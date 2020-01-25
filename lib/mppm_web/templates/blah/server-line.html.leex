@@ -1,0 +1,11 @@
+<section id="<%= "server-#{@server.login}" %>" class="server-card">
+  <span><%= @server.login %></span>
+  <span><%= @server.name %></span>
+  <span><%= @server.title_pack %></span>
+  <span><%= @server.max_players %></span>
+  <span><%= @server.player_pwd %></span>
+  <span><%= @server.spec_pwd %></span>
+
+
+  <%= tag(:input, type: "button", value: "Start!", phx_click: "cg") %>
+</section>

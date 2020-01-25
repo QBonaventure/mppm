@@ -1,0 +1,55 @@
+<%= f = form_for @changeset, "#", [phx_change: :validate, phx_submit: "create-server"] %>
+
+  <div>
+    <label>
+      Login: <%= text_input f, :login %>
+    </label>
+    <%= error_tag f, :login %>
+
+    <label>
+      Password: <%= text_input f, :password %>
+    </label>
+    <%= error_tag f, :password %>
+  </div>
+
+  <div>
+    <label>
+      Name: <%= text_input f, :name %>
+    </label>
+    <%= error_tag f, :name %>
+
+    <% title_packs = MppmWeb.DashboardView.get_available_titlepacks %>
+    <label>
+      Title Pack: <%= select f, :title_pack, title_packs  %>
+    </label>
+    <%= error_tag f, :title_pack %>
+  </div>
+
+    <label>
+      Comment: <%= text_input f, :comment %>
+    </label>
+    <%= error_tag f, :comment %>
+
+    <label>
+      Max players: <%= text_input f, :max_players %>
+    </label>
+    <%= error_tag f, :name %>
+
+  <label>
+    SuperAdmin password: <%= text_input f, :superadmin_pass %>
+  </label>
+  <%= error_tag f, :superadmin_pass %>
+
+  <label>
+    Admin password: <%= text_input f, :admin_pass %>
+  </label>
+  <%= error_tag f, :admin_pass %>
+
+  <label>
+    User password: <%= text_input f, :user_pass %>
+  </label>
+  <%= error_tag f, :user_pass %>
+
+  <%= submit "Submit" %>
+  <%= tag(:input, type: "button", value: "Cancel", phx_click: "cancel-form") %>
+</form>
