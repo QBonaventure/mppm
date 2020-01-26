@@ -15,6 +15,11 @@ defmodule Mppm.Application do
       # Starts a worker by calling: Mppm.Worker.start_link(arg)
       # {Mppm.Worker, arg},
       {DynamicSupervisor, strategy: :one_for_one, name: Mppm.ManiaplanetServerSupervisor}
+      # ,
+      # %{
+      #   id: Mppm.ServerStatusPubSub,
+      #   start: {Phoenix.PubSub, :start_link, []}
+      # }
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html

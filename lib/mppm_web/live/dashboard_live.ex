@@ -4,7 +4,7 @@ defmodule MppmWeb.DashboardLive do
   alias MppmWeb.Live.Component.CreateServerForm
 
 
-  @topic "username_update"
+  @topic "server_status"
 
 
   def render(assigns) do
@@ -13,6 +13,7 @@ defmodule MppmWeb.DashboardLive do
 
 
   def mount(session, socket) do
+    MppmWeb.Endpoint.subscribe(@topic)
     statuses = Mppm.ManiaplanetServer.servers_status()
 
     servers = Repo.all(Mppm.ServerConfig)
@@ -37,6 +38,13 @@ defmodule MppmWeb.DashboardLive do
       {:ok, _ } ->
         {:ok, changeset}
     end
+  end
+
+
+
+  def handle_info(:update, socket) do
+    statuses = Mppm.ManiaplanetServer.servers_status()
+    {:noreply, assign(socket, statuses: statuses)}
   end
 
 

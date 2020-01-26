@@ -20,3 +20,35 @@ label {
 input[type="text"] {
   width: 160px;
 }
+
+
+section#server-form {
+  margin-top: 40px;
+}
+
+div#servers-list-wrapper section {
+  border-bottom: 1px solid lightgrey;
+  margin-top: 10px;
+}
+
+
+div#servers-list-wrapper span {
+  display: inline-block;
+  width: 100px;
+  margin: 5px;
+}
+
+
+div#servers-list-wrapper span.max-pl,
+div#servers-list-wrapper span.server-status,
+div#servers-list-wrapper span.controller-status {
+  width: 20px;
+  text-align: center;
+}
+
+
+div#servers-list-wrapper input[type="button"] {
+  padding: 0;
+  height: 20px;
+  line-height: 10px;
+}

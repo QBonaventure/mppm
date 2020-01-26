@@ -1,5 +1,4 @@
 defmodule Mppm.Controller.Maniacontrol do
-  # @behaviour Mppm.Controller
   require Logger
   use GenServer
   alias Mppm.ServerConfig
@@ -15,8 +14,13 @@ defmodule Mppm.Controller.Maniacontrol do
   @default_config_file @mc_root_path <> "/configs/server.default.xml"
 
 
-  def child_spec() do
-
+  def child_spec(mp_server_state) do
+    %{
+      id: __MODULE__,
+      start: {__MODULE__, :start_link, [[mp_server_state], []]},
+      restart: :transient,
+      name: {:global, {:mp_controller, mp_server_state.config.login}}
+    }
   end
 
   def start_link([%{config: config}] = state, _opts \\ []) do
@@ -99,7 +103,10 @@ defmodule Mppm.Controller.Maniacontrol do
   end
 
 
-
+  def handle_call(:status, _, state) do
+    {:os_pid, pid} = state.os_pid
+    {:reply, %{state: state.status, port: state.port, os_pid: pid}, state}
+  end
 
 
   def handle_info({_port, {:data, text_line}}, state) do
@@ -115,6 +122,11 @@ defmodule Mppm.Controller.Maniacontrol do
     Logger.info "External exit: :exit_status: #{status}"
 
     {:noreply, %{state | exit_status: status}}
+  end
+
+  def handle_info({:DOWN, _ref, :port, port, :normal}, %{exit_status: 137} = state) do
+    Phoenix.PubSub.broadcast(Mppm.PubSub, "server_status", :update)
+    {:stop, "Crash of controller process", %{state | status: "crashed"}}
   end
 
 

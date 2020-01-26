@@ -38,7 +38,6 @@ defmodule Mppm.ManiaplanetServer do
       listening_ports: listening_ports,
       status: "running", config: server_config
     }
-    {:ok, _controller_port} =  Mppm.Controller.Maniacontrol.start_link([state])
 
     {:ok, state}
   end
@@ -82,6 +81,8 @@ defmodule Mppm.ManiaplanetServer do
     port = Port.open({:spawn, command}, [:binary, :exit_status])
     Port.monitor(port)
 
+    Phoenix.PubSub.broadcast(Mppm.PubSub, "server_status", :update)
+
     {:ok, port}
   end
 
@@ -101,13 +102,14 @@ defmodule Mppm.ManiaplanetServer do
     end)
   end
 
+
   def servers_status() do
     servers = :global.registered_names()
-    Enum.map(servers, fn server ->
-      {_, server_name} = server
+    Enum.reduce(servers, %{}, fn server, acc ->
+      {server_type, server_name} = server
       server_status = GenServer.call({:global, server}, :status)
-      Map.put(server_status, :name, server_name)
-    end)
+      Map.put(acc, server_name, Map.get(acc, server_name,[]) ++ ["#{server_type}": server_status])
+   end)
   end
 
 
@@ -122,7 +124,6 @@ defmodule Mppm.ManiaplanetServer do
   end
 
 
-
   def handle_info(:start, state) do
     {:ok, port} = start_server(state.config)
 
@@ -130,6 +131,7 @@ defmodule Mppm.ManiaplanetServer do
     listening_ports = get_listening_ports(state.os_pid)
     {:noreply, %{state | port: port, exit_status: nil, listening_ports: listening_ports, status: "running"}}
   end
+
 
   def handle_info(:stop, state) do
     stop_server(state)
@@ -142,9 +144,6 @@ defmodule Mppm.ManiaplanetServer do
     {:ok, port} = start_server(state.config)
     {:noreply, %{state | port: port, exit_status: nil, status: "running"}}
   end
-
-
-
 
 
   def handle_info({_port, {:data, text_line}}, state) do

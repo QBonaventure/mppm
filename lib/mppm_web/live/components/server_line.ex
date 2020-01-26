@@ -5,7 +5,12 @@ defmodule MppmWeb.Live.Component.ServerLine do
   alias Mppm.ManiaplanetServerSupervisor
 
 
+  @server "mppm_ps"
+  @topic "server_status"
+
+
   def mount(socket) do
+    :ok = Phoenix.PubSub.subscribe(Mppm.PubSub, @topic)
     {:ok, socket}
   end
 
@@ -20,5 +25,9 @@ defmodule MppmWeb.Live.Component.ServerLine do
   end
 
 
+  def handle_info("status-change", socket) do
+    IO.inspect "HALLO"
+    {:noreply, socket}
+  end
 
 end

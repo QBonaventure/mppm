@@ -1,8 +1,20 @@
 <% require Phoenix.LiveView.Helpers %>
 
-<div id="teams-list-wrapper"  phx-update="append">
+
+
+<div id="servers-list-wrapper"  phx-update="append">
+  <section class="server-list-header">
+    <span class="login">Login</span>
+    <span class="name">Name</span>
+    <span class="title-pack">Title Pack</span>
+    <span class="max-pl">MP</span>
+    <span class="players-pwd">Pl. pwd</span>
+    <span class="spec-pwd">Spec. pwd</span>
+    <span class="server-status">S</span>
+    <span class="controller-status">C</span>
+  </section>
   <%= for server <- @servers do %>
-    <%= live_component @socket, MppmWeb.Live.Component.ServerLine, id: server.login, server: server %>
+    <%= live_component @socket, MppmWeb.Live.Component.ServerLine, id: server.login, server: server, status: @statuses[server.login] %>
   <% end %>
 </div>
 

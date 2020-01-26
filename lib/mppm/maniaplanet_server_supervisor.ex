@@ -12,8 +12,18 @@ defmodule Mppm.ManiaplanetServerSupervisor do
 
   def start_mp_server(%Mppm.ServerConfig{} = serv_conf) do
     mps_spec = Mppm.ManiaplanetServer.child_spec(serv_conf)
+    {:ok, pid} = DynamicSupervisor.start_child(__MODULE__, mps_spec)
 
-    DynamicSupervisor.start_child(__MODULE__, mps_spec)
+    server_state = :sys.get_state(pid)
+
+    mpc_spec = Mppm.Controller.Maniacontrol.child_spec(server_state)
+    {:ok, _} = DynamicSupervisor.start_child(__MODULE__, mpc_spec)
+  end
+
+  def handle_info(msg, state) do
+    IO.inspect msg
+    IO.inspect state
+    {:noreply, state}
   end
 
 

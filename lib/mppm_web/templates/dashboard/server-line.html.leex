@@ -1,11 +1,12 @@
 <section id="<%= "server-#{@server.login}" %>" class="server-card">
-  <span><%= @server.login %></span>
-  <span><%= @server.name %></span>
-  <span><%= @server.title_pack %></span>
-  <span><%= @server.max_players %></span>
-  <span><%= @server.player_pwd %></span>
-  <span><%= @server.spec_pwd %></span>
-
+  <span class="login"><%= @server.login %></span>
+  <span class="name"><%= @server.name %></span>
+  <span class="title-pack"><%= MppmWeb.DashboardView.shorten_title_pack(@server.title_pack) %></span>
+  <span class="max-pl"><%= @server.max_players %></span>
+  <span class="players-pwd"><%= @server.player_pwd %></span>
+  <span class="spec-pwd"><%= @server.spec_pwd %></span>
+  <span class="server-status"><%= MppmWeb.DashboardView.get_status_icone(@status[:mp_server][:state]) %></span>
+  <span class="controller-status"><%= MppmWeb.DashboardView.get_status_icone(@status[:mp_controller][:state]) %></span>
 
   <%= tag(:input, type: "button", value: "Start!", phx_click: "start-server", phx_target: "#server-#{@server.login}") %>
 </section>
