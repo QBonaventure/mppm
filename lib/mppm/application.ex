@@ -15,6 +15,7 @@ defmodule Mppm.Application do
       # Starts a worker by calling: Mppm.Worker.start_link(arg)
       # {Mppm.Worker, arg},
       {DynamicSupervisor, strategy: :one_for_one, name: Mppm.ManiaplanetServerSupervisor}
+      # hostname: "localhost", username: "postgres", password: "postgres", database: "postgres"
       # ,
       # %{
       #   id: Mppm.ServerStatusPubSub,
@@ -27,6 +28,7 @@ defmodule Mppm.Application do
     opts = [strategy: :one_for_one, name: Mppm.Supervisor]
     Supervisor.start_link(children, opts)
   end
+
 
   # Tell Phoenix to update the endpoint configuration
   # whenever the application is updated.

@@ -29,7 +29,7 @@
 
 
     <label>
-      Password: <%= text_input f, :password %>
+      Password: <%= password_input f, :password %>
     </label>
     <%= error_tag f, :password %>
 
@@ -45,6 +45,14 @@
       Title Pack: <%= select f, :title_pack, title_packs  %>
     </label>
     <%= error_tag f, :title_pack %>
+
+
+
+    <% controllers = Mppm.ServerConfig.get_available_controllers %>
+    <label>
+      Title Pack: <%= select f, :controller, controllers  %>
+    </label>
+    <%= error_tag f, :controller %>
 
 
     <label>

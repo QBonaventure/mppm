@@ -194,7 +194,8 @@ defmodule Mppm.ManiaplanetServer do
       spec_pwd: nil,
       superadmin_pass: "8l-W2DiFYUqj",
       title_pack: "TMStadium@nadeo",
-      user_pass: "H5Cy11FrJ1dB"
+      user_pass: "H5Cy11FrJ1dB",
+      controller: "pyplanet"
     }
   end
 

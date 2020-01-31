@@ -15,6 +15,7 @@ defmodule Mppm.Repo.Migrations.CreateServersConfigTable do
       add :admin_pass, :string
       add :user_pass, :string
       add :validation_key, :string
+      add :controller, :string
     end
 
     create unique_index(:mp_servers_configs, [:login], name: :uk_server_configs_login)

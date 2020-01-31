@@ -16,7 +16,12 @@ defmodule Mppm.ManiaplanetServerSupervisor do
 
     server_state = :sys.get_state(pid)
 
-    mpc_spec = Mppm.Controller.Maniacontrol.child_spec(server_state)
+
+
+    mpc_spec = case serv_conf.controller do
+      "maniacontrol" -> Mppm.Controller.Maniacontrol.child_spec(server_state)
+      "pyplanet" -> Mppm.Controller.Pyplanet.child_spec(server_state)
+    end
     {:ok, _} = DynamicSupervisor.start_child(__MODULE__, mpc_spec)
   end
 

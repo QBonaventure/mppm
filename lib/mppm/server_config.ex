@@ -25,16 +25,17 @@ defmodule Mppm.ServerConfig do
     field :superadmin_pass, :string
     field :admin_pass, :string
     field :user_pass, :string
+    field :controller, :string
   end
 
 
-  @required [:login, :password, :title_pack, :max_players]
+  @required [:login, :password, :title_pack, :max_players, :controller]
   @users_pwd [:superadmin_pass, :admin_pass, :user_pass]
   def create_server_changeset(%ServerConfig{} = server_config \\ %ServerConfig{}, data \\ %{}) do
     data = defaults_missing_passwords(data)
 
     server_config
-    |> cast(data, [:login, :password, :name, :comment, :title_pack, :player_pwd, :spec_pwd, :max_players, :superadmin_pass, :admin_pass, :user_pass])
+    |> cast(data, [:login, :password, :name, :comment, :title_pack, :controller, :player_pwd, :spec_pwd, :max_players, :superadmin_pass, :admin_pass, :user_pass])
     |> validate_required(@required)
   end
 
@@ -136,6 +137,14 @@ defmodule Mppm.ServerConfig do
     |> Enum.map(fn pack ->
         String.replace_suffix(pack, ".Title.Pack.gbx", "")
       end)
+  end
+
+  def get_available_controllers do
+    'ls /opt/mppm/'
+    |> :os.cmd
+    |> to_string
+    |> String.split("\n", trim: true)
+    |> Enum.filter(fn x -> x != "maniaplanet" end)
   end
 
 end

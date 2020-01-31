@@ -83,4 +83,8 @@ config :mppm, Mppm.Controller.Maniacontrol,
   root_path: "/opt/mppm/maniacontrol/"
 
 
+config :mppm, Mppm.Controller.Pyplanet,
+  root_path: "/opt/mppm/pyplanet/"
+
+
 import_config "dev.secret.exs"
