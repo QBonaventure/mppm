@@ -65,7 +65,7 @@ defmodule Mppm.Controller.Pyplanet do
       |> Kernel.put_in(["DATABASES", "default", "OPTIONS", "host"], @pp_configs[:db_host])
       |> Kernel.put_in(["DATABASES", "default", "OPTIONS", "user"], @pp_configs[:db_user])
       |> Kernel.put_in(["DATABASES", "default", "OPTIONS", "password"], @pp_configs[:db_pass])
-      |> Kernel.put_in(["DATABASES", "default", "NAME"], "pp_" <> server_config.login)
+      |> Kernel.put_in(["DATABASES", "default", "NAME"], "pp_" <> database_name(server_config))
       |> Kernel.put_in(["POOLS"], [server_config.login])
       |> Jason.encode!
       |> String.replace("default", server_config.login)
@@ -103,9 +103,12 @@ defmodule Mppm.Controller.Pyplanet do
     |> Jason.decode
   end
 
-  def create_db(%ServerConfig{login: name}) do
-    Mppm.Repo.query("CREATE DATABASE pp_#{name} OWNER #{@pp_configs[:db_user]}")
+  def create_db(%ServerConfig{} = server_config) do
+    Mppm.Repo.query("CREATE DATABASE pp_#{database_name(server_config)} OWNER #{@pp_configs[:db_user]}")
   end
+
+
+  def database_name(%ServerConfig{login: name}), do: String.downcase(name)
 
 
   def handle_call(:status, _, state) do
