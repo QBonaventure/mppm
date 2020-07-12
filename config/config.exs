@@ -34,7 +34,7 @@ config :phoenix, :json_library, Jason
 
 config :mppm,
   app_path: File.cwd!,
-  mp_servers_root_path: "/opt/mppm/maniaplanet/"
+  mp_servers_root_path: "/opt/mppm/TrackmaniaServer/"
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.

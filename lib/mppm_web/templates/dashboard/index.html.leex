@@ -41,8 +41,7 @@
 
 
     <% title_packs = MppmWeb.DashboardView.get_available_titlepacks %>
-    <label>
-      Title Pack: <%= select f, :title_pack, title_packs  %>
+      Title Pack: <%= select f, :title_pack, ["Trackmania"]  %>
     </label>
     <%= error_tag f, :title_pack %>
 
@@ -50,7 +49,7 @@
 
     <% controllers = Mppm.ServerConfig.get_available_controllers %>
     <label>
-      Title Pack: <%= select f, :controller, controllers  %>
+      Controller: <%= select f, :controller, controllers  %>
     </label>
     <%= error_tag f, :controller %>
 

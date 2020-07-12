@@ -14,43 +14,11 @@ defmodule Mppm.Controller.Maniacontrol do
   @default_config_file @mc_root_path <> "/configs/server.default.xml"
 
 
-  def child_spec(mp_server_state) do
-    %{
-      id: __MODULE__,
-      start: {__MODULE__, :start_link, [[mp_server_state], []]},
-      restart: :transient,
-      name: {:global, {:mp_controller, mp_server_state.config.login}}
-    }
-  end
-
-  def start_link([%{config: config}] = state, _opts \\ []) do
-    GenServer.start_link(__MODULE__, state, name: {:global, {:mp_controller, config.login}})
-  end
-
-
-  def init([%{config: config} = state]) do
-    {:ok, port} = start_server(state)
-    {:ok, %{port: port, os_pid: Port.info(port, :os_pid), exit_status: nil, listening_ports: nil, latest_output: nil, status: "running", config: config}}
-  end
-
-
   def get_command(%ServerConfig{login: name}), do: "/usr/bin/php73 #{@mc_root_path}/ManiaControl.php -config=#{name}.xml -id=#{name}"
-
-
-  def start_server(%{config: config} = state) do
-    create_config_file(state)
-    command = get_command(config)
-    port = Port.open({:spawn, command}, [:binary, :exit_status])
-    Port.monitor(port)
-
-    {:ok, port}
-  end
 
 
   def create_config_file(%{config: server_config, listening_ports: %{"xmlrpc" => xmlport}}) do
     xml = get_base_xml()
-
-
 
     server =
       elem(xml, 2)
@@ -76,7 +44,7 @@ defmodule Mppm.Controller.Maniacontrol do
       elem(xml, 2)
       |> List.keyfind(:masteradmins, 0)
       |> elem(2)
-      |> List.keyreplace(:login, 0, {:login, [], ['rrrazzziel']})
+      |> List.keyreplace(:login, 0, {:login, [], ['mr2_md43Qg-_ZeOmUQ32pA']})
     masteradmins = {:masteradmins, [], masteradmins}
 
     new_xml = {:maniacontrol, [], [server, database, masteradmins]}
@@ -90,43 +58,15 @@ defmodule Mppm.Controller.Maniacontrol do
     filename
   end
 
+
   defp charlist(value) when is_binary(value), do: String.to_charlist(value)
   defp charlist(nil = _value), do: []
-
-
 
 
   def get_base_xml() do
     {result, _misc} = :xmerl_scan.file(@default_config_file, [{:space, :normalize}])
     [clean] = :xmerl_lib.remove_whitespace([result])
     :xmerl_lib.simplify_element(clean)
-  end
-
-
-  def handle_call(:status, _, state) do
-    {:os_pid, pid} = state.os_pid
-    {:reply, %{state: state.status, port: state.port, os_pid: pid}, state}
-  end
-
-
-  def handle_info({_port, {:data, text_line}}, state) do
-    latest_output = text_line |> String.trim
-
-    Logger.info "Contr. #{latest_output}"
-
-    {:noreply, %{state | latest_output: latest_output}}
-  end
-
-
-  def handle_info({_port, {:exit_status, status}}, state) do
-    Logger.info "External exit: :exit_status: #{status}"
-
-    {:noreply, %{state | exit_status: status}}
-  end
-
-  def handle_info({:DOWN, _ref, :port, port, :normal}, %{exit_status: 137} = state) do
-    Phoenix.PubSub.broadcast(Mppm.PubSub, "server_status", :update)
-    {:stop, "Crash of controller process", %{state | status: "crashed"}}
   end
 
 

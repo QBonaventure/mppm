@@ -20,13 +20,20 @@ defmodule MppmWeb.Live.Component.ServerLine do
 
 
   def handle_event("start-server", params, socket) do
-    ManiaplanetServerSupervisor.start_mp_server(socket.assigns.server)
+    spawn(ManiaplanetServerSupervisor, :start_mp_server, [socket.assigns.server])
+    Phoenix.PubSub.broadcast(Mppm.PubSub, "server_status", :update)
+
+    {:noreply, socket}
+  end
+
+
+  def handle_event("stop-server", params, socket) do
+    ManiaplanetServerSupervisor.stop_mp_server(socket.assigns.id)
     {:noreply, socket}
   end
 
 
   def handle_info("status-change", socket) do
-    IO.inspect "HALLO"
     {:noreply, socket}
   end
 

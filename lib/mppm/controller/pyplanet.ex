@@ -8,40 +8,18 @@ defmodule Mppm.Controller.Pyplanet do
   @servers_configs_root @pp_configs[:root_path]
 
 
-  def child_spec(mp_server_state) do
-    %{
-      id: __MODULE__,
-      start: {__MODULE__, :start_link, [[mp_server_state], []]},
-      restart: :transient,
-      name: {:global, {:mp_controller, mp_server_state.config.login}}
-    }
-  end
-
-  def start_link([%{config: config}] = state, _opts \\ []) do
-    GenServer.start_link(__MODULE__, state, name: {:global, {:mp_controller, config.login}})
-  end
-
-
-  def init([%{config: config} = state]) do
-    {:ok, port} = start_server(state)
-    IO.inspect(Port.info(port, :os_pid))
-    {:ok, %{port: port, os_pid: Port.info(port, :os_pid), exit_status: nil, listening_ports: nil, latest_output: nil, status: "running", config: config}}
-  end
-
+  ###################################
+  ##### START FUNCTIONS #############
+  ###################################
 
   def get_command(%ServerConfig{login: name}),
     do: "#{@pp_configs[:root_path]}#{name}/manage.py start --pid-file #{name}.pid"
 
 
-  def start_server(%{config: config} = state) do
-    :ok = create_config_file(state)
-    command = get_command(config)
-    IO.inspect command
-    port = Port.open({:spawn, command}, [:binary, :exit_status])
-    Port.monitor(port)
 
-    {:ok, port}
-  end
+  ###################################
+  ##### OTHER FUNCTIONS #############
+  ###################################
 
 
   def create_config_file(%{config: server_config, listening_ports: %{"xmlrpc" => xmlport}}) do
@@ -111,31 +89,7 @@ defmodule Mppm.Controller.Pyplanet do
   def database_name(%ServerConfig{login: name}), do: String.downcase(name)
 
 
-  def handle_call(:status, _, state) do
-    {:os_pid, pid} = state.os_pid
-    {:reply, %{state: state.status, port: state.port, os_pid: pid}, state}
-  end
 
-
-  def handle_info({_port, {:data, text_line}}, state) do
-    latest_output = text_line |> String.trim
-
-    Logger.info "Contr. #{latest_output}"
-
-    {:noreply, %{state | latest_output: latest_output}}
-  end
-
-
-  def handle_info({_port, {:exit_status, status}}, state) do
-    Logger.info "External exit: :exit_status: #{status}"
-
-    {:noreply, %{state | exit_status: status}}
-  end
-
-  def handle_info({:DOWN, _ref, :port, port, :normal}, %{exit_status: 137} = state) do
-    Phoenix.PubSub.broadcast(Mppm.PubSub, "server_status", :update)
-    {:stop, "Crash of controller process", %{state | status: "crashed"}}
-  end
 
 
 end

@@ -12,15 +12,24 @@ defmodule Mppm.Application do
       Mppm.Repo,
       # Start the endpoint when the application starts
       MppmWeb.Endpoint,
+
+      Mppm.ServerConfigStore,
+      Mppm.Statuses,
       # Starts a worker by calling: Mppm.Worker.start_link(arg)
       # {Mppm.Worker, arg},
-      {DynamicSupervisor, strategy: :one_for_one, name: Mppm.ManiaplanetServerSupervisor}
+      {DynamicSupervisor, strategy: :one_for_one, name: Mppm.ManiaplanetServerSupervisor},
       # hostname: "localhost", username: "postgres", password: "postgres", database: "postgres"
       # ,
       # %{
       #   id: Mppm.ServerStatusPubSub,
       #   start: {Phoenix.PubSub, :start_link, []}
       # }
+      %{
+        id: Mppm.ManiaplanetServerSupervisorStarter,
+        start: {Mppm.ManiaplanetServerSupervisorStarter, :start_link, []},
+        restart: :temporary,
+        type: :worker
+      }
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html

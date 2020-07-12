@@ -79,7 +79,7 @@ config :phoenix, :plug_init_mode, :runtime
 
 
 config :mppm, Mppm.Controller.Maniacontrol,
-  version: "200119",
+  version: "080720",
   root_path: "/opt/mppm/maniacontrol/"
 
 

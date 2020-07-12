@@ -14,7 +14,7 @@ defmodule MppmWeb.DashboardLive do
 
   def mount(session, socket) do
     MppmWeb.Endpoint.subscribe(@topic)
-    statuses = Mppm.ManiaplanetServer.servers_status()
+    statuses = Mppm.Statuses.all
 
     servers = Repo.all(Mppm.ServerConfig)
     socket =
@@ -43,8 +43,7 @@ defmodule MppmWeb.DashboardLive do
 
 
   def handle_info(:update, socket) do
-    statuses = Mppm.ManiaplanetServer.servers_status()
-    {:noreply, assign(socket, statuses: statuses)}
+    {:noreply, assign(socket, statuses: Mppm.Statuses.all)}
   end
 
 

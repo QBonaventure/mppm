@@ -1,6 +1,7 @@
 defmodule Mppm.ServerConfig do
   use Ecto.Schema
   import Ecto.Changeset
+  import Ecto.Query
   alias __MODULE__
   alias Mppm.ServerConfigStore
   import Record
@@ -26,6 +27,10 @@ defmodule Mppm.ServerConfig do
     field :admin_pass, :string
     field :user_pass, :string
     field :controller, :string
+  end
+
+  def get_all() do
+    Mppm.Repo.all (from(Mppm.ServerConfig))
   end
 
 
@@ -76,7 +81,7 @@ defmodule Mppm.ServerConfig do
       |> elem(2)
       |> List.keyreplace(:password, 0, {:password, [], [charlist(serv_config.password)]})
       |> List.keyreplace(:login, 0, {:login, [], [charlist(serv_config.login)]})
-      |> List.keyreplace(:validation_key, 0, {:validation_key, [], [charlist(Application.get_env(:mppm, :masteraccount_validation_key))]})
+#      |> List.keyreplace(:validation_key, 0, {:validation_key, [], [charlist(Application.get_env(:mppm, :masteraccount_validation_key))]})
     masterserver_account = {:masterserver_account, [], masterserver_account}
 
     server_options =
@@ -110,7 +115,7 @@ defmodule Mppm.ServerConfig do
 
   def create_tracklist(%ServerConfig{login: login}) do
     target_path = "#{@maps_path}MatchSettings/#{login}.txt"
-    source_path = "#{@maps_path}MatchSettings/tracklist.txt"
+    source_path = "#{@maps_path}MatchSettings/example.txt"
 
     'ls #{target_path} >> /dev/null 2>&1 || cp #{source_path} #{target_path}'
     |> :os.cmd

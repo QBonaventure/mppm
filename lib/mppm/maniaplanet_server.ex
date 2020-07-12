@@ -2,9 +2,10 @@ defmodule Mppm.ManiaplanetServer do
   alias __MODULE__
   require Logger
   use GenServer
-  alias Mppm.ServerConfig
+  alias Mppm.{ServerConfig,Statuses}
 
   @root_path Application.get_env(:mppm, :mp_servers_root_path)
+  @msg_waiting_ports "Waiting for game server ports..."
 
   def child_spec(%ServerConfig{} = server_config) do
     %{
@@ -23,31 +24,30 @@ defmodule Mppm.ManiaplanetServer do
 
 
   def init(%ServerConfig{} = server_config) do
-    {:ok, port} = start_server(server_config)
-    {:os_pid, os_pid} = Port.info(port, :os_pid)
-
-    Process.sleep(5000)
-    listening_ports = get_listening_ports(os_pid)
+    ServerConfig.create_config_file(server_config)
+    ServerConfig.create_tracklist(server_config)
 
     state = %{
-      port: port,
-      controller_port: port,
-      os_pid: os_pid,
+      port: nil,
+      controller_port: nil,
+      os_pid: nil,
       exit_status: nil,
       latest_output: nil,
-      listening_ports: listening_ports,
-      status: "running", config: server_config
+      listening_ports: nil,
+      status: "stopped",
+      config: server_config
     }
 
     {:ok, state}
   end
 
 
-
-  # FUNCTIONS
+  ###################################
+  ##### START FUNCTIONS #############
+  ###################################
 
   defp get_command(%ServerConfig{login: filename, title_pack: title_pack}) do
-    "#{@root_path}/ManiaPlanetServer /title=#{title_pack} /dedicated_cfg=#{filename}.txt /game_settings=MatchSettings/#{filename}.txt /nodaemon"
+    "#{@root_path}TrackmaniaServer /nologs /dedicated_cfg=#{filename}.txt /game_settings=MatchSettings/#{filename}.txt /nodaemon"
   end
 
 
@@ -68,31 +68,105 @@ defmodule Mppm.ManiaplanetServer do
       %{"xmlrpc" => _xmlrpc, "server" => _server} ->
         res
       _ ->
+        IO.puts @msg_waiting_ports
         Process.sleep(1000)
         get_listening_ports(pid)
     end
   end
 
 
-  def start_server(%ServerConfig{} = server_config \\ []) do
-    ServerConfig.create_config_file(server_config)
-    ServerConfig.create_tracklist(server_config)
-    command = get_command(server_config)
+  def handle_call(:start, _, state) do
+    update_status(state.config.login, "starting")
+    {:ok, new_state} = start_server(state)
+    update_status(state.config.login, "started")
+
+    {:reply, {:ok, new_state}, new_state}
+  end
+
+  def update_status(login, status) do
+    Statuses.update_server(login, status)
+    Phoenix.PubSub.broadcast(Mppm.PubSub, "server_status", :update)
+    {:ok, status}
+  end
+
+  def start_server(state) do
+    command = get_command(state.config)
     port = Port.open({:spawn, command}, [:binary, :exit_status])
+    {:os_pid, os_pid} = Port.info(port, :os_pid)
+
+    listening_ports = get_listening_ports(os_pid)
     Port.monitor(port)
 
-    Phoenix.PubSub.broadcast(Mppm.PubSub, "server_status", :update)
+    state = %{state | status: "running", listening_ports: listening_ports, port: port}
 
-    {:ok, port}
+    update_status(state.config.login, "started")
+
+    {:ok, state}
   end
 
+
+  def handle_call(:starting, _, state) do
+    new_state = %{state | status: "starting"}
+    {:reply, :ok, new_state}
+  end
+
+
+  def handle_cast(:started, state) do
+    {:noreply, %{state | status: "running"}}
+  end
+
+
+  def handle_cast(:stopped, state) do
+    {:noreply, %{state | status: "stopped"}}
+  end
+
+
+  ###################################
+  ##### STOP FUNCTIONS ##############
+  ###################################
 
   def stop_server(state) do
+    GenServer.cast(self(), :closing_port)
     {:os_pid, pid} = Port.info(state.port, :os_pid)
-    System.cmd("kill", ["#{pid}"])
     Port.close(state.port)
+    System.cmd("kill", ["#{pid}"])
+
+    update_status(state.config.login, "stopped")
+
     {:ok, %{state | port: nil, status: "stopped"}}
   end
+
+
+  def handle_call(:stop, _, state) do
+    stop_server(state)
+    {:reply, {:ok, self()}, state}
+  end
+
+
+  def handle_cast(:closing_port, state) do
+    {:noreply, %{state | exit_status: :port_closed, status: "stopped"}}
+  end
+
+
+  def handle_info(:stop, state) do
+    stop_server(state)
+    {:noreply, %{state | exit_status: :port_closed, status: "stopped"}}
+  end
+
+
+  def handle_info({:DOWN, _ref, :port, port, :normal}, %{exit_status: :port_closed} = state) do
+    Logger.info "Process successfully stopped through Port: #{inspect port}"
+
+    {:noreply, state}
+  end
+
+
+
+
+  ###################################
+  ##### OTHER FUNCTIONS #############
+  ###################################
+
 
 
   def list_servers() do
@@ -119,37 +193,20 @@ defmodule Mppm.ManiaplanetServer do
   #        Callbacks       #
   ##########################
 
+  def handle_call(:pid, _, state) do
+    {:reply, self, state}
+  end
+
+
   def handle_call(:status, _, state) do
     {:reply, %{state: state.status, port: state.port, os_pid: state.os_pid}, state}
-  end
-
-
-  def handle_info(:start, state) do
-    {:ok, port} = start_server(state.config)
-
-    ###### IMPLEMENT TRY AGAIN IF NO XMLRPC PORT YET
-    listening_ports = get_listening_ports(state.os_pid)
-    {:noreply, %{state | port: port, exit_status: nil, listening_ports: listening_ports, status: "running"}}
-  end
-
-
-  def handle_info(:stop, state) do
-    stop_server(state)
-    {:noreply, %{state | exit_status: :port_closed, status: "stopped"}}
-  end
-
-
-  def handle_info(:restart, state) do
-    stop_server(state)
-    {:ok, port} = start_server(state.config)
-    {:noreply, %{state | port: port, exit_status: nil, status: "running"}}
   end
 
 
   def handle_info({_port, {:data, text_line}}, state) do
     latest_output = text_line |> String.trim
 
-    Logger.info "#{latest_output}"
+    Logger.info "[#{state.config.login}] #{latest_output}"
 
     {:noreply, %{state | latest_output: latest_output}}
   end
@@ -161,42 +218,5 @@ defmodule Mppm.ManiaplanetServer do
     {:noreply, %{state | exit_status: status}}
   end
 
-  # def handle_info({:DOWN, _ref, :port, port, :normal}, %{exit_status: 137} = state) do
-  #   Logger.info "Handled :DOWN message from port: #{inspect port}"
-  #
-  #   start_server(state.config)
-  #   {:noreply, state}
-  # end
-
-
-  # def handle_info({:DOWN, _ref, :port, port, :normal}, %{exit_status: :port_closed} = state) do
-  #   Logger.info "Process successfully stopped through Port: #{inspect port}"
-  #
-  #   {:noreply, state}
-  # end
-
-
-  # def handle_info(msg, state) do
-  #   Logger.info "Unhandled message: #{inspect msg}"
-  #   {:noreply, state}
-  # end
-
-
-  def hh do
-    %Mppm.ServerConfig{
-      admin_pass: "eeM013xUvJ-U",
-      comment: nil,
-      login: "ftc_ps_3",
-      max_players: 32,
-      name: "FTC PS3",
-      password: "6eWhmzPkQbGFS5KXkCvl",
-      player_pwd: nil,
-      spec_pwd: nil,
-      superadmin_pass: "8l-W2DiFYUqj",
-      title_pack: "TMStadium@nadeo",
-      user_pass: "H5Cy11FrJ1dB",
-      controller: "pyplanet"
-    }
-  end
 
 end

@@ -1,12 +1,16 @@
+<% alias MppmWeb.DashboardView %>
 <section id="<%= "server-#{@server.login}" %>" class="server-card">
   <span class="login"><%= @server.login %></span>
   <span class="name"><%= @server.name %></span>
-  <span class="title-pack"><%= MppmWeb.DashboardView.shorten_title_pack(@server.title_pack) %></span>
+  <span class="title-pack"><%= DashboardView.shorten_title_pack(@server.title_pack) %></span>
+  <span class="controller"><%= DashboardView.shorten_controller(@server.controller) %></span>
   <span class="max-pl"><%= @server.max_players %></span>
   <span class="players-pwd"><%= @server.player_pwd %></span>
   <span class="spec-pwd"><%= @server.spec_pwd %></span>
-  <span class="server-status"><%= MppmWeb.DashboardView.get_status_icone(@status[:mp_server][:state]) %></span>
-  <span class="controller-status"><%= MppmWeb.DashboardView.get_status_icone(@status[:mp_controller][:state]) %></span>
-
-  <%= tag(:input, type: "button", value: "Start!", phx_click: "start-server", phx_target: "#server-#{@server.login}") %>
+  <span class="server-status">
+    <%= DashboardView.get_status_icon(@status.server, @server.login) %>
+  </span>
+  <span class="controller-status">
+    <%= DashboardView.get_status_icon(@status.controller, @server.login) %>
+  </span>
 </section>
