@@ -3,13 +3,14 @@ defmodule Mppm.ServerConfig do
   import Ecto.Changeset
   import Ecto.Query
   alias __MODULE__
-  alias Mppm.ServerConfigStore
+  alias Mppm.Repo
   import Record
+
   defrecord(:xmlElement, extract(:xmlElement, from_lib: "xmerl/include/xmerl.hrl"))
   defrecord(:xmlAttribute, extract(:xmlAttribute, from_lib: "xmerl/include/xmerl.hrl"))
   defrecord(:xmlText, extract(:xmlText, from_lib: "xmerl/include/xmerl.hrl"))
 
-  @app_path Application.get_env(:mppm, :app_path)
+  # @app_path Application.get_env(:mppm, :app_path)
   @root_path Application.get_env(:mppm, :mp_servers_root_path)
   @config_path @root_path <> "UserData/Config/"
   @maps_path @root_path <> "UserData/Maps/"
@@ -42,6 +43,13 @@ defmodule Mppm.ServerConfig do
     server_config
     |> cast(data, [:login, :password, :name, :comment, :title_pack, :controller, :player_pwd, :spec_pwd, :max_players, :superadmin_pass, :admin_pass, :user_pass])
     |> validate_required(@required)
+  end
+
+
+  def create_new_server(game_server_config) do
+    %ServerConfig{}
+    |> ServerConfig.create_server_changeset(game_server_config)
+    |> Repo.insert
   end
 
 
@@ -123,7 +131,7 @@ defmodule Mppm.ServerConfig do
 
   defp charlist(value) when is_binary(value), do: String.to_charlist(value)
   defp charlist(value) when is_integer(value), do: Integer.to_string(value) |> String.to_charlist
-  defp charlist(nil = value), do: []
+  defp charlist(nil = _value), do: []
 
 
   def get_base_xml() do

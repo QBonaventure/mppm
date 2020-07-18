@@ -1,7 +1,6 @@
 defmodule MppmWeb.DashboardLive do
   use Phoenix.LiveView
   alias Mppm.Repo
-  alias MppmWeb.Live.Component.CreateServerForm
 
 
   @topic "server_status"
@@ -12,7 +11,7 @@ defmodule MppmWeb.DashboardLive do
   end
 
 
-  def mount(session, socket) do
+  def mount(_params, _session, socket) do
     MppmWeb.Endpoint.subscribe(@topic)
     statuses = Mppm.Statuses.all
 
@@ -48,14 +47,13 @@ defmodule MppmWeb.DashboardLive do
 
 
   def handle_event("create-server", params, socket) do
-    {:ok, server} =
-      %Mppm.ServerConfig{}
-      |> Mppm.ServerConfig.create_server_changeset(params["server_config"])
-      |> Repo.insert
+    {:ok, server_config} = Mppm.ServerConfig.create_new_server(params["server_config"])
+    Mppm.ManiaplanetServerSupervisor.start_server_supervisor(server_config)
 
     socket =
       socket
-      |> assign(servers: [server])
+      |> assign(statuses: Mppm.Statuses.all())
+      |> assign(servers: [server_config | socket.assigns.servers])
       |> assign(changeset: Mppm.ServerConfig.create_server_changeset())
 
     {:noreply, socket}

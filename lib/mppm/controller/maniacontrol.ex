@@ -3,16 +3,15 @@ defmodule Mppm.Controller.Maniacontrol do
   use GenServer
   alias Mppm.ServerConfig
 
-
   @mc_config Application.get_env(:mppm, Mppm.Controller.Maniacontrol)
-  # @path "./ManiaControl/ManiaControl-170120/"
-  @app_path Application.get_env(:mppm, :app_path)
-  # @comm "/usr/bin/php73 /opt/maniacontrol/ManiaControl.php -config=#{name}.xml -id=#{name} > /dev/null 2>/dev/null"
-
   @mc_root_path @mc_config[:root_path] <> @mc_config[:version] <> "/"
   @config_path @mc_root_path <> "/configs/"
   @default_config_file @mc_root_path <> "/configs/server.default.xml"
 
+
+  def init(init_arg) do
+    {:ok, init_arg}
+  end
 
   def get_command(%ServerConfig{login: name}), do: "/usr/bin/php73 #{@mc_root_path}/ManiaControl.php -config=#{name}.xml -id=#{name}"
 

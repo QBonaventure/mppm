@@ -1,7 +1,7 @@
 defmodule Mppm.ManiaplanetServerSupervisor do
   use DynamicSupervisor
-  alias DynamicSupervisorWithRegistry.Worker
-  alias Mppm.ManiaplanetServer
+  alias Mppm.{ServerConfig,ManiaplanetServer}
+  alias __MODULE__
 
 
   def start_link(_arg) do
@@ -17,24 +17,40 @@ defmodule Mppm.ManiaplanetServerSupervisor do
     DynamicSupervisor.start_child(__MODULE__, mps_spec)
   end
 
+  def start_server_supervisor(%ServerConfig{} = server_config) do
+    {:ok, mp_server_pid} =
+      ManiaplanetServer.child_spec(server_config)
+      |> ManiaplanetServerSupervisor.start_child
 
-  def start_mp_server(%Mppm.ServerConfig{} = serv_conf) do
-    {:ok, mp_server_state} = GenServer.call({:global, {:mp_server, serv_conf.login}}, :start, 10000)
+    :ok = Mppm.Statuses.add_new_server(server_config.login)
 
-    GenServer.call({:global, {:mp_controller, serv_conf.login}}, {:start, mp_server_state}, 10000)
+    {:ok, mp_server_pid}
+  end
+
+
+
+  def start_mp_server(%ServerConfig{} = serv_conf) do
+    case GenServer.call({:global, {:mp_server, serv_conf.login}}, :start, 10000) do
+      {:ok, _mp_server_state} ->
+        "TO REMOVE?"
+        # GenServer.call({:global, {:mp_broker, serv_conf.login}}, {:start, mp_server_state}, 10000)
+        # GenServer.call({:global, {:mp_controller, serv_conf.login}}, {:start, mp_server_state}, 10000)
+      _ -> "TO DO"
+    end
   end
 
 
   def stop_mp_server(server_id) do
-    {:ok, mpc_pid} = GenServer.call({:global, {:mp_controller, server_id}}, :stop)
+    # {:ok, _mpc_pid} = GenServer.call({:global, {:mp_controller, server_id}}, :stop)
 
-    {:ok, mps_pid} = GenServer.call({:global, {:mp_server, server_id}}, :stop)
+    {:ok, _mps_pid} = GenServer.call({:global, {:mp_server, server_id}}, :stop)
 
     {:ok}
   end
 
 
   def handle_info(msg, state) do
+    IO.puts "----DSS: " <> msg
     {:noreply, state}
   end
 

@@ -1,11 +1,10 @@
 defmodule Mppm.Statuses do
   use Agent
-  alias __MODULE__
-  import Ecto.Query
   alias Mppm.ServerConfigStore
 
 
   @allowed_statuses ["stopped", "starting", "started", "failed"]
+  @default_statuses %{server: "stopped", controller: "stopped"}
 
 
   def start_link(_init_value) do
@@ -21,6 +20,10 @@ defmodule Mppm.Statuses do
     Agent.get(__MODULE__, & &1)
   end
 
+  def add_new_server(login) do
+    Agent.update(__MODULE__, & Map.put_new(&1, login, @default_statuses))
+  end
+
 
   def update_server(login, status) when status in @allowed_statuses do
     Agent.update(__MODULE__, & Kernel.put_in(&1, [login, :server], status))
@@ -28,14 +31,8 @@ defmodule Mppm.Statuses do
 
 
   def update_controller(login, status) when status in @allowed_statuses do
-    IO.inspect status
     Agent.update(__MODULE__, & Kernel.put_in(&1, [login, :controller], status))
   end
-
-
-  # def status do
-  #   Agent.get(__MODULE__, & &1)
-  # end
 
 
 end

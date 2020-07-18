@@ -7,6 +7,10 @@ defmodule Mppm.Controller.Pyplanet do
   @pp_configs Application.get_env(:mppm, Mppm.Controller.Pyplanet)
   @servers_configs_root @pp_configs[:root_path]
 
+  def init(init_arg) do
+    {:ok, init_arg}
+  end
+
 
   ###################################
   ##### START FUNCTIONS #############

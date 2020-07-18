@@ -1,11 +1,10 @@
 defmodule Mppm.ManiaplanetServer do
-  alias __MODULE__
   require Logger
   use GenServer
   alias Mppm.{ServerConfig,Statuses}
 
   @root_path Application.get_env(:mppm, :mp_servers_root_path)
-  @msg_waiting_ports "Waiting for game server ports..."
+  @msg_waiting_ports "Waiting for game server ports to open..."
 
   def child_spec(%ServerConfig{} = server_config) do
     %{
@@ -34,6 +33,7 @@ defmodule Mppm.ManiaplanetServer do
       exit_status: nil,
       latest_output: nil,
       listening_ports: nil,
+      xmlrpc_port: nil,
       status: "stopped",
       config: server_config
     }
@@ -46,20 +46,20 @@ defmodule Mppm.ManiaplanetServer do
   ##### START FUNCTIONS #############
   ###################################
 
-  defp get_command(%ServerConfig{login: filename, title_pack: title_pack}) do
+  defp get_command(%ServerConfig{login: filename, title_pack: _title_pack}) do
     "#{@root_path}TrackmaniaServer /nologs /dedicated_cfg=#{filename}.txt /game_settings=MatchSettings/#{filename}.txt /nodaemon"
   end
 
 
-  def get_listening_ports(pid) when is_integer(pid) do
+  def get_listening_ports(pid, tries \\ 0) when is_integer(pid) do
     res = :os.cmd('ss -lpn | grep "pid=#{pid}" | awk {\'print$5\'} | cut -d: -f2')
     |> to_string
     |> String.split("\n", trim: true)
     |> Enum.map(fn p ->
         case String.at(p, 0) do
-          "2" -> {"server", p}
-          "3" -> {"p2p", p}
-          "5" -> {"xmlrpc", p}
+          "2" -> {"server", String.to_integer(p)}
+          "3" -> {"p2p", String.to_integer(p)}
+          "5" -> {"xmlrpc", String.to_integer(p)}
         end
       end)
     |> Map.new
@@ -70,17 +70,8 @@ defmodule Mppm.ManiaplanetServer do
       _ ->
         IO.puts @msg_waiting_ports
         Process.sleep(1000)
-        get_listening_ports(pid)
+        get_listening_ports(pid, tries+1)
     end
-  end
-
-
-  def handle_call(:start, _, state) do
-    update_status(state.config.login, "starting")
-    {:ok, new_state} = start_server(state)
-    update_status(state.config.login, "started")
-
-    {:reply, {:ok, new_state}, new_state}
   end
 
   def update_status(login, status) do
@@ -97,28 +88,15 @@ defmodule Mppm.ManiaplanetServer do
     listening_ports = get_listening_ports(os_pid)
     Port.monitor(port)
 
-    state = %{state | status: "running", listening_ports: listening_ports, port: port}
+    Mppm.Broker.child_spec(state.config, listening_ports["xmlrpc"])
+    |> Mppm.ManiaplanetServerSupervisor.start_child
 
-    update_status(state.config.login, "started")
+    state = %{state | status: "started", listening_ports: listening_ports, port: port}
 
     {:ok, state}
   end
 
 
-  def handle_call(:starting, _, state) do
-    new_state = %{state | status: "starting"}
-    {:reply, :ok, new_state}
-  end
-
-
-  def handle_cast(:started, state) do
-    {:noreply, %{state | status: "running"}}
-  end
-
-
-  def handle_cast(:stopped, state) do
-    {:noreply, %{state | status: "stopped"}}
-  end
 
 
   ###################################
@@ -126,7 +104,8 @@ defmodule Mppm.ManiaplanetServer do
   ###################################
 
   def stop_server(state) do
-    GenServer.cast(self(), :closing_port)
+    GenServer.call({:global, {:mp_broker, state.config.login}}, :stop)
+    IO.inspect Port.info(state.port, :os_pid)
     {:os_pid, pid} = Port.info(state.port, :os_pid)
     Port.close(state.port)
     System.cmd("kill", ["#{pid}"])
@@ -136,28 +115,8 @@ defmodule Mppm.ManiaplanetServer do
     {:ok, %{state | port: nil, status: "stopped"}}
   end
 
-
-  def handle_call(:stop, _, state) do
-    stop_server(state)
-    {:reply, {:ok, self()}, state}
-  end
-
-
   def handle_cast(:closing_port, state) do
     {:noreply, %{state | exit_status: :port_closed, status: "stopped"}}
-  end
-
-
-  def handle_info(:stop, state) do
-    stop_server(state)
-    {:noreply, %{state | exit_status: :port_closed, status: "stopped"}}
-  end
-
-
-  def handle_info({:DOWN, _ref, :port, port, :normal}, %{exit_status: :port_closed} = state) do
-    Logger.info "Process successfully stopped through Port: #{inspect port}"
-
-    {:noreply, state}
   end
 
 
@@ -193,8 +152,37 @@ defmodule Mppm.ManiaplanetServer do
   #        Callbacks       #
   ##########################
 
+
+  def handle_cast({:incoming_game_message, message}, state) do
+    IO.inspect message
+    {:noreply, state}
+  end
+
+
+
+  def handle_call(:start, _, state) do
+    update_status(state.config.login, "starting")
+    {:ok, new_state} = start_server(state)
+    update_status(state.config.login, new_state.status)
+
+    {:reply, {:ok, new_state}, new_state}
+  end
+
+  def handle_call(:stop, _, state) do
+    stop_server(state)
+    {:reply, {:ok, self()}, state}
+  end
+
   def handle_call(:pid, _, state) do
-    {:reply, self, state}
+    {:reply, self(), state}
+  end
+
+
+  def handle_call(:xmlrpc_port, _, state) do
+    case state.listening_ports do
+      nil -> {:reply, nil, state}
+      %{"xmlrpc" => port} -> {:reply, port, state}
+    end
   end
 
 
@@ -202,6 +190,28 @@ defmodule Mppm.ManiaplanetServer do
     {:reply, %{state: state.status, port: state.port, os_pid: state.os_pid}, state}
   end
 
+
+  def handle_call(:get_state, _, state) do
+    {:reply, state, state}
+  end
+
+
+  def handle_info(:stop, state) do
+    stop_server(state)
+    {:noreply, %{state | exit_status: :port_closed, status: "stopped"}}
+  end
+
+
+  def handle_info({:DOWN, _ref, :port, port, :normal}, %{exit_status: :port_closed} = state) do
+    Logger.info "Process successfully stopped through Port: #{inspect port}"
+
+    {:noreply, state}
+  end
+
+  # Callback for info upon normally stopping a game server.
+  def handle_info({:DOWN, _ref, :port, port, :normal}, state) do
+    {:noreply, %{state | status: "stopped"}}
+  end
 
   def handle_info({_port, {:data, text_line}}, state) do
     latest_output = text_line |> String.trim

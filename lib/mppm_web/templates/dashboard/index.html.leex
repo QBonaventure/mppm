@@ -2,7 +2,7 @@
 
 
 
-<div id="servers-list-wrapper"  phx-update="append">
+<div id="servers-list-wrapper">
   <section class="server-list-header">
     <span class="login">Login</span>
     <span class="name">Name</span>
@@ -13,9 +13,12 @@
     <span class="server-status">S</span>
     <span class="controller-status">C</span>
   </section>
-  <%= for server <- @servers do %>
-    <%= live_component @socket, MppmWeb.Live.Component.ServerLine, id: server.login, server: server, status: @statuses[server.login] %>
-  <% end %>
+
+  <div id="servers-list" phx-update="append">
+    <%= for server <- @servers do %>
+      <%= live_component @socket, MppmWeb.Live.Component.ServerLine, id: server.login, server: server, status: @statuses[server.login] %>
+    <% end %>
+  </div>
 </div>
 
 
@@ -40,7 +43,7 @@
     <%= error_tag f, :name %>
 
 
-    <% title_packs = MppmWeb.DashboardView.get_available_titlepacks %>
+    <label>
       Title Pack: <%= select f, :title_pack, ["Trackmania"]  %>
     </label>
     <%= error_tag f, :title_pack %>

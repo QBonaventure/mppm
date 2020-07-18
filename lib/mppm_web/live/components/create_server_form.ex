@@ -1,6 +1,5 @@
 defmodule MppmWeb.Live.Component.CreateServerForm do
   use Phoenix.LiveComponent
-  alias Mppm.ServerConfig
   alias MppmWeb.DashboardView
 
 

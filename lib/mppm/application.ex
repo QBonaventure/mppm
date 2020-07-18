@@ -17,7 +17,9 @@ defmodule Mppm.Application do
       Mppm.Statuses,
       # Starts a worker by calling: Mppm.Worker.start_link(arg)
       # {Mppm.Worker, arg},
-      {DynamicSupervisor, strategy: :one_for_one, name: Mppm.ManiaplanetServerSupervisor},
+      {
+        DynamicSupervisor, strategy: :one_for_one, name: Mppm.ManiaplanetServerSupervisor
+      },
       # hostname: "localhost", username: "postgres", password: "postgres", database: "postgres"
       # ,
       # %{
@@ -26,7 +28,7 @@ defmodule Mppm.Application do
       # }
       %{
         id: Mppm.ManiaplanetServerSupervisorStarter,
-        start: {Mppm.ManiaplanetServerSupervisorStarter, :start_link, []},
+        start: {Mppm.GameServerSupervisor.Starter, :start_link, []},
         restart: :temporary,
         type: :worker
       }

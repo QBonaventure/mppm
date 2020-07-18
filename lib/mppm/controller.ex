@@ -1,11 +1,9 @@
 defmodule Mppm.Controller do
   require Logger
   use GenServer
-  alias Mppm.ServerConfig
 
 
   def child_spec(mp_server_state) do
-    IO.inspect mp_server_state
     %{
       id: __MODULE__,
       start: {__MODULE__, :start_link, [[mp_server_state], []]},
@@ -16,6 +14,7 @@ defmodule Mppm.Controller do
 
 
   def start_link([%{config: config}] = state, _opts \\ []) do
+    IO.puts "starting controller"
     GenServer.start_link(__MODULE__, state, name: {:global, {:mp_controller, config.login}})
   end
 
@@ -51,15 +50,6 @@ defmodule Mppm.Controller do
   end
 
 
-  def handle_call({:start, mp_server_state}, _, state) do
-    update_status(state.login, "starting")
-    {:ok, port} = start_server(mp_server_state)
-    update_status(state.login, "started")
-
-    {:reply, :result, %{state | status: "started", port: port, login: mp_server_state.config.login}}
-  end
-
-
   ###################################
   ##### STOP FUNCTIONS ##############
   ###################################
@@ -76,9 +66,30 @@ defmodule Mppm.Controller do
   end
 
 
+
+
+  def handle_call({:start, mp_server_state}, _, state) do
+    update_status(state.login, "starting")
+    {:ok, port} = start_server(mp_server_state)
+    update_status(state.login, "started")
+
+    {:reply, :result, %{state | status: "started", port: port, login: mp_server_state.config.login}}
+  end
+
+
   def handle_call(:stop, _, state) do
     stop_server(state)
     {:reply, {:ok, self()}, state}
+  end
+
+
+  def handle_call(:pid, _, state) do
+    {:reply, self(), state}
+  end
+
+
+  def handle_call(:status, _, state) do
+    {:reply, %{state: state.status, port: state.port, os_pid: state.os_pid}, state}
   end
 
 
@@ -100,20 +111,12 @@ defmodule Mppm.Controller do
   end
 
 
-  def handle_call(:pid, _, state) do
-    {:reply, self, state}
-  end
-
-
-  def handle_call(:status, _, state) do
-    {:reply, %{state: state.status, port: state.port, os_pid: state.os_pid}, state}
-  end
-
-
   def handle_info({_port, {:data, text_line}}, state) do
-    Logger.info text_line
+    latest_output = text_line |> String.trim
 
-    {:noreply, state}
+    Logger.info "[#{state.config.login}] #{latest_output}"
+
+    {:noreply, %{state | latest_output: latest_output}}
   end
 
 
@@ -125,19 +128,18 @@ defmodule Mppm.Controller do
   end
 
 
-  def handle_info({:DOWN, _ref, :port, port, :normal}, %{exit_status: 137} = state) do
+  def handle_info({:DOWN, _ref, :port, _port, :normal}, %{exit_status: 137} = state) do
     update_status(state.login, "failed")
     {:noreply, %{state | status: "crashed"}}
   end
 
 
-  def handle_info({:DOWN, _ref, :port, port, :normal}, %{exit_status: 0} = state) do
+  def handle_info({:DOWN, _ref, :port, _port, :normal}, %{exit_status: 0} = state) do
     update_status(state.login, "failed")
     {:noreply, %{state | status: "failed"}}
   end
 
   def update_status(login, status) do
-    IO.inspect login
     Mppm.Statuses.update_controller(login, status)
     Phoenix.PubSub.broadcast(Mppm.PubSub, "server_status", :update)
     {:ok, status}
