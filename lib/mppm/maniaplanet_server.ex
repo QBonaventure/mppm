@@ -154,6 +154,7 @@ defmodule Mppm.ManiaplanetServer do
 
 
   def handle_cast({:incoming_game_message, message}, state) do
+    IO.puts "-----------------------------------------------"
     IO.inspect message
     {:noreply, state}
   end
