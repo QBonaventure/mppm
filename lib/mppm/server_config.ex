@@ -19,7 +19,6 @@ defmodule Mppm.ServerConfig do
     has_one :ruleset, Mppm.GameRules, foreign_key: :server_id, on_replace: :update
     field :login, :string
     field :password, :string
-    field :title_pack, :string
     field :name, :string
     field :comment, :string
     field :max_players, :integer, default: 32
@@ -29,7 +28,6 @@ defmodule Mppm.ServerConfig do
     field :admin_pass, :string
     field :user_pass, :string
     field :keep_player_slot, :boolean
-    field :controller, :string
     field :disable_horns, :boolean
     field :ip_address, EctoNetwork.INET
     field :bind_ip, EctoNetwork.INET
@@ -49,14 +47,14 @@ defmodule Mppm.ServerConfig do
   end
 
 
-  @required [:login, :password, :title_pack, :max_players, :controller]
+  @required [:login, :password, :max_players]
   @users_pwd [:superadmin_pass, :admin_pass, :user_pass]
   def create_server_changeset(%ServerConfig{} = server_config \\ %ServerConfig{}, data \\ %{}) do
     data = defaults_missing_passwords(data) |> Map.put_new("mode_id", 2)
 #     |> Map.put("ruleset", %Mppm.GameRules{})
 # IO.inspect data
     server_config
-    |> cast(data, [:login, :password, :name, :comment, :title_pack, :controller, :player_pwd, :spec_pwd, :max_players, :superadmin_pass, :admin_pass, :user_pass])
+    |> cast(data, [:login, :password, :name, :comment, :player_pwd, :spec_pwd, :max_players, :superadmin_pass, :admin_pass, :user_pass])
     |> put_assoc(:ruleset, %Mppm.GameRules{})
     |> validate_required(@required)
   end

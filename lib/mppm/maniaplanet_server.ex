@@ -6,47 +6,11 @@ defmodule Mppm.ManiaplanetServer do
   @root_path Application.get_env(:mppm, :mp_servers_root_path)
   @msg_waiting_ports "Waiting for game server ports to open..."
 
-  def child_spec(%ServerConfig{} = server_config) do
-    %{
-      id: __MODULE__,
-      start: {__MODULE__, :start_link, [[server_config], []]},
-      restart: :transient,
-      name: {:global, {:mp_server, server_config.login}}
-    }
-  end
-
-  # GENSERVER BEHAVIOUR IMPL
-
-  def start_link([%ServerConfig{} = server_config], _opts \\ []) do
-    GenServer.start_link(__MODULE__, server_config, name: {:global, {:mp_server, server_config.login}})
-  end
-
-
-  def init(%ServerConfig{} = server_config) do
-    # ServerConfig.create_config_file(server_config)
-    # ServerConfig.create_tracklist(server_config)
-
-    state = %{
-      port: nil,
-      controller_port: nil,
-      os_pid: nil,
-      exit_status: nil,
-      latest_output: nil,
-      listening_ports: nil,
-      xmlrpc_port: nil,
-      status: "stopped",
-      config: server_config
-    }
-
-    {:ok, state}
-  end
-
-
   ###################################
   ##### START FUNCTIONS #############
   ###################################
 
-  defp get_command(%ServerConfig{login: filename, title_pack: _title_pack}) do
+  defp get_command(%ServerConfig{login: filename}) do
     "#{@root_path}TrackmaniaServer /nologs /dedicated_cfg=#{filename}.txt /game_settings=MatchSettings/#{filename}.txt /nodaemon"
   end
 
@@ -83,7 +47,7 @@ defmodule Mppm.ManiaplanetServer do
   def start_server(state) do
     ServerConfig.create_config_file(state.config)
     ServerConfig.create_tracklist(state.config)
-    
+
     command = get_command(state.config)
     port = Port.open({:spawn, command}, [:binary, :exit_status])
     {:os_pid, os_pid} = Port.info(port, :os_pid)
@@ -230,6 +194,39 @@ defmodule Mppm.ManiaplanetServer do
     Logger.info "External exit: :exit_status: #{status}"
 
     {:noreply, %{state | exit_status: status}}
+  end
+
+
+
+
+  def child_spec(%ServerConfig{} = server_config) do
+    %{
+      id: __MODULE__,
+      start: {__MODULE__, :start_link, [[server_config], []]},
+      restart: :transient,
+      name: {:global, {:mp_server, server_config.login}}
+    }
+  end
+
+  def start_link([%ServerConfig{} = server_config], _opts \\ []) do
+    GenServer.start_link(__MODULE__, server_config, name: {:global, {:mp_server, server_config.login}})
+  end
+
+
+  def init(%ServerConfig{} = server_config) do
+    state = %{
+      port: nil,
+      controller_port: nil,
+      os_pid: nil,
+      exit_status: nil,
+      latest_output: nil,
+      listening_ports: nil,
+      xmlrpc_port: nil,
+      status: "stopped",
+      config: server_config
+    }
+
+    {:ok, state}
   end
 
 
