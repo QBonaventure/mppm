@@ -7,15 +7,11 @@
   </span>
   <span class="login"><%= @server.login %></span>
   <span class="name"><%= @server.name %></span>
-  <span class="title-pack"><%= DashboardView.shorten_title_pack(@server.title_pack) %></span>
-  <span class="controller"><%= DashboardView.shorten_controller(@server.controller) %></span>
   <span class="max-pl"><%= @server.max_players %></span>
   <span class="players-pwd"><%= @server.player_pwd %></span>
   <span class="spec-pwd"><%= @server.spec_pwd %></span>
   <span class="server-status">
     <%= DashboardView.get_status_icon(@status.server, @server.login) %>
   </span>
-  <span class="controller-status">
-    <%= DashboardView.get_status_icon(@status.controller, @server.login) %>
-  </span>
+
 </section>

@@ -1,16 +1,16 @@
 defmodule Mppm.ChatMessage do
   use Ecto.Schema
-  use __MODULE__
+  alias __MODULE__
 
   schema "chat_messages" do
-    belongs_to :user, Mppm.User, foreign_key: id
-    belongs_to :server, Mpppm.ServerConfig, foreign_key: :id, define_field: false
+    belongs_to :user, Mppm.User, foreign_key: :user_id
+    belongs_to :server, Mpppm.ServerConfig, foreign_key: :server_id, define_field: false
     field :text, :string
   end
 
-  def changeset(%ChatMessage{} = message, data \\ [])
+  def changeset(%ChatMessage{} = message, data \\ []) do
     message
-    |> cast(data, [:text])
+    # |> cast(data, [:text])
   end
 
 end

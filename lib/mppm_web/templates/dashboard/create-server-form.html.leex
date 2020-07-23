@@ -18,13 +18,6 @@
     </label>
     <%= error_tag f, :name %>
 
-    <% title_packs = MppmWeb.DashboardView.get_available_titlepacks %>
-    <label>
-      Title Pack: <%= select f, :title_pack, title_packs  %>
-    </label>
-    <%= error_tag f, :title_pack %>
-  </div>
-
     <label>
       Comment: <%= text_input f, :comment %>
     </label>

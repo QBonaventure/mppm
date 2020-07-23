@@ -44,20 +44,6 @@
 
 
     <label>
-      Title Pack: <%= select f, :title_pack, ["Trackmania"]  %>
-    </label>
-    <%= error_tag f, :title_pack %>
-
-
-
-    <% controllers = Mppm.ServerConfig.get_available_controllers %>
-    <label>
-      Controller: <%= select f, :controller, controllers  %>
-    </label>
-    <%= error_tag f, :controller %>
-
-
-    <label>
       Comment: <%= textarea f, :comment %>
     </label>
     <%= error_tag f, :comment %>
