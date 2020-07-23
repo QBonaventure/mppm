@@ -18,6 +18,8 @@ defmodule MppmWeb.Router do
     pipe_through :browser
 
     live "/", DashboardLive
+
+    live "/:server_login", ServerManagerLive
   end
 
   # Other scopes may use custom stacks.

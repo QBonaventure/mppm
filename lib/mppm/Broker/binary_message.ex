@@ -1,4 +1,4 @@
-defmodule Mppm.GameServerSupervisor.BinaryMessage do
+defmodule Mppm.Broker.BinaryMessage do
   defstruct [
     size: 0,
     id: nil,

@@ -1,0 +1,127 @@
+<section id="server-info">
+  <div>
+    <span>Login: <%= @server_info.login %></span>
+    <span>Password: <details><%= @server_info.password %></details></span>
+  </div>
+</section>
+
+<section id="server-update-form">
+  <%= f = form_for @changeset, "#", [phx_change: :validate, phx_submit: "update-config"] %>
+  <%= submit "Submit" , disabled: Kernel.not @changeset.valid? %>
+  <%= tag(:input, type: "button", value: "Cancel", phx_click: "cancel-form") %>
+
+    <section id="ruleset-subform">
+      <h1>Ruleset</h1>
+      <%= inputs_for f, :ruleset, fn rs -> %>
+
+        <% game_modes = Mppm.Repo.all(Mppm.Type.GameMode) |> Enum.map(&{&1.name, &1.id}) %>
+        <% IO.inspect game_modes %>
+        <label>
+          Game Mode: <%= select rs, :mode_id, game_modes  %>
+        </label>
+        <%= error_tag f, :mode_id %>
+
+        <label>Finish timeout: <%= text_input rs, :finish_timeout %></label>
+        <%= error_tag f, :finish_timeout %>
+
+        <h2>Time attack</h2>
+
+        <label>TA time limit : <%= text_input rs, :ta_time_limit %></label>
+        <%= error_tag f, :ta_time_limit %>
+
+        <h2>Rounds</h2>
+
+        <label>Points limit: <%= text_input rs, :rounds_pts_limit %></label>
+        <%= error_tag f, :rounds_pts_limit %>
+
+        <label>Forced laps: <%= text_input rs, :rounds_forced_laps %></label>
+        <%= error_tag f, :rounds_forced_laps %>
+
+        <label>Use new rules: <%= checkbox rs, :rounds_use_new_rules %></label>
+        <%= error_tag f, :rounds_use_new_rules %>
+
+
+        <h2>Team</h2>
+
+        <label>Points limit: <%= text_input rs, :team_pts_limit %></label>
+        <%= error_tag f, :team_pts_limit %>
+
+        <label>Team max points: <%= text_input rs, :team_max_pts %></label>
+        <%= error_tag f, :team_max_pts %>
+
+        <label>Use new rules: <%= checkbox rs, :team_use_new_rule %></label>
+        <%= error_tag f, :team_use_new_rule %>
+
+
+        <h2>Rounds</h2>
+
+        <label>Laps number: <%= text_input rs, :laps_lap_nb %></label>
+        <%= error_tag f, :laps_lap_nb %>
+
+        <label>Time limit: <%= text_input rs, :laps_time_limit %></label>
+        <%= error_tag f, :laps_time_limit %>
+
+      <% end %>
+    </section>
+
+
+    <section id="server-settings">
+      <h1>Server settings</h1>
+
+      <label>
+        Pl. pwd: <%= text_input f, :player_pwd %>
+      </label>
+      <%= error_tag f, :player_pwd %>
+
+      <label>
+        Spec. pwd: <%= text_input f, :spec_pwd %>
+      </label>
+      <%= error_tag f, :spec_pwd %>
+
+      <label>
+        Max players: <%= text_input f, :max_players %>
+      </label>
+      <%= error_tag f, :max_players %>
+
+      <label>
+        Disable horns: <%= checkbox f, :disable_horns %>
+      </label>
+      <%= error_tag f, :disable_horns %>
+
+      <label>
+        Autosave replays: <%= checkbox f, :autosave_replays %>
+      </label>
+      <%= error_tag f, :autosave_replays %>
+
+      <label>
+        Autosave valid. replays: <%= checkbox f, :autosave_validation_replays %>
+      </label>
+      <%= error_tag f, :autosave_validation_replays %>
+
+      <label>
+        Keep players slot: <%= checkbox f, :keep_player_slot %>
+      </label>
+      <%= error_tag f, :keep_player_slot %>
+
+      <label>
+        Comment: <%= textarea f, :comment %>
+      </label>
+      <%= error_tag f, :comment %>
+
+      <h2>Advanced settings</h2>
+      <label>
+        IP address: <%= text_input f, :ip_address %>
+      </label>
+      <%= error_tag f, :ip_address %>
+      <label>
+        Bind to IP: <%= text_input f, :bind_ip %>
+      </label>
+      <%= error_tag f, :bind_ip %>
+      <label>
+        IP address: <%= text_input f, :ip_address %>
+      </label>
+      <%= error_tag f, :ip_address %>
+    </section>
+
+  </form>
+</section>

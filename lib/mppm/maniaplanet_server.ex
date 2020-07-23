@@ -23,8 +23,8 @@ defmodule Mppm.ManiaplanetServer do
 
 
   def init(%ServerConfig{} = server_config) do
-    ServerConfig.create_config_file(server_config)
-    ServerConfig.create_tracklist(server_config)
+    # ServerConfig.create_config_file(server_config)
+    # ServerConfig.create_tracklist(server_config)
 
     state = %{
       port: nil,
@@ -81,6 +81,9 @@ defmodule Mppm.ManiaplanetServer do
   end
 
   def start_server(state) do
+    ServerConfig.create_config_file(state.config)
+    ServerConfig.create_tracklist(state.config)
+    
     command = get_command(state.config)
     port = Port.open({:spawn, command}, [:binary, :exit_status])
     {:os_pid, os_pid} = Port.info(port, :os_pid)

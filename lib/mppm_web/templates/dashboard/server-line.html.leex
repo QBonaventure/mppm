@@ -1,5 +1,10 @@
 <% alias MppmWeb.DashboardView %>
 <section id="<%= "server-#{@server.login}" %>" class="server-card">
+  <span class="server-manager-link">
+    <%= live_link to: Routes.live_path(@socket, MppmWeb.ServerManagerLive, @server.login), do:
+      content_tag :span, "Manage >" %>
+
+  </span>
   <span class="login"><%= @server.login %></span>
   <span class="name"><%= @server.name %></span>
   <span class="title-pack"><%= DashboardView.shorten_title_pack(@server.title_pack) %></span>

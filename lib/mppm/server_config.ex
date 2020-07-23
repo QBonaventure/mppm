@@ -16,6 +16,7 @@ defmodule Mppm.ServerConfig do
   @maps_path @root_path <> "UserData/Maps/"
 
   schema "mp_servers_configs" do
+    has_one :ruleset, Mppm.GameRules, foreign_key: :server_id, on_replace: :update
     field :login, :string
     field :password, :string
     field :title_pack, :string
@@ -27,22 +28,43 @@ defmodule Mppm.ServerConfig do
     field :superadmin_pass, :string
     field :admin_pass, :string
     field :user_pass, :string
+    field :keep_player_slot, :boolean
     field :controller, :string
+    field :disable_horns, :boolean
+    field :ip_address, EctoNetwork.INET
+    field :bind_ip, EctoNetwork.INET
+    field :autosave_replays, :boolean
+    field :autosave_validation_replays, :boolean
+
   end
 
   def get_all() do
-    Mppm.Repo.all (from(Mppm.ServerConfig))
+    Mppm.Repo.all(Mppm.ServerConfig)
+    |> Mppm.Repo.preload(ruleset: [:mode])
+  end
+
+  def get_server_config(server_login) do
+    Mppm.Repo.get_by(Mppm.ServerConfig, login: server_login)
+    |> Mppm.Repo.preload(ruleset: [:mode])
   end
 
 
   @required [:login, :password, :title_pack, :max_players, :controller]
   @users_pwd [:superadmin_pass, :admin_pass, :user_pass]
   def create_server_changeset(%ServerConfig{} = server_config \\ %ServerConfig{}, data \\ %{}) do
-    data = defaults_missing_passwords(data)
-
+    data = defaults_missing_passwords(data) |> Map.put_new("mode_id", 2)
+#     |> Map.put("ruleset", %Mppm.GameRules{})
+# IO.inspect data
     server_config
     |> cast(data, [:login, :password, :name, :comment, :title_pack, :controller, :player_pwd, :spec_pwd, :max_players, :superadmin_pass, :admin_pass, :user_pass])
+    |> put_assoc(:ruleset, %Mppm.GameRules{})
     |> validate_required(@required)
+  end
+
+  def changeset(%ServerConfig{} = config, params) do
+    config
+    |> cast(params, [:name, :comment, :player_pwd, :spec_pwd, :max_players])
+    |> cast_assoc(:ruleset)
   end
 
 
@@ -51,6 +73,26 @@ defmodule Mppm.ServerConfig do
     |> ServerConfig.create_server_changeset(game_server_config)
     |> Repo.insert
   end
+
+  def update(changeset) do
+    case changeset |> Repo.update do
+      {:ok, server_config} ->
+        propagate_ruleset_changes(server_config.login, changeset)
+      {:error, changeset} ->
+
+    end
+  end
+
+
+  def propagate_ruleset_changes(login, %Ecto.Changeset{changes: %{ruleset: %Ecto.Changeset{changes: changes}}}) do
+    Enum.each(changes, fn {option, value} ->
+
+      GenServer.call({:global, {:mp_broker, login}}, {:set, option, value})
+      |> IO.inspect
+     end)
+    {:ok, changes}
+  end
+  def propagate_ruleset_changes(_login, _changeset), do: {:no, nil}
 
 
   def defaults_missing_passwords(data) do
@@ -66,7 +108,8 @@ defmodule Mppm.ServerConfig do
 
 
   def create_config_file(%ServerConfig{} = serv_config) do
-    xml = get_base_xml()
+    source_path = "#{@config_path}dedicated_cfg.default.txt"
+    xml = get_default_xml(source_path)
 
     authorization_levels = {:authorization_levels, [], [
       {:level, [], [
@@ -101,12 +144,18 @@ defmodule Mppm.ServerConfig do
       |> List.keyreplace(:max_players, 0, {:max_players, [], [charlist(serv_config.max_players)]})
       |> List.keyreplace(:password_spectator, 0, {:password_spectator, [], []})
       |> List.keyreplace(:password, 0, {:password, [], [charlist(serv_config.player_pwd)]})
+      |> List.keyreplace(:disable_horns, 0, {:disable_horns, [], [charlist(serv_config.disable_horns)]})
+      |> List.keyreplace(:keep_player_slots, 0, {:keep_player_slots, [], [charlist(serv_config.keep_player_slot)]})
+      |> List.keyreplace(:autosave_replays, 0, {:autosave_replays, [], [charlist(serv_config.autosave_replays)]})
+      |> List.keyreplace(:autosave_validation_replays, 0, {:autosave_validation_replays, [], [charlist(serv_config.autosave_validation_replays)]})
     server_options = {:server_options, [], server_options}
 
     system_config =
       elem(xml, 2)
       |> List.keyfind(:system_config, 0)
       |> elem(2)
+      # |> List.keyreplace(:force_ip_address, 0, {:force_ip_address, [], [charlist(serv_config.ip_address)]})
+
     system_config = {:system_config, [], system_config}
 
     new_xml = {:dedicated, [], [authorization_levels, masterserver_account, server_options, system_config]}
@@ -125,22 +174,34 @@ defmodule Mppm.ServerConfig do
     target_path = "#{@maps_path}MatchSettings/#{login}.txt"
     source_path = "#{@maps_path}MatchSettings/example.txt"
 
+    xml = get_default_xml(source_path)
+
+    game_rules =
+      elem(xml, 2)
+      |> List.keyfind(:gameinfos, 0)
+      |> elem(2)
+      # |> List.keyreplace()
+
+
     'ls #{target_path} >> /dev/null 2>&1 || cp #{source_path} #{target_path}'
     |> :os.cmd
   end
 
+
   defp charlist(value) when is_binary(value), do: String.to_charlist(value)
   defp charlist(value) when is_integer(value), do: Integer.to_string(value) |> String.to_charlist
+  defp charlist(%Postgrex.INET{} = value), do: charlist(EctoNetwork.INET.decode(value))
+  defp charlist(true), do: ['True']
+  defp charlist(false), do: ['False']
   defp charlist(nil = _value), do: []
 
 
-  def get_base_xml() do
-    {result, _misc} =
-      @config_path <> "dedicated_cfg.default.txt"
-      |>:xmerl_scan.file([{:space, :normalize}])
+  def get_default_xml(path) do
+    {result, _misc} = path |>:xmerl_scan.file([{:space, :normalize}])
     [clean] = :xmerl_lib.remove_whitespace([result])
     :xmerl_lib.simplify_element(clean)
   end
+
 
   def get_available_titlepacks do
     'ls #{@root_path}UserData/Packs/'

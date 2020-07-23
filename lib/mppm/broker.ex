@@ -1,7 +1,7 @@
 defmodule Mppm.Broker do
   use GenServer
   alias Mppm.{ServerConfig,Statuses}
-  alias Mppm.GameServerSupervisor.BinaryMessage
+  alias Mppm.Broker.BinaryMessage
 
   @xmlrpc_conn_opts [:binary, {:active, true}, {:reuseaddr, true}, {:keepalive, true}, {:send_timeout, 20000}]
   @handshake_id_bytes <<255,255,255,255>>
@@ -96,10 +96,52 @@ defmodule Mppm.Broker do
   def handle_call({:unban, client_login}, _from, state), do:
     {:reply, make_request("UnBan", [client_login], state), state}
 
-  def handle_call({:BanAndBlackList, client_login, message, save?}, _from, state)
+  def handle_call({:ban_and_blacklist, client_login, message, save?}, _from, state)
   when is_binary(message) and is_boolean(save?), do:
     {:reply, make_request("Kick", [client_login, message, save?], state), state}
 
+
+  ### Ruleset updates
+  def handle_call({:set, :mode_id, value}, _from, state), do:
+    {:reply, make_request("SetTimeAttackLimit", [value], state), state}
+      ### Ruleset updates
+
+  def handle_call({:set, :ta_time_limit, value}, _from, state), do:
+    {:reply, make_request("SetTimeAttackLimit", [value], state), state}
+
+  def handle_call({:set, :finish_timeout, value}, _from, state), do:
+    {:reply, make_request("SetFinishTimeout", [value], state), state}
+
+  def handle_call({:set, :rounds_pts_limit, value}, _from, state), do:
+    {:reply, make_request("SetRoundPointsLimit", [value], state), state}
+
+  def handle_call({:set, :rounds_use_new_rules, value}, _from, state), do:
+    {:reply, make_request("SetUseNewRulesRound", [value], state), state}
+
+  def handle_call({:set, :rounds_forced_laps, value}, _from, state), do:
+    {:reply, make_request("SetRoundForcedLaps", [value], state), state}
+
+  def handle_call({:set, :team_max_pts, value}, _from, state), do:
+    {:reply, make_request("SetMaxPointsTeam", [value], state), state}
+
+  def handle_call({:set, :team_pts_limit, value}, _from, state), do:
+    {:reply, make_request("SetTeamPointsLimit", [value], state), state}
+
+  def handle_call({:set, :team_use_new_rule, value}, _from, state), do:
+    {:reply, make_request("SetUseNewRulesTeam", [value], state), state}
+
+  def handle_call({:set, :laps_lap_nb, value}, _from, state), do:
+    {:reply, make_request("SetNbLaps", [value], state), state}
+
+  def handle_call({:set, :laps_time_limit, value}, _from, state), do:
+    {:reply, make_request("SetLapsTimeLimit", [value], state), state}
+
+  def handle_call({:set, :warmup_duration, value}, _from, state), do:
+    {:reply, make_request("SetAllWarmUpDuration", [value], state), state}
+
+  def handle_call({:set, :disable_respawn, value}, _from, state)
+  when is_boolean(value), do:
+    {:reply, make_request("SetDisableRespawn", [value], state), state}
 
 
 
@@ -121,7 +163,10 @@ defmodule Mppm.Broker do
     :get_sys_info => "GetSystemInfo",
     :quit_game => "QuitGame",
     :hide_display => "SendHideManialinkPage",
-    :get_manialink_answer => "GetManialinkPageAnswers"
+    :get_manialink_answer => "GetManialinkPageAnswers",
+    :get_game_rules => "GetGameInfos",
+    :get_current_game_rules => "GetCurrentGameInfo",
+    :get_next_game_rules => "GetNextGameInfo"
   }
 
   def handle_call(:stop, _from, state) do
@@ -129,18 +174,13 @@ defmodule Mppm.Broker do
     {:stop, :shutdown, :ok, state}
   end
 
-  def handle_call({:query, method}, _, state)  do
+  def handle_call({:query, method}, _, state) when :erlang.is_map_key(method, @methods), do:
     {:reply, make_request(@methods[method], [], state), state}
-  end
 
-  def handle_call({:query, method, params}, _, state) do
+  def handle_call({:query, method, params}, _, state), do:
     {:reply, make_request(@methods[method], params, state), state}
-  end
 
-  def handle_call(:get_broker_state, _, state) do
-    {:reply, state, state}
-  end
-
+  def handle_call(:get_broker_state, _, state), do: {:reply, state, state}
 
 
   def handle_info({:tcp_closed, port}, state) do
@@ -148,24 +188,18 @@ defmodule Mppm.Broker do
     {:noreply, %{state | status: :disconnected}}
   end
 
-  def handle_info({:tcp, _port, @handshake_response}, state) do
-    {:noreply, %{state | status: :connected}}
-  end
-
+  def handle_info({:tcp, _port, @handshake_response}, state), do: {:noreply, %{state | status: :connected}}
 
   def handle_info({:tcp, _port, binary}, %{incoming_message: nil} = state) do
     {:ok, incoming_message} = parse_new_packet(state.login, binary)
     {:noreply, %{state | incoming_message: incoming_message}}
   end
 
-
   def handle_info({:tcp, _port, binary}, %{incoming_message: incoming_message} = state) do
     {:ok, incoming_message} = parse_message_next_packet(state.login, binary, incoming_message)
     {:noreply, %{state | incoming_message: incoming_message}}
   end
 
-
-  # defp parse_new_packet(_login, "GBXRemote 2"), do: {:ok, nil}
   defp parse_new_packet(_login, <<size::little-32,id::little-32>>), do: {:ok, %BinaryMessage{size: size, id: id}}
   defp parse_new_packet(_login, <<size::little-32>>), do: {:ok, %BinaryMessage{size: size}}
 
@@ -201,6 +235,17 @@ defmodule Mppm.Broker do
 
   defp transmit_to_server_supervisor(login, message) do
     message = XMLRPC.decode! message
+IO.inspect message
+    case message do
+      %XMLRPC.MethodCall{} ->
+        case message.method_name do
+          "TrackMania.PlayerChat" ->
+            IO.puts "DDDDDDDDDDDDDDDDDDDDDDD"
+          _ -> IO.puts "llllllllllllllllll"
+        end
+      _ -> nil
+    end
+
     GenServer.cast({:global, {:mp_server, login}}, {:incoming_game_message, message})
   end
 

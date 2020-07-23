@@ -52,3 +52,84 @@ div#servers-list-wrapper input[type="button"] {
   height: 20px;
   line-height: 10px;
 }
+
+form label {
+  font-size: 14px;
+}
+
+
+
+#server-update-form {
+    width: 100%;
+    position: relative;
+}
+
+#server-update-form section {
+    width: 48%;
+    position: absolute;
+    border: 1px solid lightgrey;
+}
+
+#server-update-form h1,
+#server-update-form h2 {
+  text-align: center;
+  width: 99%;
+  display: inline-block;
+  margin: 0.7em 0 0.2em;
+}
+
+#server-update-form h1 {
+
+}
+#server-update-form h2 {
+  text-align: center;
+  width: 99%;
+  display: inline-block;
+}
+
+#server-update-form label {
+
+}
+
+#server-update-form hr {
+  display: inline-block;
+  width: 99%;
+
+}
+
+
+#server-update-form #server-settings {
+  position: absolute;
+  right: 0;
+  margin: 1px;
+}
+
+#server-update-form label  {
+  width: 50%;
+  clear: none;
+  padding-right: 10px;
+  position: relative;
+}
+
+#server-update-form textarea  {
+  width: 200%;
+  left: -100%;
+  position: relative;
+}
+
+form input[type=text],
+form select {
+  border: 0;
+  border-bottom: 1px solid lightgrey;
+  margin-bottom: 4px;
+  border-radius: 0;
+  font-size: 14px;
+  padding: 0px;
+  height: 22px;
+  width: 100px;
+  text-align: center;
+}
+
+form select {
+  padding-right: 12px;
+}

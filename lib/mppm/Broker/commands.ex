@@ -40,10 +40,4 @@ defmodule Mppm.Broker.Commands do
     <<byte_size(query)::little-32>> <> req_id <> query
   end
 
-
-  # def get_request_id(state) do
-  #   new_id = state.request_id + 1
-  #   {new_id, <<new_id::little-32>>}
-  # end
-
 end
