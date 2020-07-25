@@ -167,9 +167,10 @@ defmodule Mppm.Broker do
 
 
   def handle_call({:request_user_info, user_login}, _from, state) do
-    user_info = make_request("GetDetailedPlayerInfo", [user_login], state)
-IO.inspect user_info
-    {:noreply, user_info, state}
+    %{param: %{"Login" => login, "NickName" => nickname, "PlayerId" => player_id}} =
+      make_request("GetDetailedPlayerInfo", [user_login], state)
+
+    {:reply, %Mppm.User{login: login, player_id: player_id, nickname: nickname}, state}
   end
 
 

@@ -1,5 +1,7 @@
 defmodule Mppm.User do
   use Ecto.Schema
+  import Ecto.Changeset
+  import Ecto.Query
   alias __MODULE__
 
   schema "users" do
@@ -10,7 +12,7 @@ defmodule Mppm.User do
 
   def changeset(%User{} = message, data \\ []) do
     message
-    # |> cast(data, [:text])
+    |> cast(data, [:login, :nickname, :player_id])
   end
 
 end
