@@ -166,6 +166,14 @@ defmodule Mppm.Broker do
   def handle_call(:get_broker_state, _, state), do: {:reply, state, state}
 
 
+  def handle_call({:request_user_info, user_login}, _from, state) do
+    user_info = make_request("GetDetailedPlayerInfo", [user_login], state)
+IO.inspect user_info
+    {:noreply, user_info, state}
+  end
+
+
+
   def handle_info({:tcp_closed, port}, state) do
     IO.puts "------------CLOSING BROKER CONNECTION"
     {:noreply, %{state | status: :disconnected}}
@@ -218,11 +226,16 @@ defmodule Mppm.Broker do
 
   defp transmit_to_server_supervisor(login, message) do
     message = XMLRPC.decode! message
+
     case message do
       %XMLRPC.MethodCall{} ->
         case message.method_name do
           "TrackMania.PlayerChat" ->
-            IO.puts "DDDDDDDDDDDDDDDDDDDDDDD"
+            IO.puts "FFFFFFFFFFFFFFFFFFF"
+          "TrackMania.PlayerConnect" ->
+            GenServer.cast(Mppm.ConnectedUsers, {:user_connection, login, List.first(message.params)})
+          "TrackMania.PlayerDisconnect" ->
+            GenServer.cast(Mppm.ConnectedUsers, {:user_disconnection, login, List.first(message.params)})
           _ -> IO.puts "llllllllllllllllll"
         end
       _ -> nil
@@ -231,6 +244,10 @@ defmodule Mppm.Broker do
     GenServer.cast({:global, {:mp_server, login}}, {:incoming_game_message, message})
   end
 
+def handle_call(:start_internet, _from, state) do
+    IO.inspect make_request("StartServerInternet", [], state)
+    {:reply, :ok, state}
+end
 
   def get_request_id(state) do
     new_id = state.request_id + 1

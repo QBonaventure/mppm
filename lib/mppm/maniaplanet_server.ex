@@ -51,9 +51,9 @@ defmodule Mppm.ManiaplanetServer do
     command = get_command(state.config)
     port = Port.open({:spawn, command}, [:binary, :exit_status])
     {:os_pid, os_pid} = Port.info(port, :os_pid)
+    Port.monitor(port)
 
     listening_ports = get_listening_ports(os_pid)
-    Port.monitor(port)
 
     Mppm.Broker.child_spec(state.config, listening_ports["xmlrpc"])
     |> Mppm.ManiaplanetServerSupervisor.start_child

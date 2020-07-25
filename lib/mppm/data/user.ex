@@ -3,7 +3,9 @@ defmodule Mppm.User do
   alias __MODULE__
 
   schema "users" do
-    field :text, :string
+    field :login, :string
+    field :nickname, :string
+    field :player_id, :string
   end
 
   def changeset(%User{} = message, data \\ []) do

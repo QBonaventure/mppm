@@ -13,6 +13,8 @@ defmodule Mppm.Application do
       # Start the endpoint when the application starts
       MppmWeb.Endpoint,
 
+      Mppm.ConnectedUsers,
+
       Mppm.ServerConfigStore,
       Mppm.Statuses,
       # Starts a worker by calling: Mppm.Worker.start_link(arg)
