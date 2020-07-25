@@ -3,6 +3,7 @@ defmodule Mppm.Type.GameMode do
 
   schema "game_modes" do
     field :name, :string
+    field :script_name, :string
   end
 
 end

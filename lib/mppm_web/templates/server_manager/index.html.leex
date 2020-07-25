@@ -15,51 +15,69 @@
       <%= inputs_for f, :ruleset, fn rs -> %>
 
         <% game_modes = Mppm.Repo.all(Mppm.Type.GameMode) |> Enum.map(&{&1.name, &1.id}) %>
-        <% IO.inspect game_modes %>
         <label>
           Game Mode: <%= select rs, :mode_id, game_modes  %>
         </label>
         <%= error_tag f, :mode_id %>
 
-        <label>Finish timeout: <%= text_input rs, :finish_timeout %></label>
-        <%= error_tag f, :finish_timeout %>
+
 
         <h2>Time attack</h2>
 
-        <label>TA time limit : <%= text_input rs, :ta_time_limit %></label>
+        <label>Respawn bhvr: <%= text_input rs, :ta_respawn_behaviour %></label>
+        <%= error_tag f, :ta_respawn_behaviour %>
+
+        <label>Time limit: <%= text_input rs, :ta_time_limit %></label>
         <%= error_tag f, :ta_time_limit %>
 
+        <label>Warmups nb: <%= text_input rs, :ta_warmup_nb %></label>
+        <%= error_tag f, :ta_warmup_nb %>
+
+        <label>Warmup duration: <%= text_input rs, :ta_warmup_duration %></label>
+        <%= error_tag f, :ta_warmup_duration %>
+
+        <label>Forced laps nb: <%= text_input rs, :ta_forced_laps_nb %></label>
+        <%= error_tag f, :ta_forced_laps_nb %>
+
+        <label>Allow respawns: <%= checkbox rs, :ta_allow_respawn %></label>
+        <%= error_tag f, :ta_allow_respawn %>
+
+
+
         <h2>Rounds</h2>
+
+        <label>Respawn bhvr: <%= text_input rs, :rounds_respawn_behaviour %></label>
+        <%= error_tag f, :rounds_respawn_behaviour %>
+
+        <label>Finish Timeout: <%= text_input rs, :rounds_finish_timeout %></label>
+        <%= error_tag f, :rounds_finish_timeout %>
+
+        <label>Warmups nb: <%= text_input rs, :rounds_warmup_nb %></label>
+        <%= error_tag f, :rounds_warmup_nb %>
+
+        <label>Warmup duration: <%= text_input rs, :rounds_warmup_duration %></label>
+        <%= error_tag f, :rounds_warmup_duration %>
+
+        <label>Rounds/match: <%= text_input rs, :rounds_maps_per_match %></label>
+        <%= error_tag f, :rounds_maps_per_match %>
+
+        <label>Rounds/map: <%= text_input rs, :rounds_rounds_per_map %></label>
+        <%= error_tag f, :rounds_rounds_per_map %>
 
         <label>Points limit: <%= text_input rs, :rounds_pts_limit %></label>
         <%= error_tag f, :rounds_pts_limit %>
 
-        <label>Forced laps: <%= text_input rs, :rounds_forced_laps %></label>
-        <%= error_tag f, :rounds_forced_laps %>
+        <label>Points repart.: <%= text_input rs, :rounds_pts_repartition %></label>
+        <%= error_tag f, :rounds_pts_repartition %>
 
-        <label>Use new rules: <%= checkbox rs, :rounds_use_new_rules %></label>
-        <%= error_tag f, :rounds_use_new_rules %>
+        <label>Forced laps: <%= text_input rs, :rounds_forced_laps_nb %></label>
+        <%= error_tag f, :rounds_forced_laps_nb %>
 
+        <label>Use alt. rules: <%= checkbox rs, :rounds_use_alternate_rules %></label>
+        <%= error_tag f, :rounds_use_alternate_rules %>
 
-        <h2>Team</h2>
-
-        <label>Points limit: <%= text_input rs, :team_pts_limit %></label>
-        <%= error_tag f, :team_pts_limit %>
-
-        <label>Team max points: <%= text_input rs, :team_max_pts %></label>
-        <%= error_tag f, :team_max_pts %>
-
-        <label>Use new rules: <%= checkbox rs, :team_use_new_rule %></label>
-        <%= error_tag f, :team_use_new_rule %>
-
-
-        <h2>Rounds</h2>
-
-        <label>Laps number: <%= text_input rs, :laps_lap_nb %></label>
-        <%= error_tag f, :laps_lap_nb %>
-
-        <label>Time limit: <%= text_input rs, :laps_time_limit %></label>
-        <%= error_tag f, :laps_time_limit %>
+        <label>Allow respawns: <%= checkbox rs, :rounds_allow_respawn %></label>
+        <%= error_tag f, :rounds_allow_respawn %>
 
       <% end %>
     </section>

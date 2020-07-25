@@ -5,6 +5,7 @@ defmodule Mppm.Repo.Migrations.CreateGamesModesTable do
     create table(:game_modes, primary_key: false) do
       add :id, :id, primary_key: true
       add :name, :string
+      add :script_name, :string
     end
     flush()
     insert_games_modes()
@@ -18,13 +19,8 @@ defmodule Mppm.Repo.Migrations.CreateGamesModesTable do
     Mppm.Repo.insert_all(
       Mppm.Type.GameMode,
       [
-        %{id: 0, name: "Script"},
-        %{id: 1, name: "Rounds"},
-        %{id: 2, name: "Time Attack"},
-        %{id: 3, name: "Team"},
-        %{id: 4, name: "Laps"},
-        %{id: 5, name: "Cup"},
-        %{id: 6, name: "Stunt"}
+        %{id: 1, name: "Time Attack", script_name: "Trackmania/TM_TimeAttack_Online.Script.txt"},
+        %{id: 2, name: "Rounds", script_name: "Trackmania/TM_Rounds_Online.Script.txt"},
       ]
     )
   end

@@ -106,42 +106,19 @@ defmodule Mppm.Broker do
     {:reply, make_request("SetTimeAttackLimit", [value], state), state}
       ### Ruleset updates
 
-  def handle_call({:set, :ta_time_limit, value}, _from, state), do:
-    {:reply, make_request("SetTimeAttackLimit", [value], state), state}
+  @script_settings Mppm.GameRules.get_script_settings_variables
 
-  def handle_call({:set, :finish_timeout, value}, _from, state), do:
-    {:reply, make_request("SetFinishTimeout", [value], state), state}
+  def ff, do: @script_settings
 
-  def handle_call({:set, :rounds_pts_limit, value}, _from, state), do:
-    {:reply, make_request("SetRoundPointsLimit", [value], state), state}
+  def handle_call({:update_ruleset, values}, _from, state) do
+    script_vars = Mppm.GameRules.get_flat_script_variables
+    values =
+      Enum.filter(values, fn {key, value} -> Map.has_key?(script_vars, key) end)
+      |> Enum.map(fn {key, value} -> {script_vars[key], value} end)
+      |> Map.new
 
-  def handle_call({:set, :rounds_use_new_rules, value}, _from, state), do:
-    {:reply, make_request("SetUseNewRulesRound", [value], state), state}
-
-  def handle_call({:set, :rounds_forced_laps, value}, _from, state), do:
-    {:reply, make_request("SetRoundForcedLaps", [value], state), state}
-
-  def handle_call({:set, :team_max_pts, value}, _from, state), do:
-    {:reply, make_request("SetMaxPointsTeam", [value], state), state}
-
-  def handle_call({:set, :team_pts_limit, value}, _from, state), do:
-    {:reply, make_request("SetTeamPointsLimit", [value], state), state}
-
-  def handle_call({:set, :team_use_new_rule, value}, _from, state), do:
-    {:reply, make_request("SetUseNewRulesTeam", [value], state), state}
-
-  def handle_call({:set, :laps_lap_nb, value}, _from, state), do:
-    {:reply, make_request("SetNbLaps", [value], state), state}
-
-  def handle_call({:set, :laps_time_limit, value}, _from, state), do:
-    {:reply, make_request("SetLapsTimeLimit", [value], state), state}
-
-  def handle_call({:set, :warmup_duration, value}, _from, state), do:
-    {:reply, make_request("SetAllWarmUpDuration", [value], state), state}
-
-  def handle_call({:set, :disable_respawn, value}, _from, state)
-  when is_boolean(value), do:
-    {:reply, make_request("SetDisableRespawn", [value], state), state}
+    {:reply, make_request("SetModeScriptSettings", [values], state), state}
+  end
 
 
 
@@ -164,9 +141,12 @@ defmodule Mppm.Broker do
     :quit_game => "QuitGame",
     :hide_display => "SendHideManialinkPage",
     :get_manialink_answer => "GetManialinkPageAnswers",
-    :get_game_rules => "GetGameInfos",
+    :get_game_rules => "GetModeScriptSettings",
     :get_current_game_rules => "GetCurrentGameInfo",
-    :get_next_game_rules => "GetNextGameInfo"
+    :get_next_game_rules => "GetNextGameInfo",
+    :get_mode_script_variable => "GetModeScriptVariables",
+    :get_mode_script_text => "GetModeScriptInfo"
+
   }
 
   def handle_call(:stop, _from, state) do
@@ -235,7 +215,6 @@ defmodule Mppm.Broker do
 
   defp transmit_to_server_supervisor(login, message) do
     message = XMLRPC.decode! message
-IO.inspect message
     case message do
       %XMLRPC.MethodCall{} ->
         case message.method_name do

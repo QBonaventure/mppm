@@ -50,7 +50,7 @@ defmodule Mppm.ServerConfig do
   @required [:login, :password, :max_players]
   @users_pwd [:superadmin_pass, :admin_pass, :user_pass]
   def create_server_changeset(%ServerConfig{} = server_config \\ %ServerConfig{}, data \\ %{}) do
-    data = defaults_missing_passwords(data) |> Map.put_new("mode_id", 2)
+    data = defaults_missing_passwords(data) |> Map.put_new("mode_id", 1)
 #     |> Map.put("ruleset", %Mppm.GameRules{})
 # IO.inspect data
     server_config
@@ -75,22 +75,22 @@ defmodule Mppm.ServerConfig do
   def update(changeset) do
     case changeset |> Repo.update do
       {:ok, server_config} ->
-        propagate_ruleset_changes(server_config.login, changeset)
+        IO.inspect :global.whereis_name({:mp_proc, server_config.login})
+        IO.inspect propagate_ruleset_changes(:global.whereis_name({:mp_broker, server_config.login}), changeset)
       {:error, changeset} ->
-
+        {:ok, nil}
     end
   end
 
 
-  def propagate_ruleset_changes(login, %Ecto.Changeset{changes: %{ruleset: %Ecto.Changeset{changes: changes}}}) do
-    Enum.each(changes, fn {option, value} ->
-
-      GenServer.call({:global, {:mp_broker, login}}, {:set, option, value})
-      |> IO.inspect
-     end)
-    {:ok, changes}
+  def propagate_ruleset_changes(pid, %Ecto.Changeset{changes: %{ruleset: %Ecto.Changeset{changes: changes}}} = data)
+  when is_pid(pid) do
+    mode_vars = Mppm.GameRules.get_script_variables_by_mode(data.data.ruleset.mode)
+    to_update = Enum.filter(changes, fn {key, value} -> Map.has_key?(mode_vars, key) end)
+    GenServer.call(pid, {:update_ruleset, to_update})
+    {:ok, to_update}
   end
-  def propagate_ruleset_changes(_login, _changeset), do: {:no, nil}
+  def propagate_ruleset_changes(_pid, _changeset), do: {:no, nil}
 
 
   def defaults_missing_passwords(data) do
