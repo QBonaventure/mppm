@@ -120,6 +120,9 @@ defmodule Mppm.Broker do
     {:reply, make_request("SetModeScriptSettings", [values], state), state}
   end
 
+  def handle_call({:switch_game_mode, %Mppm.Type.GameMode{} = game_mode}, _from, state), do:
+    {:reply, make_request("SetScriptName", [game_mode.script_name], state), state}
+
 
 
   def handle_call({:write_to_chat, message}, _from, state)

@@ -88,10 +88,17 @@ defmodule Mppm.ServerConfig do
     mode_vars = Mppm.GameRules.get_script_variables_by_mode(data.data.ruleset.mode)
     to_update = Enum.filter(changes, fn {key, value} -> Map.has_key?(mode_vars, key) end)
     GenServer.call(pid, {:update_ruleset, to_update})
+    case switch_game_mode?(changes) do
+      true -> GenServer.call(pid, {:switch_game_mode, Mppm.Repo.get(Mppm.Type.GameMode, changes.mode_id)})
+      false ->
+    end
+
     {:ok, to_update}
   end
   def propagate_ruleset_changes(_pid, _changeset), do: {:no, nil}
 
+  def switch_game_mode?(%{mode_id: _}), do: true
+  def switch_game_mode?(_), do: false
 
   def defaults_missing_passwords(data) do
     Enum.reduce @users_pwd, data, fn field, acc ->
