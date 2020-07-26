@@ -5,7 +5,17 @@
   </div>
 </section>
 
+<section id="server-controls">
+  <h1>Controls</h1>
+  <%= tag(:input, type: "button", value: "Restart", phx_click: "restart-map") %>
+  <%= tag(:input, type: "button", value: "Skip map", phx_click: "skip-map") %>
+  <%= tag(:input, type: "button", value: "End round", phx_click: "end-round") %>
+  <%= tag(:input, type: "button", value: "End Warmup", phx_click: "end-warmup") %>
+  <%= tag(:input, type: "button", value: "End all WUs", phx_click: "end-all-warmup") %>
+</section>
+
 <section id="server-update-form">
+  <h1>Server Settings</h1>
   <%= f = form_for @changeset, "#", [phx_change: :validate, phx_submit: "update-config"] %>
   <%= submit "Submit" , disabled: Kernel.not @changeset.valid? %>
   <%= tag(:input, type: "button", value: "Cancel", phx_click: "cancel-form") %>

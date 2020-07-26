@@ -170,6 +170,31 @@ defmodule Mppm.Broker do
     {:noreply, state}
   end
 
+  def handle_cast(:skip_map, state) do
+    make_request("NextMap", [], state)
+    {:noreply, state}
+  end
+
+  def handle_cast(:restart_map, state) do
+    make_request("RestartMap", [], state)
+    {:noreply, state}
+  end
+
+  def handle_cast(:end_round, state) do
+    make_request("TriggerModeScriptEventArray", ["Trackmania.ForceEndRound", []], state)
+    {:noreply, state}
+  end
+
+  def handle_cast(:end_warmup, state) do
+    make_request("TriggerModeScriptEventArray", ["Trackmania.WarmUp.ForceStopRound", []], state)
+    {:noreply, state}
+  end
+
+  def handle_cast(:end_all_warmup, state) do
+    make_request("TriggerModeScriptEventArray", ["Trackmania.WarmUp.ForceStop", []], state)
+    {:noreply, state}
+  end
+
 
 
   def handle_info({:tcp_closed, port}, state) do

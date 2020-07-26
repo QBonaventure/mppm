@@ -20,11 +20,39 @@ defmodule MppmWeb.ServerManagerLive do
     {:ok, socket}
   end
 
+  def broker_pname(server_login), do: {:global, {:mp_broker, server_login}}
+
 
   def handle_event("update-config", params, socket) do
     {:ok, changeset} = get_changeset(socket.assigns.server_info.id, params["server_config"])
     Mppm.ServerConfig.update(changeset)
 
+    {:noreply, socket}
+  end
+
+
+  def handle_event("skip-map", params, socket) do
+    GenServer.cast(broker_pname(socket.assigns.server_info.login), :skip_map)
+    {:noreply, socket}
+  end
+
+  def handle_event("restart-map", params, socket) do
+    GenServer.cast(broker_pname(socket.assigns.server_info.login), :restart_map)
+    {:noreply, socket}
+  end
+
+  def handle_event("end-round", params, socket) do
+    GenServer.cast(broker_pname(socket.assigns.server_info.login), :end_round)
+    {:noreply, socket}
+  end
+
+  def handle_event("end-warmup", params, socket) do
+    GenServer.cast(broker_pname(socket.assigns.server_info.login), :end_warmup)
+    {:noreply, socket}
+  end
+
+  def handle_event("end-all-warmup", params, socket) do
+    GenServer.cast(broker_pname(socket.assigns.server_info.login), :end_all_warmup)
     {:noreply, socket}
   end
 
