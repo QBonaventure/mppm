@@ -5,7 +5,7 @@ defmodule Mppm.Repo.Migrations.AddUserTable do
     create table(:users) do
       add :login, :string
       add :nickname, :string
-      add :player_id, :string
+      add :player_id, :integer
     end
   end
 end

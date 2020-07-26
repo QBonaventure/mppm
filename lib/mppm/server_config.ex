@@ -54,14 +54,18 @@ defmodule Mppm.ServerConfig do
 #     |> Map.put("ruleset", %Mppm.GameRules{})
 # IO.inspect data
     server_config
-    |> cast(data, [:login, :password, :name, :comment, :player_pwd, :spec_pwd, :max_players, :superadmin_pass, :admin_pass, :user_pass])
+    |> cast(data, [
+      :login, :password, :name, :comment, :player_pwd, :spec_pwd,
+      :max_players, :superadmin_pass, :admin_pass, :user_pass,
+      :ip_address
+      ])
     |> put_assoc(:ruleset, %Mppm.GameRules{})
     |> validate_required(@required)
   end
 
   def changeset(%ServerConfig{} = config, params) do
     config
-    |> cast(params, [:name, :comment, :player_pwd, :spec_pwd, :max_players])
+    |> cast(params, [:name, :comment, :player_pwd, :spec_pwd, :max_players, :ip_address])
     |> cast_assoc(:ruleset)
   end
 
@@ -159,7 +163,7 @@ defmodule Mppm.ServerConfig do
       elem(xml, 2)
       |> List.keyfind(:system_config, 0)
       |> elem(2)
-      # |> List.keyreplace(:force_ip_address, 0, {:force_ip_address, [], [charlist(serv_config.ip_address)]})
+      |> List.keyreplace(:force_ip_address, 0, {:force_ip_address, [], [charlist(serv_config.ip_address)]})
 
     system_config = {:system_config, [], system_config}
 

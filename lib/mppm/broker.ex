@@ -108,7 +108,6 @@ defmodule Mppm.Broker do
 
   @script_settings Mppm.GameRules.get_script_settings_variables
 
-  def ff, do: @script_settings
 
   def handle_call({:update_ruleset, values}, _from, state) do
     script_vars = Mppm.GameRules.get_flat_script_variables
@@ -166,11 +165,9 @@ defmodule Mppm.Broker do
   def handle_call(:get_broker_state, _, state), do: {:reply, state, state}
 
 
-  def handle_call({:request_user_info, user_login}, _from, state) do
-    %{param: %{"Login" => login, "NickName" => nickname, "PlayerId" => player_id}} =
-      make_request("GetDetailedPlayerInfo", [user_login], state)
-
-    {:reply, %Mppm.User{login: login, player_id: player_id, nickname: nickname}, state}
+  def handle_cast({:request_user_info, user_login}, state) do
+    make_request("GetDetailedPlayerInfo", [user_login], state)
+    {:noreply, state}
   end
 
 
@@ -237,8 +234,11 @@ defmodule Mppm.Broker do
             GenServer.cast(Mppm.ConnectedUsers, {:user_connection, login, List.first(message.params)})
           "TrackMania.PlayerDisconnect" ->
             GenServer.cast(Mppm.ConnectedUsers, {:user_disconnection, login, List.first(message.params)})
-          _ -> IO.puts "llllllllllllllllll"
+          _ ->
         end
+      %XMLRPC.MethodResponse{param: %{"Login" => login, "NickName" => nickname, "PlayerId" => player_id}} ->
+        user = %{login: login, nickname: nickname, player_id: player_id}
+        GenServer.cast(Mppm.ConnectedUsers, {:connected_user_info, user})
       _ -> nil
     end
 
@@ -246,7 +246,7 @@ defmodule Mppm.Broker do
   end
 
 def handle_call(:start_internet, _from, state) do
-    IO.inspect make_request("StartServerInternet", [], state)
+    make_request("StartServerInternet", [], state)
     {:reply, :ok, state}
 end
 
@@ -300,7 +300,9 @@ end
 
   def handle_continue(:authenticate, state) do
     make_request("Authenticate", ["SuperAdmin", state.superadmin_pwd], state)
+    make_request("SetApiVersion", ["2013-04-16"], state)
     make_request("EnableCallbacks", [true], state)
+    make_request("TriggerModeScriptEventArray", ["XmlRpc.EnableCallbacks", ["true"]], state)
     {:noreply, state}
   end
 

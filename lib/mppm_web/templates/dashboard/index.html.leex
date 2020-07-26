@@ -82,8 +82,18 @@
     <label>
       User password: <%= text_input f, :user_pass %>
     </label>
-
     <%= error_tag f, :user_pass %>
+
+
+    <label>
+      Public IP: <%= text_input f, :ip_address %>
+    </label>
+    <%= error_tag f, :ip_address %>
+
+    <label>
+      Bind to IP: <%= text_input f, :bind_ip %>
+    </label>
+    <%= error_tag f, :bind_ip %>
 
     <%= submit "Submit" , disabled: Kernel.not @changeset.valid? %>
     <%= tag(:input, type: "button", value: "Cancel", phx_click: "cancel-form") %>

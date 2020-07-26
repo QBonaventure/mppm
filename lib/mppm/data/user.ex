@@ -7,7 +7,7 @@ defmodule Mppm.User do
   schema "users" do
     field :login, :string
     field :nickname, :string
-    field :player_id, :string
+    field :player_id, :integer
   end
 
   def changeset(%User{} = message, data \\ []) do
