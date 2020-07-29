@@ -12,6 +12,7 @@ defmodule Mppm.Application do
       Mppm.Repo,
       # Start the endpoint when the application starts
       MppmWeb.Endpoint,
+      {Phoenix.PubSub, [name: Mppm.PubSub, adapter: Phoenix.PubSub.PG2]},
 
       Mppm.ConnectedUsers,
 
