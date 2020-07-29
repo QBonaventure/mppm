@@ -1,7 +1,16 @@
 defmodule MppmWeb.Endpoint do
   use Phoenix.Endpoint, otp_app: :mppm
 
-  socket "/live", Phoenix.LiveView.Socket
+
+  @session_options [
+    store: :cookie,
+    key: "_mppm_web_ui_key",
+    signing_salt: "OzwrX7ZX"
+  ]
+
+
+  socket "/live", Phoenix.LiveView.Socket,
+    websocket: [connect_info: [session: @session_options]]
   socket "/socket", MppmWeb.UserSocket,
     websocket: true,
     longpoll: false
@@ -38,10 +47,8 @@ defmodule MppmWeb.Endpoint do
   # The session will be stored in the cookie and signed,
   # this means its contents can be read but not tampered with.
   # Set :encryption_salt if you would also like to encrypt it.
-  plug Plug.Session,
-    store: :cookie,
-    key: "_mppm_web_ui_key",
-    signing_salt: "OzwrX7ZX"
+  plug Plug.Session, @session_options
+
 
   plug MppmWeb.Router
 end

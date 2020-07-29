@@ -19,5 +19,68 @@ import "phoenix_html"
 import {Socket} from "phoenix"
 import LiveSocket from "phoenix_live_view"
 
-let liveSocket = new LiveSocket("/live", Socket)
+let Hooks = {}
+Hooks.draggable_mx_track_hook = {
+  mounted() {
+    this.el.addEventListener("dragstart", e => {
+      e.dataTransfer.effectAllowed = "copy";
+      e.dataTransfer.dropEffect = "copy";
+      e.dataTransfer.setData("text/plain", e.target.id); // save the elements id as a payload
+    })
+  }
+}
+
+function get_placeholder() {
+  let li = document.createElement('div');
+  li.className = 'track-placeholder';
+  return li;
+}
+
+function remove_all_placeholders(document) {
+  var ph = document.getElementsByClassName("track-placeholder")
+  while (ph[0]) {
+    ph[0].parentNode.removeChild(ph[0])
+  }
+}
+
+Hooks.draggable_server_track_hook = {
+  mounted() {
+    this.el.addEventListener("dragover", e => {
+      document.querySelectorAll(".row").forEach(element => element.classList.remove("sss"))
+      // classList.remove("sss");
+      remove_all_placeholders(document)
+      e.target.parentNode.insertBefore(get_placeholder(), e.target.nextSibling);
+    })
+    // this.el.addEventListener("dragleave", e => {
+    //   e.target.classList.remove("sss");
+    // })
+  }
+}
+
+Hooks.track_dropzone = {
+  mounted() {
+    this.el.addEventListener("dragstart", e => {
+
+      e.currentTarget.classList.add("sss");
+    })
+
+    this.el.addEventListener("dragover", e => {
+      e.preventDefault();
+      e.dataTransfer.effectAllowed = "copy";
+      e.dataTransfer.dropEffect = "copy";
+    })
+
+    this.el.addEventListener("drop", e => {
+      e.preventDefault();
+      let ph = document.getElementsByClassName("track-placeholder")[0]
+      let lmkmlk = Array.prototype.slice.call(e.currentTarget.children).indexOf(ph)
+
+      var data = e.dataTransfer.getData("text/plain");
+      this.pushEvent("add-mx-track", {data, index: lmkmlk});
+      // this.el.appendChild(e.view.document.getElementById(data));
+    })
+  }
+}
+
+let liveSocket = new LiveSocket("/live", Socket, {hooks: Hooks})
 liveSocket.connect()
