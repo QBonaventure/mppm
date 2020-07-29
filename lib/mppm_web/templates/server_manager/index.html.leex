@@ -14,6 +14,64 @@
   <%= tag(:input, type: "button", value: "End all WUs", phx_click: "end-all-warmup") %>
 </section>
 
+<section id="tracklist">
+  <h1>Tracklist</h1>
+
+  <div id="servers-maps" phx-hook="track_dropzone">
+    <div class="row header">
+      <div class="track-id">ID</div>
+      <div class="track-author">Author</div>
+      <div class="track-name">Name</div>
+    </div>
+    <%= for track <- @tracklist do %>
+
+      <div class="row" draggable="true" phx-hook="draggable_server_track_hook">
+        <div class="track-id"><%= track.mx_track_id %></div>
+        <div class="track-author"><%= track.author_nickname %></div>
+        <div class="track-name"><%= track.name %></div>
+      </div>
+    <% end %>
+  </div>
+</section>
+
+<section id="search-tracks">
+  <%= mxo = form_for @mx_query_options, "#", [phx_change: "validate-mx-query", phx_submit: "send-mx-request"] %>
+    <%= submit "Search" , disabled: Kernel.not @mx_query_options.valid? %>
+
+    <label>
+      Name <%= text_input mxo, :map_name %>
+    </label>
+    <%= error_tag mxo, :map_name %>
+    <label>
+      <% track_style_options = @track_style_options |> Enum.map(&{&1.name, &1.id})
+      track_style_options = [{"", nil} | track_style_options] %>
+      Style <%= select mxo, :track_style_id, track_style_options %>
+    </label>
+    <%= error_tag mxo, :track_style_id %>
+    <label>
+      Author <%= text_input mxo, :author_name %>
+    </label>
+    <%= error_tag mxo, :author_name %>
+
+  </form>
+  <section id="search-tracks-results">
+    <div class="row header">
+      <div class="track-id">ID</div>
+      <div class="track-author">Author</div>
+      <div class="track-name">Name</div>
+      <div class="track-rewards">🏆</div>
+    </div>
+    <%= for track <- @mx_tracks_result.tracks do %>
+      <div id=<%= "mx-#{track.mx_track_id}"%> class="row track-search-item" draggable="true" phx-hook="draggable_mx_track_hook">
+        <div class="track-id"><%= track.mx_track_id %></div>
+        <div class="track-author"><%= track.author_nickname %></div>
+        <div class="track-name"><%= track.name %></div>
+        <div class="track-rewards"><%= track.awards_nb %></div>
+      </div>
+    <% end %>
+  </section>
+</section>
+
 <section id="server-update-form">
   <h1>Server Settings</h1>
   <%= f = form_for @changeset, "#", [phx_change: :validate, phx_submit: "update-config"] %>
@@ -24,7 +82,7 @@
       <h1>Ruleset</h1>
       <%= inputs_for f, :ruleset, fn rs -> %>
 
-        <% game_modes = Mppm.Repo.all(Mppm.Type.GameMode) |> Enum.map(&{&1.name, &1.id}) %>
+        <% game_modes = @game_modes |> Enum.map(&{&1.name, &1.id}) %>
         <label>
           Game Mode: <%= select rs, :mode_id, game_modes  %>
         </label>
@@ -145,10 +203,6 @@
         Bind to IP: <%= text_input f, :bind_ip %>
       </label>
       <%= error_tag f, :bind_ip %>
-      <label>
-        IP address: <%= text_input f, :ip_address %>
-      </label>
-      <%= error_tag f, :ip_address %>
     </section>
 
   </form>

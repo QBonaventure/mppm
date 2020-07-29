@@ -62,6 +62,7 @@ form label {
 #server-update-form {
     width: 100%;
     position: relative;
+    clear: both;
 }
 
 #server-update-form section {
@@ -132,4 +133,96 @@ form select {
 
 form select {
   padding-right: 12px;
+}
+
+
+
+/************* Tracklist ********************/
+
+section#tracklist {
+  width: 470px;
+  float: left;
+  font-size: 12px;
+  background-color: lightgrey;
+}
+
+
+section#tracklist .row,
+div.track-placeholder {
+  border-radius: 4px;
+  padding: 2px;
+  margin: 2px 4px;
+  height: 20px;
+  width: auto;
+  font-size: 12px;
+}
+
+section#tracklist .row {
+  background-color: white;
+}
+
+div.track-placeholder {
+  border: 2px dashed grey;
+  height: 16px;
+}
+
+section#tracklist .row.sss {
+  margin-top: 20px;
+}
+
+
+/********** MX Search Section ***************/
+
+
+section#search-tracks {
+  background-color: #00715a;
+  width: 470px;
+  float: right;
+}
+
+section#search-tracks form {
+  height: 52px;
+}
+
+section#search-tracks form label,
+section#search-tracks form button {
+  display: inline-block;
+  width: 100px;
+  clear: none;
+  text-align: center;
+  margin: 0 5px;
+  color: white;
+}
+
+section#search-tracks div.track-search-item {
+  border-radius: 4px;
+  background-color: white;
+  margin: 2px 0;
+  font-size: 12px;
+}
+
+section#search-tracks-results  div.row {
+  margin: 2px 4px;
+  font-size: 12px;
+  width: auto;
+  height: 20px;
+}
+
+div.track-id {
+  width: 46px;
+  text-align: center;
+}
+
+div.track-name {
+  width: 250px;
+}
+
+div.track-author {
+  width: 100px;
+  text-align: center;
+}
+
+div.track-rewards {
+  width: 24px;
+  text-align: center;
 }

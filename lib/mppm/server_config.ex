@@ -178,6 +178,26 @@ defmodule Mppm.ServerConfig do
     filename
   end
 
+  def get_tracks_list(server_login) do
+    "#{@maps_path}MatchSettings/#{server_login}.txt"
+    |> get_default_xml
+    |> elem(2)
+    |> Enum.filter(fn {key, attr, value} -> key == :map end)
+    |> Enum.map(fn {:map, _, [{_, _, [track_path]}]} ->
+      %Mppm.Track{
+        name: clear_filename(track_path)
+      }
+    end)
+  end
+
+  def clear_filename(filename) do
+    filename
+    |> List.to_string
+    |> String.split("/")
+    |> List.last
+    |> String.split(".")
+    |> List.first
+  end
 
   def create_tracklist(%ServerConfig{login: login}) do
     target_path = "#{@maps_path}MatchSettings/#{login}.txt"
