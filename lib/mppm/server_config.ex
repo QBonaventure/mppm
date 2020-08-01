@@ -17,6 +17,7 @@ defmodule Mppm.ServerConfig do
 
   schema "mp_servers_configs" do
     has_one :ruleset, Mppm.GameRules, foreign_key: :server_id, on_replace: :update
+    many_to_many :tracks, Mppm.Track, join_through: "tracklists", join_keys: [server_id: :id, track_id: :id]
     field :login, :string
     field :password, :string
     field :name, :string
@@ -40,6 +41,9 @@ defmodule Mppm.ServerConfig do
     Mppm.Repo.all(Mppm.ServerConfig)
     |> Mppm.Repo.preload(ruleset: [:mode])
   end
+
+  def get_server_id(server_login), do:
+    Mppm.Repo.get_by(Mppm.ServerConfig, login: server_login) |> Map.get(:id)
 
   def get_server_config(server_login) do
     Mppm.Repo.get_by(Mppm.ServerConfig, login: server_login)

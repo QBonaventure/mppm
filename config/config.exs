@@ -18,7 +18,7 @@ config :mppm, MppmWeb.Endpoint,
   url: [host: "localhost"],
   secret_key_base: "afV0CREl4daxWFaO0yEaAUaIVD8Fa6hutve1ayPU5SmrCdjbfVo5BAQhzje0TFUw",
   render_errors: [view: MppmWeb.ErrorView, accepts: ~w(html json)],
-  pubsub_server: Mppm.PubSub,
+  pubsub: [name: Mppm.PubSub, adapter: Phoenix.PubSub.PG2],
   live_view: [
     signing_salt: "PT9C+Rx6EMTp2/HqPQaZwCUVkJkfX9lp"
   ]

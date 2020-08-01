@@ -47,7 +47,8 @@ defmodule Mppm.MixProject do
       {:jason, "~> 1.0"},
       {:plug_cowboy, "~> 2.0"},
       {:xmlrpc, "~> 1.4"},
-      {:observer_cli, "~> 1.5"}
+      {:observer_cli, "~> 1.5"},
+      {:slugify, "~> 1.3"}
     ]
   end
 

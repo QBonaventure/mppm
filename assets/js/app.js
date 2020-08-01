@@ -73,14 +73,14 @@ Hooks.track_dropzone = {
     this.el.addEventListener("drop", e => {
       e.preventDefault();
       let ph = document.getElementsByClassName("track-placeholder")[0]
-      let lmkmlk = Array.prototype.slice.call(e.currentTarget.children).indexOf(ph)
+      let index = Array.prototype.slice.call(e.currentTarget.children).indexOf(ph)
 
       var data = e.dataTransfer.getData("text/plain");
-      this.pushEvent("add-mx-track", {data, index: lmkmlk});
+      this.pushEvent("add-mx-track", {data, index: index});
       // this.el.appendChild(e.view.document.getElementById(data));
     })
   }
 }
-
-let liveSocket = new LiveSocket("/live", Socket, {hooks: Hooks})
+ let csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content");
+let liveSocket = new LiveSocket("/live", Socket, {hooks: Hooks, params: {_csrf_token: csrfToken}})
 liveSocket.connect()

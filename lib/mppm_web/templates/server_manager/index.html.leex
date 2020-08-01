@@ -23,7 +23,7 @@
       <div class="track-author">Author</div>
       <div class="track-name">Name</div>
     </div>
-    <%= for track <- @tracklist do %>
+    <%= for track <- @tracklist.tracks do %>
 
       <div class="row" draggable="true" phx-hook="draggable_server_track_hook">
         <div class="track-id"><%= track.mx_track_id %></div>

@@ -6,7 +6,6 @@ defmodule Mppm.MXQuery do
   @mx_maps_info "https://trackmania.exchange/api/maps/get_map_info/multi/"
   @mx_track_search_uri "https://trackmania.exchange/mapsearch2/search"
   @download_track_url "https://trackmania.exchange/tracks/download/"
-  @maps_path Application.get_env(:mppm, :mp_servers_root_path) <> "UserData/Maps/"
 
   schema "mx_query_options" do
     field :author_name, :string
@@ -86,17 +85,8 @@ IO.inspect tracks
 
   ### May try using erlang's httpc to directly stream the binary into the file
   ### system and possibly save some memory usage out of it.
-  def download_track(%Mppm.Track{mx_track_id: track_id, name: track_name} = track)
-  when is_integer(track_id) do
-    {:ok, %HTTPoison.Response{body: track_binary}} =
-      @download_track_url <> Integer.to_string(track_id)
-      |> HTTPoison.get
-
-    mx_track_path(track)
-    |> File.write(track_binary)
-  end
-
-  def mx_track_path(%Mppm.Track{mx_track_id: track_id, name: track_name}), do:
-    "#{@maps_path}MX/#{track_id}_#{Slug.slugify(track_name)}.Map.Gbx"
+  def download_track(%Mppm.Track{mx_track_id: track_id}), do:
+    @download_track_url <> Integer.to_string(track_id)
+    |> HTTPoison.get
 
 end

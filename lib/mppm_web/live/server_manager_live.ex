@@ -16,15 +16,18 @@ defmodule MppmWeb.ServerManagerLive do
       %Mppm.MXQuery{}
       |> Mppm.MXQuery.changeset
 
+    # tracklist = Mppm.Tracklist.get(server_config.login)
+
+    IO.inspect Mppm.Tracklist.get_server_tracklist(server_config.login)
+
     socket =
       socket
       |> assign(changeset: changeset)
       |> assign(server_info: server_config)
       |> assign(mx_query_options: mxo)
       |> assign(track_style_options: Mppm.Repo.all(Mppm.TrackStyle))
-      |> assign(tracklist: Mppm.ServerConfig.get_tracks_list(server_config.login))
-      # |> assign(mx_tracks_result: %{tracks: [], pagination: nil})
-      |> assign(mx_tracks_result: get_data)
+      |> assign(tracklist: Mppm.Tracklist.get_server_tracklist(server_config.login))
+      |> assign(mx_tracks_result: get_data())
       |> assign(game_modes: Mppm.Repo.all(Mppm.Type.GameMode))
 
     {:ok, socket}
@@ -89,13 +92,17 @@ defmodule MppmWeb.ServerManagerLive do
   end
 
   def handle_event("add-mx-track", params, socket) do
-
     {mx_track_id, ""} = params["data"] |> String.split("-") |> List.last |> Integer.parse
     track = get_mx_track_map(mx_track_id, socket.assigns.mx_tracks_result.tracks)
 
-    spawn_link(fn -> Mppm.MXQuery.download_track(track) end)
 
-    tracklist = List.insert_at(socket.assigns.tracklist, params["index"]-1, track)
+    # spawn_link(fn -> Mppm.TracksFiles.get_mx_track_file(track) end)
+
+    tracklist = Mppm.Tracklist.add_track(socket.assigns.tracklist, track, params["index"]-1)
+
+    # tracklist = List.insert_at(socket.assigns.tracklist, params["index"]-1, track)
+
+    IO.inspect tracklist
 
     {:noreply, assign(socket, tracklist: tracklist)}
   end
