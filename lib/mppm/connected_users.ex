@@ -45,7 +45,6 @@ defmodule Mppm.ConnectedUsers do
           %Mppm.User{}
           |> Mppm.User.changeset(user)
           |> Mppm.Repo.insert
-          |> IO.inspect
 
         {:noreply, %{state |
           unknown_users: remove_unknown_user(state, user.login),

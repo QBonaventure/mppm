@@ -1,8 +1,10 @@
 defmodule Mppm.TracksFiles do
   use GenServer
 
-  @maps_path "/var/mppm/maps/"
-  @mx_path "#{@maps_path}mx/"
+  # @maps_path "/var/mppm/maps/"
+  @maps_path Application.get_env(:mppm, :mp_servers_root_path) <> "UserData/Maps/"
+  @mx_directory "MX/"
+  @mx_path "#{@maps_path}#{@mx_directory}"
 
 
   def handle_call(:get_tracks, _from, state) do
@@ -18,15 +20,19 @@ defmodule Mppm.TracksFiles do
 
 
   def download_mx_track(%Mppm.Track{mx_track_id: track_id} = track) do
-    case Mppm.MXQuery.download_track(track_id) do
-      {:ok, track_binary} -> mx_track_path(track) |> File.write(track_binary)
+    case Mppm.MXQuery.download_track(track) do
+      {:ok, http_resp} ->
+
+          @maps_path <> mx_track_path(track)
+          |> File.write(http_resp.body)
+          Mppm.Repo.insert!(track)
       _ -> {:error, :download_failed}
     end
   end
 
 
   def mx_track_path(%Mppm.Track{mx_track_id: track_id, name: track_name}), do:
-    "#{@maps_path}MX/#{track_id}_#{Slug.slugify(track_name)}.Map.Gbx"
+    "#{@mx_directory}#{track_id}_#{Slug.slugify(track_name)}.Map.Gbx"
 
 
 

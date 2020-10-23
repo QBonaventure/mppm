@@ -20,15 +20,6 @@ import {Socket} from "phoenix"
 import LiveSocket from "phoenix_live_view"
 
 let Hooks = {}
-Hooks.draggable_mx_track_hook = {
-  mounted() {
-    this.el.addEventListener("dragstart", e => {
-      e.dataTransfer.effectAllowed = "copy";
-      e.dataTransfer.dropEffect = "copy";
-      e.dataTransfer.setData("text/plain", e.target.id); // save the elements id as a payload
-    })
-  }
-}
 
 function get_placeholder() {
   let li = document.createElement('div');
@@ -43,17 +34,29 @@ function remove_all_placeholders(document) {
   }
 }
 
+
+Hooks.draggable_mx_track_hook = {
+  mounted() {
+    this.el.addEventListener("dragstart", e => {
+      e.dataTransfer.effectAllowed = "copy";
+      e.dataTransfer.dropEffect = "copy";
+      e.dataTransfer.setData("text/plain", e.target.id); // save the elements id as a payload
+    })
+  }
+}
+
 Hooks.draggable_server_track_hook = {
   mounted() {
+    this.el.addEventListener("dragstart", e => {
+      e.dataTransfer.effectAllowed = "move";
+      e.dataTransfer.dropEffect = "move";
+      e.dataTransfer.setData("text/plain", e.target.id);
+    })
     this.el.addEventListener("dragover", e => {
       document.querySelectorAll(".row").forEach(element => element.classList.remove("sss"))
-      // classList.remove("sss");
       remove_all_placeholders(document)
       e.target.parentNode.insertBefore(get_placeholder(), e.target.nextSibling);
     })
-    // this.el.addEventListener("dragleave", e => {
-    //   e.target.classList.remove("sss");
-    // })
   }
 }
 
@@ -76,7 +79,13 @@ Hooks.track_dropzone = {
       let index = Array.prototype.slice.call(e.currentTarget.children).indexOf(ph)
 
       var data = e.dataTransfer.getData("text/plain");
-      this.pushEvent("add-mx-track", {data, index: index});
+
+      if (data.startsWith("mx")) {
+        this.pushEvent("add-mx-track", {data, index: index});
+      } else if (data.startsWith("track")) {
+        this.pushEvent("reorganize-tracklist", {data, index: index})
+      } {
+      }
       // this.el.appendChild(e.view.document.getElementById(data));
     })
   }

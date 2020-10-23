@@ -69,7 +69,7 @@ defmodule Mppm.MXQuery do
       body
       |> Map.get("results")
       |> Enum.map(& Mppm.Track.track_from_mx(&1))
-IO.inspect tracks
+
 
     pagination = %{
       page: response.request.params.page,
@@ -85,8 +85,9 @@ IO.inspect tracks
 
   ### May try using erlang's httpc to directly stream the binary into the file
   ### system and possibly save some memory usage out of it.
-  def download_track(%Mppm.Track{mx_track_id: track_id}), do:
+  def download_track(%Mppm.Track{mx_track_id: track_id}) do
     @download_track_url <> Integer.to_string(track_id)
     |> HTTPoison.get
+  end
 
 end

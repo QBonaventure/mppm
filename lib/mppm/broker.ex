@@ -122,6 +122,9 @@ defmodule Mppm.Broker do
   def handle_call({:switch_game_mode, %Mppm.Type.GameMode{} = game_mode}, _from, state), do:
     {:reply, make_request("SetScriptName", [game_mode.script_name], state), state}
 
+  def handle_call(:reload_match_settings, _from, state) do
+    {:reply, make_request("LoadMatchSettings", ["MatchSettings/" <> state.login <> ".txt"], state), state}
+  end
 
 
   def handle_call({:write_to_chat, message}, _from, state)
@@ -147,7 +150,8 @@ defmodule Mppm.Broker do
     :get_current_game_rules => "GetCurrentGameInfo",
     :get_next_game_rules => "GetNextGameInfo",
     :get_mode_script_variable => "GetModeScriptVariables",
-    :get_mode_script_text => "GetModeScriptInfo"
+    :get_mode_script_text => "GetModeScriptInfo",
+    :get_current_map_info => "GetCurrentMapInfo"
 
   }
 
@@ -214,6 +218,8 @@ defmodule Mppm.Broker do
     {:noreply, %{state | incoming_message: incoming_message}}
   end
 
+
+
   defp parse_new_packet(_login, <<size::little-32,id::little-32>>), do: {:ok, %BinaryMessage{size: size, id: id}}
   defp parse_new_packet(_login, <<size::little-32>>), do: {:ok, %BinaryMessage{size: size}}
 
@@ -253,8 +259,30 @@ defmodule Mppm.Broker do
     case message do
       %XMLRPC.MethodCall{} ->
         case message.method_name do
-          "TrackMania.PlayerChat" ->
-            IO.puts "FFFFFFFFFFFFFFFFFFF"
+          "ManiaPlanet.EndMatch" ->
+            Phoenix.PubSub.broadcast(Mppm.PubSub, pubsub_topic(login), {:endmatch})
+          "ManiaPlanet.EndMap" ->
+            Phoenix.PubSub.broadcast(Mppm.PubSub, pubsub_topic(login), {:endmap})
+          "ManiaPlanet.BeginMap" ->
+            Phoenix.PubSub.broadcast(Mppm.PubSub, pubsub_topic(login), {:beginmap, List.first(message.params)})
+          "ManiaPlanet.BeginMatch" ->
+            Phoenix.PubSub.broadcast(Mppm.PubSub, pubsub_topic(login), {:beginmatch})
+          "ManiaPlanet.PlayerChat" ->
+            {user, text} =
+              case message.params do
+                [0, _, text, _] ->
+                  [[player_nick, text]] = Regex.scan(~r"\[(.*)\]\s(.*)", text, capture: :all_but_first)
+                  {Mppm.Repo.get_by(Mppm.User, nickname: player_nick), text}
+                [_, player_login, text, _] ->
+                  {Mppm.Repo.get_by(Mppm.User, login: player_login), text}
+              end
+            server = Mppm.Repo.get_by(Mppm.ServerConfig, login: login)
+            {:ok, chat_message} =
+              %Mppm.ChatMessage{}
+              |> Mppm.ChatMessage.changeset(user, server, %{text: text})
+              |> Mppm.Repo.insert
+
+            Phoenix.PubSub.broadcast(Mppm.PubSub, pubsub_topic(login), {:new_chat_message, chat_message})
           "TrackMania.PlayerConnect" ->
             GenServer.cast(Mppm.ConnectedUsers, {:user_connection, login, List.first(message.params)})
           "TrackMania.PlayerDisconnect" ->
@@ -264,6 +292,8 @@ defmodule Mppm.Broker do
       %XMLRPC.MethodResponse{param: %{"Login" => login, "NickName" => nickname, "PlayerId" => player_id}} ->
         user = %{login: login, nickname: nickname, player_id: player_id}
         GenServer.cast(Mppm.ConnectedUsers, {:connected_user_info, user})
+      %XMLRPC.MethodResponse{param: %{"UId" => _} = map_info} ->
+        Phoenix.PubSub.broadcast(Mppm.PubSub, pubsub_topic(login), {:current_map_info, map_info})
       _ -> nil
     end
 
@@ -280,6 +310,22 @@ end
     {new_id, <<new_id::little-32>>}
   end
 
+  %XMLRPC.MethodCall{
+    method_name: "ManiaPlanet.EndMatch",
+    params: [
+      [
+        %{
+          "Login" => "mr2_md43Qg-_ZeOmUQ32pA",
+          "NickName" => "Rrrazzziel",
+          "PlayerId" => 237,
+          "Rank" => 1
+        }
+      ],
+      -1
+    ]
+  }
+
+  def pubsub_topic(server_login), do: "server_status_"<>server_login
 
 
   ###############################################

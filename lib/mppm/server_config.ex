@@ -15,6 +15,7 @@ defmodule Mppm.ServerConfig do
   @config_path @root_path <> "UserData/Config/"
   @maps_path @root_path <> "UserData/Maps/"
 
+
   schema "mp_servers_configs" do
     has_one :ruleset, Mppm.GameRules, foreign_key: :server_id, on_replace: :update
     many_to_many :tracks, Mppm.Track, join_through: "tracklists", join_keys: [server_id: :id, track_id: :id]
@@ -55,8 +56,7 @@ defmodule Mppm.ServerConfig do
   @users_pwd [:superadmin_pass, :admin_pass, :user_pass]
   def create_server_changeset(%ServerConfig{} = server_config \\ %ServerConfig{}, data \\ %{}) do
     data = defaults_missing_passwords(data) |> Map.put_new("mode_id", 1)
-#     |> Map.put("ruleset", %Mppm.GameRules{})
-# IO.inspect data
+
     server_config
     |> cast(data, [
       :login, :password, :name, :comment, :player_pwd, :spec_pwd,
@@ -83,8 +83,8 @@ defmodule Mppm.ServerConfig do
   def update(changeset) do
     case changeset |> Repo.update do
       {:ok, server_config} ->
-        IO.inspect :global.whereis_name({:mp_proc, server_config.login})
-        IO.inspect propagate_ruleset_changes(:global.whereis_name({:mp_broker, server_config.login}), changeset)
+        create_config_file(server_config)
+        propagate_ruleset_changes(:global.whereis_name({:mp_broker, server_config.login}), changeset)
       {:error, changeset} ->
         {:ok, nil}
     end
@@ -182,6 +182,52 @@ defmodule Mppm.ServerConfig do
     filename
   end
 
+
+  def create_ruleset_file(%ServerConfig{ruleset: %Ecto.Association.NotLoaded{}} = serv_config), do:
+    create_ruleset_file(serv_config |> Mppm.Repo.preload(ruleset: [:mode]))
+  def create_ruleset_file(%ServerConfig{ruleset: %Mppm.GameRules{mode: %Ecto.Association.NotLoaded{}}} = serv_config), do:
+    create_ruleset_file(serv_config |> Mppm.Repo.preload(ruleset: [:mode]))
+  def create_ruleset_file(%ServerConfig{} = server_config) do
+    target_path = "#{@maps_path}MatchSettings/#{server_config.login}.txt"
+
+    script_settings = {
+      :mode_script_settings,
+      [],
+      Mppm.GameRules.get_script_variables_by_mode(server_config.ruleset.mode)
+      |> Enum.map(fn {key, value} ->
+        {:setting, [
+          name: value,
+          type: get_type(Map.get(server_config.ruleset, key)),
+          value: script_setting_value_correction(Map.get(server_config.ruleset, key))], []}
+      end)
+    }
+
+    game_info = {:gameinfos, [], [
+      {:game_mode, [], [charlist(0)]},
+      {:script_name, [], [charlist(server_config.ruleset.mode.script_name)]}
+    ]}
+
+    tracklist =
+      case File.exists?(target_path) do
+        true ->
+          get_default_xml(target_path)
+        false ->
+          get_default_xml("#{@maps_path}MatchSettings/tracklist.txt")
+      end
+      |> elem(2)
+      |> Enum.filter(fn {v, _, _} -> Enum.member?([:map, :startindex], v) end)
+
+    new_xml =
+      {:playlist, [], [game_info, script_settings] ++ tracklist}
+      |> List.wrap
+      |> :xmerl.export_simple(:xmerl_xml)
+      |> List.flatten
+
+    :file.write_file(target_path, new_xml)
+    |> IO.inspect
+  end
+
+
   def get_tracks_list(server_login) do
     "#{@maps_path}MatchSettings/#{server_login}.txt"
     |> get_default_xml
@@ -203,23 +249,45 @@ defmodule Mppm.ServerConfig do
     |> List.first
   end
 
-  def create_tracklist(%ServerConfig{login: login}) do
+
+  def create_tracklist(%Mppm.ServerConfig{id: id}), do:
+    Mppm.Repo.get(Mppm.Tracklist, id) |> create_tracklist()
+
+  def create_tracklist(%Mppm.Tracklist{server: %Ecto.Association.NotLoaded{}} = tracklist), do:
+    Mppm.Repo.preload(tracklist, :server) |> create_tracklist()
+
+  def create_tracklist(%Mppm.Tracklist{server: %{login: login}} = tracklist) do
     target_path = "#{@maps_path}MatchSettings/#{login}.txt"
-    source_path = "#{@maps_path}MatchSettings/example.txt"
 
-    xml = get_default_xml(source_path)
-
-    game_rules =
-      elem(xml, 2)
-      |> List.keyfind(:gameinfos, 0)
+    game_info =
+      get_default_xml(target_path)
       |> elem(2)
-      # |> List.keyreplace()
+      |> Enum.filter(& Enum.member?([:gameinfos, :mode_script_settings], elem(&1, 0)))
 
 
-    'ls #{target_path} >> /dev/null 2>&1 || cp #{source_path} #{target_path}'
-    |> :os.cmd
+
+    tracks = Mppm.Tracklist.get_server_tracklist(login) |> Map.get(:tracks)
+
+    tracks =
+      tracks
+      |> Enum.map(& {:map, [], [{:file, [], [charlist(Mppm.TracksFiles.mx_track_path(&1))]}] })
+      |> List.insert_at(0, {:startindex, [], [charlist("1")]})
+
+    new_xml = {:playlist, [], game_info ++ tracks}
+    pp = :xmerl.export_simple([new_xml], :xmerl_xml) |> List.flatten
+
+    :file.write_file(target_path, pp)
   end
 
+
+  defp script_setting_value_correction(true), do: 1
+  defp script_setting_value_correction(false), do: 0
+  defp script_setting_value_correction(value), do: value
+
+
+  defp get_type(value) when is_boolean(value), do: "boolean"
+  defp get_type(value) when is_integer(value), do: "integer"
+  defp get_type(value) when is_binary(value), do: "text"
 
   defp charlist(value) when is_binary(value), do: String.to_charlist(value)
   defp charlist(value) when is_integer(value), do: Integer.to_string(value) |> String.to_charlist

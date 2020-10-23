@@ -157,6 +157,22 @@ div.track-placeholder {
   font-size: 12px;
 }
 
+
+div#current-track-status {
+  float: left;
+  left: -20px;
+  top: 13px;
+  position: relative;
+}
+
+
+div#tracks-list div.row:first-child {
+  color:red;
+  height: 28px;
+  margin: 10px 4px 6px;
+  padding-top: 5px;
+}
+
 section#tracklist .row {
   background-color: white;
 }
@@ -168,6 +184,41 @@ div.track-placeholder {
 
 section#tracklist .row.sss {
   margin-top: 20px;
+}
+
+section#tracklist .track-remove:hover {
+  cursor: pointer;
+}
+
+
+/*********** Chat Section ******************/
+
+section#game-server-chat {
+  float: left;
+  position: fixed;
+  left: 0;
+  top: 20px;
+  width: 300px;
+  background-color: white;
+  font-size: 12px;
+  padding: 4px;
+  border: 1px solid lightgray;
+  margin: 2px;
+}
+
+section#game-server-chat .chat-message {
+  margin-bottom: 4px;
+}
+
+section#game-server-chat .chat-message-author {
+  font-weight: bold;
+}
+
+section#game-server-chat #chat-box {
+  max-height: 400px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column-reverse;
 }
 
 

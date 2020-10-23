@@ -45,13 +45,17 @@ defmodule Mppm.ManiaplanetServer do
   end
 
   def start_server(state) do
-    ServerConfig.create_config_file(state.config)
+    server_config = Mppm.Repo.get(Mppm.ServerConfig, state.config.id)
+    ServerConfig.create_config_file(server_config)
+    ServerConfig.create_ruleset_file(server_config)
     ServerConfig.create_tracklist(state.config)
 
     command = get_command(state.config)
     port = Port.open({:spawn, command}, [:binary, :exit_status])
     {:os_pid, os_pid} = Port.info(port, :os_pid)
     Port.monitor(port)
+IO.inspect command
+    IO.inspect port
 
     listening_ports = get_listening_ports(os_pid)
 
@@ -62,7 +66,6 @@ defmodule Mppm.ManiaplanetServer do
 
     {:ok, state}
   end
-
 
 
 

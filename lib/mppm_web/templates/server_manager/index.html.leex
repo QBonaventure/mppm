@@ -5,6 +5,23 @@
   </div>
 </section>
 
+<section id="game-server-chat">
+  <div id="chat-box">
+    <%= for message  <- @chat do %>
+      <div class="chat-message">
+        <span class="chat-message-author"><%= message.user.nickname %> ></span>
+        <span class="chat-message-class"><%= message.text %></span>
+      </div>
+    <% end %>
+  </div>
+  <div id="chat-message-input-box">
+    <%= f = form_for @new_chat_message, "#", [phx_change: "validate-chat-message", phx_submit: "send-chat-message"] %>
+      <%= textarea f, :text %>
+
+      <button type="submit" <%= unless @new_chat_message.valid? do "disabled" end %>>Submit</button>    </form>
+  </div>
+</section>
+
 <section id="server-controls">
   <h1>Controls</h1>
   <%= tag(:input, type: "button", value: "Restart", phx_click: "restart-map") %>
@@ -17,21 +34,34 @@
 <section id="tracklist">
   <h1>Tracklist</h1>
 
-  <div id="servers-maps" phx-hook="track_dropzone">
+  <div id="servers-maps-table" >
     <div class="row header">
       <div class="track-id">ID</div>
       <div class="track-author">Author</div>
       <div class="track-name">Name</div>
+      <div class="track-remove"></div>
     </div>
-    <%= for track <- @tracklist.tracks do %>
+    <div id="current-track-status">
+      <%= case @current_track_status do
+        :loading -> "L"
+        :playing -> "P"
+        :unloading -> "U"
+        :ending -> "E"
+      end %>
+    </div>
+    <div id="tracks-list" phx-hook="track_dropzone">
+      <%= for track <- @tracklist.tracks do %>
+        <div id="track-<%= track.id %>" class="row played-tracks <%= if is_nil(track.id), do: "new" %>" draggable="true" phx-hook="draggable_server_track_hook">
+          <div class="track-id"><%= track.mx_track_id %></div>
+          <div class="track-author"><%= track.author_nickname %></div>
+          <div class="track-name"><%= track.name %></div>
+          <div class="track-remove" phx-click="remove-track-from-list" phx-value-track-id="<%= track.id %>">X</div>
+        </div>
+      <% end %>
+    </div>
 
-      <div class="row" draggable="true" phx-hook="draggable_server_track_hook">
-        <div class="track-id"><%= track.mx_track_id %></div>
-        <div class="track-author"><%= track.author_nickname %></div>
-        <div class="track-name"><%= track.name %></div>
-      </div>
-    <% end %>
   </div>
+  <button phx-click="update-tracklist">Save</save>
 </section>
 
 <section id="search-tracks">
