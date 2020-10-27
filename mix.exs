@@ -34,15 +34,15 @@ defmodule Mppm.MixProject do
   defp deps do
     [
       {:ecto_network, "~> 1.3.0"},
-      {:phoenix, "~> 1.4.10"},
-      {:phoenix_pubsub, "~> 1.1"},
+      {:phoenix, "~> 1.5"},
+      {:phoenix_pubsub, "~> 2.0"},
       {:phoenix_ecto, "~> 4.0"},
       {:ecto_sql, "~> 3.1"},
       {:httpoison, "~> 1.7"},
       {:postgrex, ">= 0.0.0"},
       {:phoenix_html, "~> 2.13"},
       {:phoenix_live_reload, "~> 1.2", only: :dev},
-      {:phoenix_live_view, "~> 0.6.0"},
+      {:phoenix_live_view, "~> 0.14"},
       {:gettext, "~> 0.11"},
       {:jason, "~> 1.0"},
       {:plug_cowboy, "~> 2.0"},

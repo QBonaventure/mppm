@@ -46,6 +46,7 @@ defmodule MppmWeb do
       alias MppmWeb.Router.Helpers, as: Routes
 
       import Phoenix.LiveView
+      import Phoenix.LiveView.Helpers
     end
   end
 
