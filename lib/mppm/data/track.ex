@@ -1,5 +1,6 @@
 defmodule Mppm.Track do
   use Ecto.Schema
+  import Ecto.Query
 
   schema "tracks" do
     field :mx_track_id, :integer
@@ -32,6 +33,16 @@ defmodule Mppm.Track do
       uploaded_at: get_dt(mx_track["UploadedAt"]),
       updated_at: get_dt(mx_track["UpdatedAt"])
     }
+  end
+
+  def get_random_tracks(nb_of_tracks)
+  when is_integer(nb_of_tracks) do
+    query =
+      from Mppm.Track,
+      order_by: fragment("RANDOM()"),
+      limit: ^nb_of_tracks
+
+    Mppm.Repo.all(query)
   end
 
   defp get_dt(datetime) when is_binary(datetime) do

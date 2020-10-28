@@ -55,7 +55,9 @@ defmodule Mppm.ServerConfig do
   @required [:login, :password, :max_players]
   @users_pwd [:superadmin_pass, :admin_pass, :user_pass]
   def create_server_changeset(%ServerConfig{} = server_config \\ %ServerConfig{}, data \\ %{}) do
-    data = defaults_missing_passwords(data) |> Map.put_new("mode_id", 1)
+    data =
+      defaults_missing_passwords(data)
+      |> Map.put_new("mode_id", 1)
 
     server_config
     |> cast(data, [
@@ -63,7 +65,7 @@ defmodule Mppm.ServerConfig do
       :max_players, :superadmin_pass, :admin_pass, :user_pass,
       :ip_address
       ])
-    |> put_assoc(:ruleset, %Mppm.GameRules{})
+    |> put_assoc(:ruleset, %Mppm.GameRules{mode_id: 1})
     |> validate_required(@required)
   end
 
@@ -75,9 +77,24 @@ defmodule Mppm.ServerConfig do
 
 
   def create_new_server(game_server_config) do
-    %ServerConfig{}
-    |> ServerConfig.create_server_changeset(game_server_config)
-    |> Repo.insert
+    result =
+      %ServerConfig{}
+      |> ServerConfig.create_server_changeset(game_server_config)
+      |> Repo.insert
+
+    case result do
+      {:ok, server_config} ->
+
+        tracks_ids = Enum.map(Mppm.Track.get_random_tracks(1), & &1.id)
+        |> IO.inspect
+
+        %Mppm.Tracklist{}
+          |> Mppm.Tracklist.changeset(%{server_id: server_config.id, tracks_ids: tracks_ids})
+          |> Mppm.Repo.insert
+          |> IO.inspect
+        result
+      _ -> result
+    end
   end
 
   def update(changeset) do
