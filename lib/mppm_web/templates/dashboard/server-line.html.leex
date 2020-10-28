@@ -1,7 +1,7 @@
 <% alias MppmWeb.DashboardView %>
 <section id="<%= "server-#{@server.login}" %>" class="server-card">
   <span class="server-manager-link">
-    <%= live_patch "kjkj", to: Routes.live_path(@socket, MppmWeb.ServerManagerLive, @server.login), do:
+    <%= live_patch "Manage", to: Routes.live_path(@socket, MppmWeb.ServerManagerLive, @server.login), do:
       content_tag :span, "Manage >" %>
 
   </span>
