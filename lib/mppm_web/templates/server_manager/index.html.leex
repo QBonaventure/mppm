@@ -55,7 +55,9 @@
           <div class="track-id"><%= track.mx_track_id %></div>
           <div class="track-author"><%= track.author_nickname %></div>
           <div class="track-name"><%= track.name %></div>
-          <div class="track-remove" phx-click="remove-track-from-list" phx-value-track-id="<%= track.id %>">X</div>
+          <%= unless Enum.find_index(@tracklist.tracks, & &1.id == track.id) == 0 do %>
+            <div class="track-remove" phx-click="remove-track-from-list" phx-value-track-id="<%= track.id %>">X</div>
+          <% end %>
         </div>
       <% end %>
     </div>
