@@ -81,7 +81,7 @@ Hooks.track_dropzone = {
       var data = e.dataTransfer.getData("text/plain");
 
       if (data.startsWith("mx")) {
-        this.pushEvent("add-mx-track", {data, index: index});
+        this.pushEvent("add-mx-track", {data, index: index+1});
       } else if (data.startsWith("track")) {
         this.pushEvent("reorganize-tracklist", {data, index: index})
       } {
