@@ -27,7 +27,7 @@ defmodule Mppm.Broker do
   end
 
 
-  defp open_connection(port) do
+  def open_connection(port) do
     :gen_tcp.connect({127, 0, 0, 1}, port, @xmlrpc_conn_opts)
   end
 

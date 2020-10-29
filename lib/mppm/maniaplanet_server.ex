@@ -54,8 +54,6 @@ defmodule Mppm.ManiaplanetServer do
     port = Port.open({:spawn, command}, [:binary, :exit_status])
     {:os_pid, os_pid} = Port.info(port, :os_pid)
     Port.monitor(port)
-IO.inspect command
-    IO.inspect port
 
     listening_ports = get_listening_ports(os_pid)
 
@@ -68,6 +66,25 @@ IO.inspect command
   end
 
 
+  def handle_cast({:relink_orphan_process, {login, pid, xmlrpc_port}}, state) do
+    server_config = Mppm.Repo.get_by(Mppm.ServerConfig, login: login)
+
+    Mppm.Broker.child_spec(state.config, xmlrpc_port)
+    |> Mppm.ManiaplanetServerSupervisor.start_child
+
+    update_status(login, "started")
+    state = %{state |
+      status: "started",
+      xmlrpc_port: xmlrpc_port,
+      listening_ports: %{"xmlrpc" => xmlrpc_port},
+      port: nil,
+      os_pid: pid
+    }
+
+    {:noreply, state}
+  end
+
+
 
   ###################################
   ##### STOP FUNCTIONS ##############
@@ -75,9 +92,15 @@ IO.inspect command
 
   def stop_server(state) do
     GenServer.call({:global, {:mp_broker, state.config.login}}, :stop)
-    IO.inspect Port.info(state.port, :os_pid)
-    {:os_pid, pid} = Port.info(state.port, :os_pid)
-    Port.close(state.port)
+    pid =
+      case state.port do
+        nil ->
+          state.os_pid
+        port ->
+          {:os_pid, pid} = Port.info(port, :os_pid)
+          Port.close(port)
+          pid
+      end
     System.cmd("kill", ["#{pid}"])
 
     update_status(state.config.login, "stopped")
@@ -86,6 +109,7 @@ IO.inspect command
   end
 
   def handle_cast(:closing_port, state) do
+    update_status(state.config.login, "stopped")
     {:noreply, %{state | exit_status: :port_closed, status: "stopped"}}
   end
 
