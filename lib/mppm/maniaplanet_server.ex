@@ -4,6 +4,7 @@ defmodule Mppm.ManiaplanetServer do
   alias Mppm.{ServerConfig,Statuses}
 
   @root_path Application.get_env(:mppm, :mp_servers_root_path)
+  @config Application.get_env(:mppm, Mppm.Trackmania)
   @msg_waiting_ports "Waiting for game server ports to open..."
 
   ###################################
@@ -137,6 +138,14 @@ defmodule Mppm.ManiaplanetServer do
       server_status = GenServer.call({:global, server}, :status)
       Map.put(acc, server_name, Map.get(acc, server_name,[]) ++ ["#{server_type}": server_status])
    end)
+  end
+
+  @game_server_download_path "/tmp/tm_server_latest.zip"
+
+  def update_game_server() do
+    {:ok, %HTTPoison.Response{body: body}} = HTTPoison.get(Keyword.get(@config, :download_link))
+    :zip.unzip(body, [{:cwd, ~c'#{@root_path}'}])
+    :ok
   end
 
 

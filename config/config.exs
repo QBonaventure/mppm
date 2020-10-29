@@ -36,6 +36,9 @@ config :mppm,
   app_path: File.cwd!,
   mp_servers_root_path: "/opt/mppm/TrackmaniaServer/"
 
+config :mppm, Mppm.Trackmania,
+  download_link: "http://files.v04.maniaplanet.com/server/TrackmaniaServer_Latest.zip"
+
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
 import_config "#{Mix.env()}.exs"
