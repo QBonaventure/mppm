@@ -226,7 +226,7 @@ defmodule Mppm.ServerConfig do
     }
 
     game_info = {:gameinfos, [], [
-      {:game_mode, [], [charlist(server_config.ruleset.mode.id)]},
+      {:game_mode, [], [charlist(0)]},
       {:script_name, [], [charlist(server_config.ruleset.mode.script_name)]}
     ]}
 
