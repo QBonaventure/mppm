@@ -100,18 +100,24 @@ defmodule Mppm.ServerConfig do
   def update(changeset) do
     case changeset |> Repo.update do
       {:ok, server_config} ->
+        server_config = server_config |> Mppm.Repo.preload(:ruleset, force: true)
         create_config_file(server_config)
-        propagate_ruleset_changes(:global.whereis_name({:mp_broker, server_config.login}), changeset)
+        create_ruleset_file(server_config)
+        propagate_ruleset_changes(server_config, changeset)
       {:error, changeset} ->
         {:ok, nil}
     end
   end
 
 
-  def propagate_ruleset_changes(pid, %Ecto.Changeset{changes: %{ruleset: %Ecto.Changeset{changes: changes}}} = data)
-  when is_pid(pid) do
-    mode_vars = Mppm.GameRules.get_script_variables_by_mode(data.data.ruleset.mode)
-    to_update = Enum.filter(changes, fn {key, value} -> Map.has_key?(mode_vars, key) end)
+  def propagate_ruleset_changes(%ServerConfig{} = server_config, %Ecto.Changeset{changes: %{ruleset: %Ecto.Changeset{changes: changes}}} = data) do
+    pid = :global.whereis_name({:mp_broker, server_config.login})
+    mode_vars = Mppm.GameRules.get_script_variables_by_mode(server_config.ruleset.mode_id)
+
+    to_update =
+      Map.from_struct(server_config.ruleset)
+      |> Enum.filter(fn {key, value} -> Map.has_key?(mode_vars, key) end)
+
     GenServer.call(pid, {:update_ruleset, to_update})
     case switch_game_mode?(changes) do
       true -> GenServer.call(pid, {:switch_game_mode, Mppm.Repo.get(Mppm.Type.GameMode, changes.mode_id)})
@@ -220,7 +226,7 @@ defmodule Mppm.ServerConfig do
     }
 
     game_info = {:gameinfos, [], [
-      {:game_mode, [], [charlist(0)]},
+      {:game_mode, [], [charlist(server_config.ruleset.mode.id)]},
       {:script_name, [], [charlist(server_config.ruleset.mode.script_name)]}
     ]}
 

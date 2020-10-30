@@ -30,7 +30,9 @@ defmodule Mppm.GameRules do
     }
   }
 
+  def get_script_variables_by_mode(1), do: @script_settings.time_attack
   def get_script_variables_by_mode(%Mppm.Type.GameMode{name: "Time Attack"}), do: @script_settings.time_attack
+  def get_script_variables_by_mode(2), do: @script_settings.rounds
   def get_script_variables_by_mode(%Mppm.Type.GameMode{name: "Rounds"}), do: @script_settings.rounds
 
   def get_script_settings_variables(), do: @script_settings

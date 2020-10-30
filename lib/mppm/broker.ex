@@ -116,6 +116,8 @@ defmodule Mppm.Broker do
       |> Enum.map(fn {key, value} -> {script_vars[key], value} end)
       |> Map.new
 
+IO.puts "kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk"
+IO.inspect values
     {:reply, make_request("SetModeScriptSettings", [values], state), state}
   end
 
