@@ -115,7 +115,7 @@ defmodule MppmWeb.ServerManagerLive do
       |> String.replace_leading("track-", "")
       |> Integer.parse
 
-tracklist = socket.assigns.tracklist
+    tracklist = socket.assigns.tracklist
 
     {track, tracks_collection} =
       tracklist.tracks
