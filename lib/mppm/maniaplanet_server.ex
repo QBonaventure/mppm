@@ -6,6 +6,7 @@ defmodule Mppm.ManiaplanetServer do
   @root_path Application.get_env(:mppm, :mp_servers_root_path)
   @config Application.get_env(:mppm, Mppm.Trackmania)
   @msg_waiting_ports "Waiting for game server ports to open..."
+  @max_start_attempts 7
 
   ###################################
   ##### START FUNCTIONS #############
@@ -16,6 +17,10 @@ defmodule Mppm.ManiaplanetServer do
   end
 
 
+  def get_listening_ports(pid, tries) when is_integer(pid) and tries >= @max_start_attempts do
+    kill_server_process(pid)
+    {:error, :unknown_reason}
+  end
   def get_listening_ports(pid, tries \\ 0) when is_integer(pid) do
     res = :os.cmd('ss -lpn | grep "pid=#{pid}" | awk {\'print$5\'} | cut -d: -f2')
     |> to_string
@@ -31,7 +36,7 @@ defmodule Mppm.ManiaplanetServer do
 
     case res do
       %{"xmlrpc" => _xmlrpc, "server" => _server} ->
-        res
+        {:ok, res}
       _ ->
         IO.puts @msg_waiting_ports
         Process.sleep(1000)
@@ -56,12 +61,15 @@ defmodule Mppm.ManiaplanetServer do
     {:os_pid, os_pid} = Port.info(port, :os_pid)
     Port.monitor(port)
 
-    listening_ports = get_listening_ports(os_pid)
-
-    Mppm.Broker.child_spec(state.config, listening_ports["xmlrpc"])
-    |> Mppm.ManiaplanetServerSupervisor.start_child
-
-    state = %{state | status: "started", listening_ports: listening_ports, port: port}
+    state =
+      case get_listening_ports(os_pid) do
+        {:ok, listening_ports} ->
+          Mppm.Broker.child_spec(state.config, listening_ports["xmlrpc"])
+          |> Mppm.ManiaplanetServerSupervisor.start_child()
+          %{state | status: "started", listening_ports: listening_ports, port: port}
+        {:error, _} ->
+          %{state | status: "stopped"}
+      end
 
     {:ok, state}
   end
@@ -102,12 +110,14 @@ defmodule Mppm.ManiaplanetServer do
           Port.close(port)
           pid
       end
-    System.cmd("kill", ["#{pid}"])
+    kill_server_process(pid)
 
     update_status(state.config.login, "stopped")
 
     {:ok, %{state | port: nil, status: "stopped"}}
   end
+
+  def kill_server_process(pid) when is_integer(pid), do: System.cmd("kill", ["#{pid}"])
 
   def handle_cast(:closing_port, state) do
     update_status(state.config.login, "stopped")
