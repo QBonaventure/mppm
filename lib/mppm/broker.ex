@@ -283,9 +283,9 @@ defmodule Mppm.Broker do
               |> Mppm.Repo.insert
 
             Phoenix.PubSub.broadcast(Mppm.PubSub, pubsub_topic(login), {:new_chat_message, chat_message})
-          "TrackMania.PlayerConnect" ->
+          "ManiaPlanet.PlayerConnect" ->
             GenServer.cast(Mppm.ConnectedUsers, {:user_connection, login, List.first(message.params)})
-          "TrackMania.PlayerDisconnect" ->
+          "ManiaPlanet.PlayerDisconnect" ->
             GenServer.cast(Mppm.ConnectedUsers, {:user_disconnection, login, List.first(message.params)})
           _ ->
         end
