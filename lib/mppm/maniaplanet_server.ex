@@ -200,6 +200,9 @@ defmodule Mppm.ManiaplanetServer do
     end
   end
 
+  def handle_call(:get_current_track, _, state) do
+    {:reply, state.current_track, state}
+  end
 
   def handle_call(:status, _, state) do
     {:reply, %{state: state.status, port: state.port, os_pid: state.os_pid}, state}
@@ -209,6 +212,15 @@ defmodule Mppm.ManiaplanetServer do
   def handle_call(:get_state, _, state) do
     {:reply, state, state}
   end
+
+
+  def handle_info({:current_map_info, %{"UId" => map_uid}}, state), do:
+    {:noreply, %{state | current_track: Mppm.Repo.get_by(Mppm.Track, track_uid: map_uid)}}
+  def handle_info({:beginmap, %{"UId" => map_uid}}, state), do:
+    {:noreply, %{state | current_track: Mppm.Repo.get_by(Mppm.Track, track_uid: map_uid)}}
+  def handle_info({:endmatch}, state), do: {:noreply, state}
+  def handle_info({:endmap}, state), do: {:noreply, state}
+  def handle_info({:beginmatch}, state), do: {:noreply, state}
 
 
   def handle_info(:stop, state) do
@@ -261,7 +273,9 @@ defmodule Mppm.ManiaplanetServer do
 
 
   def init(%ServerConfig{} = server_config) do
+    Phoenix.PubSub.subscribe(Mppm.PubSub, "server_status_"<>server_config.login)
     state = %{
+      current_track: nil,
       port: nil,
       controller_port: nil,
       os_pid: nil,

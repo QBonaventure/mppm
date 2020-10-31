@@ -284,12 +284,17 @@ defmodule Mppm.Broker do
               %Mppm.ChatMessage{}
               |> Mppm.ChatMessage.changeset(user, server, %{text: text})
               |> Mppm.Repo.insert
-
             Phoenix.PubSub.broadcast(Mppm.PubSub, pubsub_topic(login), {:new_chat_message, chat_message})
           "ManiaPlanet.PlayerConnect" ->
             GenServer.cast(Mppm.ConnectedUsers, {:user_connection, login, List.first(message.params)})
           "ManiaPlanet.PlayerDisconnect" ->
             GenServer.cast(Mppm.ConnectedUsers, {:user_disconnection, login, List.first(message.params)})
+          "ManiaPlanet.ModeScriptCallbackArray" ->
+            case message.params do
+              ["Trackmania.Event.WayPoint", data] ->
+                Phoenix.PubSub.broadcast(Mppm.PubSub, Mppm.TimeTracker.get_pubsub_topic(), {Jason.decode!(data), login})
+              _ ->
+            end
           _ ->
         end
       %XMLRPC.MethodResponse{param: %{"Login" => login, "NickName" => nickname, "PlayerId" => player_id}} ->

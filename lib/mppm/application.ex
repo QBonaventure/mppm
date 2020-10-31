@@ -12,9 +12,7 @@ defmodule Mppm.Application do
       Mppm.Repo,
       # Start the endpoint when the application starts
       MppmWeb.Endpoint,
-
       Mppm.ConnectedUsers,
-
       Mppm.ServerConfigStore,
       Mppm.Statuses,
       # Starts a worker by calling: Mppm.Worker.start_link(arg)
@@ -34,7 +32,8 @@ defmodule Mppm.Application do
         start: {Mppm.GameServerSupervisor.Starter, :start_link, []},
         restart: :temporary,
         type: :worker
-      }
+      },
+      Mppm.TimeTracker
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html
