@@ -22,10 +22,9 @@ defmodule Mppm.TracksFiles do
   def download_mx_track(%Mppm.Track{mx_track_id: track_id} = track) do
     case Mppm.MXQuery.download_track(track) do
       {:ok, http_resp} ->
-
           @maps_path <> mx_track_path(track)
           |> File.write(http_resp.body)
-          Mppm.Repo.insert!(track)
+          Mppm.Repo.insert(track, on_conflict: {:replace_all_except, [:id]}, conflict_target: :track_uid)
       _ -> {:error, :download_failed}
     end
   end
