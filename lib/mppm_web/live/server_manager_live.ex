@@ -47,7 +47,6 @@ defmodule MppmWeb.ServerManagerLive do
 
   def handle_event("update-config", params, socket) do
     {:ok, changeset} = get_changeset(socket.assigns.server_info.id, params["server_config"])
-    IO.inspect changeset
     Mppm.ServerConfig.update(changeset)
 
     {:noreply, socket}

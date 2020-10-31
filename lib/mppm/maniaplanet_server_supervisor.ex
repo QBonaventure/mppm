@@ -50,7 +50,6 @@ defmodule Mppm.ManiaplanetServerSupervisor do
 
 
   def handle_info(msg, state) do
-    IO.puts "----DSS: " <> msg
     {:noreply, state}
   end
 

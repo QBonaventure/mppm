@@ -14,7 +14,6 @@ defmodule Mppm.Controller do
 
 
   def start_link([%{config: config}] = state, _opts \\ []) do
-    IO.puts "starting controller"
     GenServer.start_link(__MODULE__, state, name: {:global, {:mp_controller, config.login}})
   end
 

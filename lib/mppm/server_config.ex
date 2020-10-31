@@ -86,12 +86,10 @@ defmodule Mppm.ServerConfig do
       {:ok, server_config} ->
 
         tracks_ids = Enum.map(Mppm.Track.get_random_tracks(1), & &1.id)
-        |> IO.inspect
 
         %Mppm.Tracklist{}
           |> Mppm.Tracklist.changeset(%{server_id: server_config.id, tracks_ids: tracks_ids})
           |> Mppm.Repo.insert
-          |> IO.inspect
         result
       _ -> result
     end
@@ -247,7 +245,6 @@ defmodule Mppm.ServerConfig do
       |> List.flatten
 
     :file.write_file(target_path, new_xml)
-    |> IO.inspect
   end
 
 
