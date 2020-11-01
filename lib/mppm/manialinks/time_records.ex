@@ -31,7 +31,6 @@ defmodule Mppm.Manialinks.TimeRecords do
   end
 
   def display_lines(times) do
-    IO.inspect times
     {
       :frame,
       [id: "records-list", pos: "0 -5"],
@@ -47,7 +46,6 @@ defmodule Mppm.Manialinks.TimeRecords do
       end)
       |> elem(0)
     }
-    |> IO.inspect
   end
 
 end

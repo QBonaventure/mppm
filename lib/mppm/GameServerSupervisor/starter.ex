@@ -23,6 +23,7 @@ defmodule Mppm.GameServerSupervisor.Starter do
       {:ok, mp_server_pid} = ManiaplanetServerSupervisor.start_server_supervisor(server_config)
     end)
     relink_lost_processes
+
     {:stop, :normal, %{}}
   end
 
@@ -36,7 +37,6 @@ defmodule Mppm.GameServerSupervisor.Starter do
   @trackmania 'TrackmaniaServer'
 
   def relink_lost_processes() do
-    IO.puts "RELINKIIIIIIIIIIIIIIIING"
     {:ok, zombie_processes} = get_zombie_processes()
     Enum.each(zombie_processes, fn {login, pid, port} = tup ->
       GenServer.cast({:global, {:mp_server, login}}, {:relink_orphan_process, tup})

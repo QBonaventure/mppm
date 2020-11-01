@@ -79,6 +79,9 @@ defmodule Mppm.Broker do
   def handle_call({:hide_display_to_client_with_login, client_login}, _from, state), do:
     {:reply, make_request("SendHideManialinkPageToLogin", [client_login], state), state}
 
+
+
+
   def handle_call({:kick_by_id, client_uid}, _from, state), do:
     {:reply, make_request("KickId", [client_uid], state), state}
 

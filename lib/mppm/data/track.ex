@@ -15,6 +15,7 @@ defmodule Mppm.Track do
     field :exe_ver, :string
     field :uploaded_at, :utc_datetime
     field :updated_at, :utc_datetime
+    has_many :time_records, Mppm.TimeRecord
   end
 
 
@@ -34,6 +35,11 @@ defmodule Mppm.Track do
       updated_at: get_dt(mx_track["UpdatedAt"])
     }
   end
+
+  def get_by_uid(track_uid) when is_binary(track_uid), do:
+    Mppm.Repo.get_by(Mppm.Track, track_uid: track_uid)
+  def get_by_uid(tracks_uid) when is_list(tracks_uid), do:
+    Mppm.Track |> where([t], t.track_uid in ^tracks_uid) |> Mppm.Repo.all
 
   def get_random_tracks(nb_of_tracks)
   when is_integer(nb_of_tracks) do
