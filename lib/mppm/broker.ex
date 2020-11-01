@@ -60,6 +60,7 @@ defmodule Mppm.Broker do
     {:reply, make_request("SendNotice", [message, "", mood], state), state}
 
 
+  ############### Manialinks
   def handle_call({:display, xml, hide_on_click?, hide_timeout}, _from, state)
   when is_binary(xml) and is_boolean(hide_on_click?) and is_integer(hide_timeout), do:
     {:reply, make_request("SendDisplayManialinkPage", [xml, hide_timeout, hide_on_click?], state), state}
