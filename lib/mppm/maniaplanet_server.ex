@@ -66,6 +66,7 @@ defmodule Mppm.ManiaplanetServer do
         {:ok, listening_ports} ->
           Mppm.Broker.child_spec(state.config, listening_ports["xmlrpc"])
           |> Mppm.ManiaplanetServerSupervisor.start_child()
+          Phoenix.PubSub.broadcast(Mppm.PubSub, "server_status", :update)
           %{state | status: "started", listening_ports: listening_ports, port: port}
         {:error, _} ->
           %{state | status: "stopped"}

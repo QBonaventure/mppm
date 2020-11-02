@@ -151,7 +151,8 @@ defmodule Mppm.Broker do
     :get_next_game_rules => "GetNextGameInfo",
     :get_mode_script_variable => "GetModeScriptVariables",
     :get_mode_script_text => "GetModeScriptInfo",
-    :get_current_map_info => "GetCurrentMapInfo"
+    :get_current_map_info => "GetCurrentMapInfo",
+    :get_player_list => "GetPlayerList"
 
   }
 
@@ -262,8 +263,10 @@ defmodule Mppm.Broker do
           "ManiaPlanet.EndMatch" ->
             Phoenix.PubSub.broadcast(Mppm.PubSub, pubsub_topic(login), {:endmatch})
           "ManiaPlanet.EndMap" ->
+            Phoenix.PubSub.broadcast(Mppm.PubSub, "maps-status", {:endmap, login, List.first(message.params) |> Map.get("UId")})
             Phoenix.PubSub.broadcast(Mppm.PubSub, pubsub_topic(login), {:endmap})
           "ManiaPlanet.BeginMap" ->
+            Phoenix.PubSub.broadcast(Mppm.PubSub, "maps-status", {:beginmap, login, List.first(message.params) |> Map.get("UId")})
             Phoenix.PubSub.broadcast(Mppm.PubSub, pubsub_topic(login), {:beginmap, List.first(message.params)})
           "ManiaPlanet.BeginMatch" ->
             Phoenix.PubSub.broadcast(Mppm.PubSub, pubsub_topic(login), {:beginmatch})
@@ -292,7 +295,8 @@ defmodule Mppm.Broker do
       %XMLRPC.MethodResponse{param: %{"Login" => login, "NickName" => nickname, "PlayerId" => player_id}} ->
         user = %{login: login, nickname: nickname, player_id: player_id}
         GenServer.cast(Mppm.ConnectedUsers, {:connected_user_info, user})
-      %XMLRPC.MethodResponse{param: %{"UId" => _} = map_info} ->
+      %XMLRPC.MethodResponse{param: %{"UId" => track_uid} = map_info} ->
+        Phoenix.PubSub.broadcast(Mppm.PubSub, "maps-status", {:update_server_map, login, track_uid})
         Phoenix.PubSub.broadcast(Mppm.PubSub, pubsub_topic(login), {:current_map_info, map_info})
       _ -> nil
     end
@@ -374,6 +378,10 @@ end
     make_request("SetApiVersion", ["2013-04-16"], state)
     make_request("EnableCallbacks", [true], state)
     make_request("TriggerModeScriptEventArray", ["XmlRpc.EnableCallbacks", ["true"]], state)
+
+    make_request("GetCurrentMapInfo", [], state)
+    make_request("GetPlayerList", [1000, 0], state)
+
     {:noreply, state}
   end
 
