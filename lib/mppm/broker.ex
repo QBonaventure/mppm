@@ -298,7 +298,9 @@ defmodule Mppm.Broker do
       %XMLRPC.MethodResponse{param: %{"UId" => track_uid} = map_info} ->
         Phoenix.PubSub.broadcast(Mppm.PubSub, "maps-status", {:update_server_map, login, track_uid})
         Phoenix.PubSub.broadcast(Mppm.PubSub, pubsub_topic(login), {:current_map_info, map_info})
-      _ -> nil
+      %XMLRPC.MethodResponse{param: [%{"PlayerId" => 0} | remainder] = list} ->
+        Enum.each(remainder, & GenServer.cast(Mppm.ConnectedUsers, {:user_connection, login, Map.get(&1, "Login")}))
+      d ->
     end
 
     GenServer.cast({:global, {:mp_server, login}}, {:incoming_game_message, message})

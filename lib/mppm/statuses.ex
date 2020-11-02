@@ -20,6 +20,12 @@ defmodule Mppm.Statuses do
     Agent.get(__MODULE__, & &1)
   end
 
+  def get_list_of_running() do
+    Agent.get(__MODULE__, & &1)
+    |> Enum.filter(& elem(&1, 1).server == "started")
+    |> Enum.map(& elem(&1, 0))
+  end
+
   def add_new_server(login) do
     Agent.update(__MODULE__, & Map.put_new(&1, login, @default_statuses))
   end
