@@ -34,6 +34,13 @@ defmodule Mppm.TimeTracker do
   def is_new_record?(time, %Mppm.TimeRecord{lap_time: laptime}), do: time < laptime
 
 
+  def update_server_records_display(server_login, tracks, track_uid) do
+    table =
+      Enum.find(tracks, & &1.track_uid == track_uid)
+      |> Map.get(:time_records)
+      |> Mppm.Manialinks.TimeRecords.update_table()
+    GenServer.call({:global, {:mp_broker, server_login}}, {:display, table, false, 0})
+  end
 
   def handle_info({%{"checkpointinrace" => 0, "login" => player_login, "racetime" => time}, server_login}, state) do
     {:noreply, Map.put(state, player_login, [time])}
@@ -52,8 +59,8 @@ defmodule Mppm.TimeTracker do
         tracks = Enum.reject(state.tracks, & &1.id == track.id) ++ [updated_map]
 
         Phoenix.PubSub.broadcast(Mppm.PubSub, @new_record_topic, {:new_time_record, new_time})
-        table = Mppm.Manialinks.TimeRecords.update_table(updated_map.time_records)
-        GenServer.call({:global, {:mp_broker, server_login}}, {:display, table, false, 0})
+        update_server_records_display(server_login, tracks, track.track_uid)
+
         {:noreply, %{state | tracks: tracks}}
       false ->
         {:noreply, state}
@@ -65,13 +72,15 @@ defmodule Mppm.TimeTracker do
   end
 
 
+  def handle_info({:connection_to_server, server_login, player_login}, state) do
+    IO.inspect "PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP"
+    update_server_records_display(server_login, state.tracks, Map.get(state.servers_current_tracks, server_login))
+    {:noreply, state}
+  end
+
   def handle_info({id, server_login, track_uid}, state) when id in [:beginmap, :update_server_map] do
     state = Mppm.TimeTracker.add_track(state, track_uid, server_login)
-    table =
-      Enum.find(state.tracks, & &1.track_uid == track_uid)
-      |> Map.get(:time_records)
-      |> Mppm.Manialinks.TimeRecords.update_table()
-    GenServer.call({:global, {:mp_broker, server_login}}, {:display, table, false, 0})
+    update_server_records_display(server_login, state.tracks, track_uid)
     {:noreply, state}
   end
 
@@ -93,6 +102,7 @@ defmodule Mppm.TimeTracker do
     state = %{tracks: [], servers_current_tracks: %{}, ongoing_runs: %{}}
     :ok = Phoenix.PubSub.subscribe(Mppm.PubSub, @topic)
     :ok = Phoenix.PubSub.subscribe(Mppm.PubSub, "maps-status")
+    :ok = Phoenix.PubSub.subscribe(Mppm.PubSub, "players-status")
     {:ok, state}
   end
 
