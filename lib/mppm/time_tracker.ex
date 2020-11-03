@@ -2,8 +2,7 @@ defmodule Mppm.TimeTracker do
   use GenServer
 
   @topic "waypoint-time"
-  @new_record_topic "new_time_record"
-
+  @time_topic "time-status"
 
   def add_track(state, track_uid, server_login) when is_binary(track_uid) do
     tracks = Map.get(state, :tracks)
@@ -29,18 +28,29 @@ defmodule Mppm.TimeTracker do
     %{tracks: tracks, servers_current_tracks: servers_current_tracks}
   end
 
-
   def is_new_record?(_, nil), do: true
   def is_new_record?(time, %Mppm.TimeRecord{lap_time: laptime}), do: time < laptime
 
 
-  def update_server_records_display(server_login, tracks, track_uid) do
-    table =
-      Enum.find(tracks, & &1.track_uid == track_uid)
+  defp get_server_records(state, server_login) do
+    track_uid = Map.get(state.servers_current_tracks, server_login)
+    records =
+      case Enum.find(state.tracks, & &1.track_uid == track_uid) do
+        nil ->
+          Mppm.Track.get_by_uid(track_uid) |> Mppm.Repo.preload(:time_records)
+        track ->
+          track
+      end
       |> Map.get(:time_records)
-      |> Mppm.Manialinks.TimeRecords.update_table()
-    GenServer.call({:global, {:mp_broker, server_login}}, {:display, table, false, 0})
   end
+
+  def handle_call({:get_server_current_track, server_login}, _, state) do
+    track_uid = Map.get(state.servers_current_tracks, server_login)
+    {:reply, Mppm.Repo.get_by(Mppm.Track, track_uid: track_uid), state}
+  end
+
+  def handle_call({:get_server_records, server_login}, _, state), do:
+    {:reply, get_server_records(state, server_login), state}
 
   def handle_info({%{"checkpointinrace" => 0, "login" => player_login, "racetime" => time}, server_login}, state) do
     {:noreply, Map.put(state, player_login, [time])}
@@ -58,8 +68,7 @@ defmodule Mppm.TimeTracker do
           |> Mppm.Repo.preload(:time_records, force: true)
         tracks = Enum.reject(state.tracks, & &1.id == track.id) ++ [updated_map]
 
-        Phoenix.PubSub.broadcast(Mppm.PubSub, @new_record_topic, {:new_time_record, new_time})
-        update_server_records_display(server_login, tracks, track.track_uid)
+        Phoenix.PubSub.broadcast(Mppm.PubSub, @time_topic, {:new_time_record, server_login, new_time})
 
         {:noreply, %{state | tracks: tracks}}
       false ->
@@ -71,29 +80,21 @@ defmodule Mppm.TimeTracker do
     {:noreply, Map.update!(state, player_login, & &1 ++ [time])}
   end
 
-
-  def handle_info({:connection_to_server, server_login, player_login}, state) do
-    IO.inspect "PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP"
-    update_server_records_display(server_login, state.tracks, Map.get(state.servers_current_tracks, server_login))
-    {:noreply, state}
-  end
-
   def handle_info({id, server_login, track_uid}, state) when id in [:beginmap, :update_server_map] do
-    state = Mppm.TimeTracker.add_track(state, track_uid, server_login)
-    update_server_records_display(server_login, state.tracks, track_uid)
+    state = add_track(state, track_uid, server_login)
     {:noreply, state}
   end
 
   def handle_info({:endmap, server_login, track_uid}, state) do
-    {:noreply, Mppm.TimeTracker.remove_track(state, track_uid, server_login)}
+    {:noreply, remove_track(state, track_uid, server_login)}
   end
+
+  def handle_info(_, state), do: {:noreply, state}
 
 
   def handle_cast({:track_server_time, server_login, track_uid}, state) do
-    Mppm.TimeTracker.add_track(state, track_uid, server_login)
+    {:noreply, add_track(state, track_uid, server_login)}
   end
-
-
 
   def get_pubsub_topic(), do: @topic
 

@@ -33,7 +33,8 @@ defmodule Mppm.Application do
         restart: :temporary,
         type: :worker
       },
-      Mppm.TimeTracker
+      Mppm.TimeTracker,
+      Mppm.GameUI.GameUISupervisor
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html

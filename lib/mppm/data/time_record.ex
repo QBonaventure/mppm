@@ -27,6 +27,14 @@ defmodule Mppm.TimeRecord do
     |> Mppm.Repo.insert!(on_conflict: {:replace_all_except, [:user_id, :track_id]}, conflict_target: [:user_id, :track_id])
   end
 
+  def get_user_track_record(%Mppm.Track{} = track, %Mppm.User{} = user), do:
+    Mppm.Repo.one(from r in Mppm.TimeRecord, where: r.track_id == ^track.id and r.user_id == ^user.id)
+
+  def get_track_records(track_uid) do
+    Mppm.Repo.get_by(Mppm.Track, track_uid: track_uid)
+    |> Mppm.Repo.preload(time_records: [:user])
+    |> Map.get(:time_records)
+  end
 
   def to_string(time) when is_integer(time) do
     [sec, ms] =

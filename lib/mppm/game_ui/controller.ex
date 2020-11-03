@@ -1,0 +1,21 @@
+defmodule Mppm.GameUI.Controller do
+  use GenServer
+
+
+  def handle_info({:user_connection_to_server, server_login, user_login}, state) do
+    xml = Mppm.GameUI.Helper.get_custom_template(server_login, user_login)
+    Mppm.GameUI.Helper.send_to_user(xml, server_login, user_login)
+    {:noreply, state}
+  end
+
+
+  def start_link(_init_value), do: GenServer.start_link(__MODULE__, nil, name: __MODULE__)
+  def init(_) do
+    # :ok = Phoenix.PubSub.subscribe(Mppm.PubSub, "records-status")
+    :ok = Phoenix.PubSub.subscribe(Mppm.PubSub, "players-status")
+    # :ok = Phoenix.PubSub.subscribe(Mppm.PubSub, "maps-status")
+    # :ok = Phoenix.PubSub.subscribe(Mppm.PubSub, "time-status")
+    {:ok, %{}}
+  end
+
+end
