@@ -109,11 +109,13 @@
   <%= submit "Submit" , disabled: Kernel.not @changeset.valid? %>
   <%= tag(:input, type: "button", value: "Cancel", phx_click: "cancel-form") %>
 
+  <% game_modes = @game_modes |> Enum.map(&{&1.name, &1.id}) %>
+  <% respawn_behaviours = @respawn_behaviours |> Enum.map(&{&1.name, &1.id}) %>
+
     <section id="ruleset-subform">
       <h1>Ruleset</h1>
       <%= inputs_for f, :ruleset, fn rs -> %>
 
-        <% game_modes = @game_modes |> Enum.map(&{&1.name, &1.id}) %>
         <label>
           Game Mode: <%= select rs, :mode_id, game_modes  %>
         </label>
@@ -123,7 +125,7 @@
 
         <h2>Time attack</h2>
 
-        <label>Respawn bhvr: <%= text_input rs, :ta_respawn_behaviour %></label>
+        <label>Respawn bhvr: <%= select rs, :ta_respawn_behaviour_id, respawn_behaviours %></label>
         <%= error_tag f, :ta_respawn_behaviour %>
 
         <label>Time limit: <%= text_input rs, :ta_time_limit %></label>
@@ -138,14 +140,11 @@
         <label>Forced laps nb: <%= text_input rs, :ta_forced_laps_nb %></label>
         <%= error_tag f, :ta_forced_laps_nb %>
 
-        <label>Allow respawns: <%= checkbox rs, :ta_allow_respawn %></label>
-        <%= error_tag f, :ta_allow_respawn %>
-
 
 
         <h2>Rounds</h2>
 
-        <label>Respawn bhvr: <%= text_input rs, :rounds_respawn_behaviour %></label>
+        <label>Respawn bhvr: <%= select rs, :rounds_respawn_behaviour_id, respawn_behaviours %></label>
         <%= error_tag f, :rounds_respawn_behaviour %>
 
         <label>Finish Timeout: <%= text_input rs, :rounds_finish_timeout %></label>
@@ -171,12 +170,6 @@
 
         <label>Forced laps: <%= text_input rs, :rounds_forced_laps_nb %></label>
         <%= error_tag f, :rounds_forced_laps_nb %>
-
-        <label>Use alt. rules: <%= checkbox rs, :rounds_use_alternate_rules %></label>
-        <%= error_tag f, :rounds_use_alternate_rules %>
-
-        <label>Allow respawns: <%= checkbox rs, :rounds_allow_respawn %></label>
-        <%= error_tag f, :rounds_allow_respawn %>
 
       <% end %>
     </section>

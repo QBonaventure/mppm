@@ -35,6 +35,7 @@ defmodule MppmWeb.ServerManagerLive do
       |> assign(mx_tracks_result: get_data())
       |> assign(current_track_status: :loading)
       |> assign(game_modes: Mppm.Repo.all(Mppm.Type.GameMode))
+      |> assign(respawn_behaviours: Mppm.Repo.all(Mppm.Ruleset.RespawnBehaviour))
       |> assign(chat: Mppm.ChatMessage.get_last_chat_messages(server_config.id))
 
         GenServer.call({:global, {:mp_broker, server_config.login}}, {:query, :get_current_map_info})
@@ -220,7 +221,7 @@ defmodule MppmWeb.ServerManagerLive do
     changeset =
       Mppm.ServerConfig
       |> Mppm.Repo.get_by(%{id: server_id})
-      |> Mppm.Repo.preload(ruleset: [:mode])
+      |> Mppm.Repo.preload(ruleset: [:mode, :ta_respawn_behaviour, :rounds_respawn_behaviour])
       |> Mppm.ServerConfig.changeset(params)
 
     case Ecto.Changeset.apply_action(changeset, :update) do

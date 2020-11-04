@@ -48,7 +48,7 @@ defmodule Mppm.ServerConfig do
 
   def get_server_config(server_login) do
     Mppm.Repo.get_by(Mppm.ServerConfig, login: server_login)
-    |> Mppm.Repo.preload(ruleset: [:mode])
+    |> Mppm.Repo.preload(ruleset: [:mode, :ta_respawn_behaviour, :rounds_respawn_behaviour])
   end
 
 
