@@ -41,17 +41,18 @@ defmodule Mppm.GameUI.TimeRecords do
 
 
   def get_user_best_time_root(content \\ nil), do:
-    {:manialink, [id: "user-best-time", version: 3], [content]}
+    {:manialink, [id: "user-best-time", version: 3], [Mppm.GameUI.Stylesheet.get_stylesheet(), content]}
 
   def user_best_time(nil), do:
     get_user_best_time_root()
   def user_best_time(time_record), do:
     {
       :frame,
-      [pos: "-160 50"],
+      [pos: "-160 40", scale: "1.0"],
       [
-        {:label, [text: "My Best Time", pos: "10 0", text_size: "2"], []},
-        {:label, [text: Mppm.TimeRecord.to_string(time_record.lap_time), textsize: "1", pos: "20 -5"], []}
+        {:label, [text: "My Best Time", class: "header-text", pos: "10 0"], []},
+        {:label, [text: Mppm.TimeRecord.to_string(time_record.lap_time), class: "text", pos: "20 -5"], []},
+        {:quad, [size: "42 9", pos: "1 1", class: "background-quad"], []}
       ]
     }
     |> get_user_best_time_root()
@@ -59,7 +60,7 @@ defmodule Mppm.GameUI.TimeRecords do
 
 
   def get_local_records_root(content \\ nil), do:
-    {:manialink, [id: "local-records", version: 3], [content]}
+    {:manialink, [id: "local-records", version: 3], [Mppm.GameUI.Stylesheet.get_stylesheet(), content]}
 
   def get_table(time_records) do update_table(time_records) end
   def update_table(time_records) do
@@ -68,16 +69,17 @@ defmodule Mppm.GameUI.TimeRecords do
       |> Enum.sort_by(& &1.lap_time)
       |> Enum.take(10)
 
+    quad_size = "42 "<> Integer.to_string(3*Enum.count(times)+6)
+
     base_content =
       [
-        {:label, [text: "Local Records", pos: "10 0", textsize: "2"], []},
-        {:quad, [size: "10 60", pos: "20 0", opacity: "1", colorize: "a20000000"], []},
-        {:quad, [size: "50 60", opacity: "1", pos: "0 0 1", colorize: "a20000"], []},
+        {:label, [text: "Local Records", pos: "10 0", class: "header-text"], []},
+        {:quad, [size: quad_size, pos: "1 1", class: "background-quad"], []}
       ]
       |> List.insert_at(1, display_lines(times))
       |> List.flatten
 
-    {:frame, [pos: "-160 40", scale: "1.0"], base_content}
+    {:frame, [pos: "-160 30"], base_content}
     |> get_local_records_root
   end
 
@@ -89,9 +91,9 @@ defmodule Mppm.GameUI.TimeRecords do
         time_record = Mppm.Repo.preload(time_record, :user)
         line =
           {:frame, [id: Integer.to_string(acc), size: "50 50", pos: "2 "<>Integer.to_string(-acc*4)], [
-          {:label, [text: Mppm.TimeRecord.to_string(time_record.lap_time), textsize: "1", pos: "30 0"], []},
-            {:label, [text: Integer.to_string(acc+1) <> ".", textsize: "1"], []},
-            {:label, [text: time_record.user.nickname, textsize: "1", pos: "3 0"], []}
+            {:label, [text: Mppm.TimeRecord.to_string(time_record.lap_time), class: "text", pos: "30 0"], []},
+            {:label, [text: Integer.to_string(acc+1) <> ".", class: "text"], []},
+            {:label, [text: time_record.user.nickname, class: "text", pos: "3 0"], []}
         ]}
         {line, acc+1}
       end)

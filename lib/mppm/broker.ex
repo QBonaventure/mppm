@@ -309,6 +309,10 @@ defmodule Mppm.Broker do
         Phoenix.PubSub.broadcast(Mppm.PubSub, "maps-status", {:update_server_map, login, track_uid})
         Phoenix.PubSub.broadcast(Mppm.PubSub, pubsub_topic(login), {:current_map_info, map_info})
       %XMLRPC.MethodResponse{param: [%{"PlayerId" => 0} | remainder] = list} ->
+        Enum.each(
+          remainder,
+          & Phoenix.PubSub.broadcast(Mppm.PubSub, "players-status", {:user_connection_to_server, login, Map.get(&1, "Login")})
+        )
         Enum.each(remainder, & GenServer.cast(Mppm.ConnectedUsers, {:user_connection, login, Map.get(&1, "Login")}))
       d ->
     end
@@ -325,21 +329,6 @@ end
     new_id = state.request_id + 1
     {new_id, <<new_id::little-32>>}
   end
-
-  %XMLRPC.MethodCall{
-    method_name: "ManiaPlanet.EndMatch",
-    params: [
-      [
-        %{
-          "Login" => "mr2_md43Qg-_ZeOmUQ32pA",
-          "NickName" => "Rrrazzziel",
-          "PlayerId" => 237,
-          "Rank" => 1
-        }
-      ],
-      -1
-    ]
-  }
 
   def pubsub_topic(server_login), do: "server_status_"<>server_login
 
@@ -394,6 +383,7 @@ end
     make_request("GetCurrentMapInfo", [], state)
     make_request("GetPlayerList", [1000, 0], state)
 
+    Phoenix.PubSub.broadcast(Mppm.PubSub, "server-status", {:broker_started, state.login})
     {:noreply, state}
   end
 

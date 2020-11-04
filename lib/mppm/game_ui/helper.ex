@@ -29,15 +29,18 @@ defmodule Mppm.GameUI.Helper do
       end
 
     {:manialinks, [], [
-      Mppm.GameUI.TimeRecords.get_table(track_records),
-      Mppm.GameUI.TimeRecords.user_best_time(user_record),
+        Mppm.GameUI.TimeRecords.get_table(track_records),
+        Mppm.GameUI.TimeRecords.user_best_time(user_record),
     ]}
   end
 
+
   def get_empty_template(), do:
     {:manialinks, [], [
-      Mppm.GameUI.TimeRecords.get_local_records_root(),
-      Mppm.GameUI.TimeRecords.get_user_best_time_root(),
+      {:manialink, [], [
+        Mppm.GameUI.Stylesheet.get_stylesheet,
+        Mppm.GameUI.TimeRecords.get_local_records_root(),
+        Mppm.GameUI.TimeRecords.get_user_best_time_root(),
+      ]}
     ]}
-
 end
