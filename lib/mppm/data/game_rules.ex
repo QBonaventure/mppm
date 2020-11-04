@@ -23,6 +23,23 @@ defmodule Mppm.GameRules do
       rounds_warmup_nb: "S_WarmUpNb",
       rounds_warmup_duration: "S_WarmUpDuration",
       rounds_pts_repartition: "S_PointsRepartition",
+    },
+    :team => %{
+      team_pts_limit: "S_PointsLimit",
+      team_max_pts_per_round: "S_MaxPointsPerRound",
+      team_points_gap: "S_PointsGap",
+      team_custom_pts_repartition: "S_UseCustomPointsRepartition",
+      team_cumulate_pts: "S_CumulatePoints",
+      team_rounds_per_map: "S_RoundsPerMap",
+      team_maps_per_match: "S_MapsPerMatch",
+      team_use_tie_breaker: "S_UseTieBreak",
+      team_warmup_nb: "S_WarmUpNb",
+      team_warmup_duration: "S_WarmUpDuration",
+      team_max_players_per_team: "S_NbPlayersPerTeamMax",
+      team_min_players_per_team: "S_NbPlayersPerTeamMin",
+      team_finish_timeout: "S_FinishTimeout",
+      team_forced_laps_nb: "S_ForcedLapsNb",
+      team_pts_repartition: "S_PointsRepartition",
     }
   }
 
@@ -30,6 +47,9 @@ defmodule Mppm.GameRules do
   def get_script_variables_by_mode(%Mppm.Type.GameMode{name: "Time Attack"}), do: @script_settings.time_attack
   def get_script_variables_by_mode(2), do: @script_settings.rounds
   def get_script_variables_by_mode(%Mppm.Type.GameMode{name: "Rounds"}), do: @script_settings.rounds
+  def get_script_variables_by_mode(3), do: @script_settings.team
+  def get_script_variables_by_mode(%Mppm.Type.GameMode{name: "Team"}), do: @script_settings.team
+
 
   def get_script_settings_variables(), do: @script_settings
   def get_flat_script_variables(), do:
@@ -55,6 +75,23 @@ defmodule Mppm.GameRules do
     field :rounds_warmup_nb, :integer, default: 0
     field :rounds_warmup_duration, :integer, default: 0
     field :rounds_pts_repartition, :string, default: ""
+    ### Fields for Team
+    belongs_to :team_respawn_behaviour, Mppm.Ruleset.RespawnBehaviour, foreign_key: :team_respawn_behaviour_id
+    field :team_cumulate_pts, :boolean, default: false
+    field :team_custom_pts_repartition, :boolean, default: false
+    field :team_finish_timeout, :integer, default: -1
+    field :team_forced_laps_nb, :integer, default: 5
+    field :team_maps_per_match, :integer, default: 0
+    field :team_max_players_per_team, :integer, default: 3
+    field :team_min_players_per_team, :integer, default: 3
+    field :team_max_pts_per_round, :integer, default: 6
+    field :team_points_gap, :integer, default: 1
+    field :team_pts_limit, :integer, default: 5
+    field :team_pts_repartition, :string, default: ""
+    field :team_rounds_per_map, :integer, default: 0
+    field :team_use_tie_breaker, :boolean, default: false
+    field :team_warmup_duration, :integer, default: 0
+    field :team_warmup_nb, :integer, default: 0
   end
 
   @modes_fields [
@@ -63,10 +100,16 @@ defmodule Mppm.GameRules do
 
     :rounds_pts_limit, :rounds_finish_timeout,
     :rounds_forced_laps_nb, :rounds_maps_per_match, :rounds_rounds_per_map,
-    :rounds_warmup_nb, :rounds_warmup_duration, :rounds_pts_repartition
+    :rounds_warmup_nb, :rounds_warmup_duration, :rounds_pts_repartition,
+
+    :team_cumulate_pts, :team_custom_pts_repartition, :team_finish_timeout,
+    :team_forced_laps_nb, :team_maps_per_match, :team_max_players_per_team,
+    :team_max_pts_per_round, :team_min_players_per_team, :team_points_gap,
+    :team_pts_limit, :team_pts_repartition, :team_rounds_per_map,
+    :team_use_tie_breaker, :team_warmup_duration, :team_warmup_nb
   ]
   @all_fields @modes_fields ++ [
-    :server_id, :mode_id, :ta_respawn_behaviour_id, :rounds_respawn_behaviour_id
+    :server_id, :mode_id, :ta_respawn_behaviour_id, :rounds_respawn_behaviour_id, :team_respawn_behaviour_id
   ]
 
 
@@ -76,6 +119,7 @@ defmodule Mppm.GameRules do
     |> cast_assoc(:mode)
     |> cast_assoc(:ta_respawn_behaviour)
     |> cast_assoc(:rounds_respawn_behaviour)
+    |> cast_assoc(:team_respawn_behaviour)
   end
 
   def get_options_list(), do:

@@ -156,7 +156,7 @@
         <label>Warmup duration: <%= text_input rs, :rounds_warmup_duration %></label>
         <%= error_tag f, :rounds_warmup_duration %>
 
-        <label>Rounds/match: <%= text_input rs, :rounds_maps_per_match %></label>
+        <label>Maps/match: <%= text_input rs, :rounds_maps_per_match %></label>
         <%= error_tag f, :rounds_maps_per_match %>
 
         <label>Rounds/map: <%= text_input rs, :rounds_rounds_per_map %></label>
@@ -170,6 +170,60 @@
 
         <label>Forced laps: <%= text_input rs, :rounds_forced_laps_nb %></label>
         <%= error_tag f, :rounds_forced_laps_nb %>
+
+
+
+        <h2>Team</h2>
+
+        <label>Respawn bhvr: <%= select rs, :team_respawn_behaviour_id, respawn_behaviours %></label>
+        <%= error_tag f, :team_respawn_behaviour %>
+
+        <label>Finish Timeout: <%= text_input rs, :team_finish_timeout %></label>
+        <%= error_tag f, :team_finish_timeout %>
+
+        <label>Warmups nb: <%= text_input rs, :team_warmup_nb %></label>
+        <%= error_tag f, :team_warmup_nb %>
+
+        <label>Warmup duration: <%= text_input rs, :team_warmup_duration %></label>
+        <%= error_tag f, :team_warmup_duration %>
+
+        <label>Min pl./team: <%= text_input rs, :team_min_players_per_team %></label>
+        <%= error_tag f, :team_min_players_per_team %>
+
+        <label>Max pl./team: <%= text_input rs, :team_max_players_per_team %></label>
+        <%= error_tag f, :team_max_players_per_team %>
+
+        <label>Maps/match: <%= text_input rs, :team_maps_per_match %></label>
+        <%= error_tag f, :team_maps_per_match %>
+
+        <label>Rounds/map: <%= text_input rs, :team_rounds_per_map %></label>
+        <%= error_tag f, :team_rounds_per_map %>
+
+        <label>Points limit: <%= text_input rs, :team_pts_limit %></label>
+        <%= error_tag f, :team_pts_limit %>
+
+        <label>Points repart.: <%= text_input rs, :team_pts_repartition %></label>
+        <%= error_tag f, :team_pts_repartition %>
+
+        <label>Cumulate Points: <%= checkbox rs, :team_cumulate_pts %></label>
+        <%= error_tag f, :team_cumulate_pts %>
+
+        <label>Custom Points: <%= checkbox rs, :team_custom_pts_repartition %></label>
+        <%= error_tag f, :team_custom_pts_repartition %>
+
+        <label>Max pts/round: <%= text_input rs, :team_max_pts_per_round %></label>
+        <%= error_tag f, :team_max_pts_per_round %>
+
+        <label>Points gap: <%= text_input rs, :team_points_gap %></label>
+        <%= error_tag f, :team_points_gap %>
+
+        <label>Tie breaker: <%= checkbox rs, :team_use_tie_breaker %></label>
+        <%= error_tag f, :team_use_tie_breaker %>
+
+        <label>Forced laps: <%= text_input rs, :team_forced_laps_nb %></label>
+        <%= error_tag f, :team_forced_laps_nb %>
+
+
 
       <% end %>
     </section>
