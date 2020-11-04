@@ -104,7 +104,7 @@ defmodule MppmWeb.ServerManagerLive do
     track = get_mx_track_map(mx_track_id, socket.assigns.mx_tracks_result.tracks)
 
     tracklist = Mppm.Tracklist.add_track(socket.assigns.tracklist, track, params["index"]-1)
-
+    save_tracklist_change(tracklist)
     {:noreply, assign(socket, tracklist: tracklist)}
   end
 
@@ -120,23 +120,23 @@ defmodule MppmWeb.ServerManagerLive do
       tracklist.tracks
       |> List.pop_at(Enum.find_index(tracklist.tracks, & &1.id == track_id))
 
+
     tracklist = %{tracklist | tracks: List.insert_at(tracks_collection, params["index"], track)}
 
+    save_tracklist_change(tracklist)
     {:noreply, assign(socket, tracklist: tracklist)}
   end
 
   def handle_event("update-tracklist", params, socket) do
     Mppm.Tracklist.upsert_tracklist(socket.assigns.tracklist)
-
     GenServer.call({:global, {:mp_broker, socket.assigns.server_info.login}}, :reload_match_settings)
-
     {:noreply, socket}
   end
 
   def handle_event("remove-track-from-list", params, socket) do
     {track_id, ""} = Integer.parse(Map.get(params, "track-id"))
     tracklist = Mppm.Tracklist.remove_track(socket.assigns.tracklist, track_id)
-
+    save_tracklist_change(tracklist)
     {:noreply, assign(socket, tracklist: tracklist)}
   end
 
@@ -204,6 +204,12 @@ defmodule MppmWeb.ServerManagerLive do
   def handle_event("validate", params, socket) do
     {:ok, changeset} = get_changeset(socket.assigns.server_info.id, params["server_config"])
     {:noreply, assign(socket, changeset: changeset)}
+  end
+
+
+  def save_tracklist_change(%Mppm.Tracklist{} = tracklist) do
+    tracklist = Mppm.Tracklist.upsert_tracklist(tracklist) |> Mppm.Repo.preload(:server)
+    GenServer.call({:global, {:mp_broker, tracklist.server.login}}, :reload_match_settings)
   end
 
   def get_mx_track_map(mx_track_id, tracks_list) when is_integer(mx_track_id) do
