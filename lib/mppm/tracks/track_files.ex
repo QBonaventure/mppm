@@ -6,6 +6,8 @@ defmodule Mppm.TracksFiles do
   @mx_directory "MX/"
   @mx_path "#{@maps_path}#{@mx_directory}"
 
+  def mx_path(), do: @mx_path
+
 
   def handle_call(:get_tracks, _from, state) do
     {:reply, state.tracks_files, state}

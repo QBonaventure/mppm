@@ -153,9 +153,13 @@ defmodule Mppm.ManiaplanetServer do
 
   @game_server_download_path "/tmp/tm_server_latest.zip"
 
-  def update_game_server() do
+  def update_game_server(root_path) do
+    IO.puts "Installing lastest Trackmania game server"
+    IO.puts "Downloading files..."
     {:ok, %HTTPoison.Response{body: body}} = HTTPoison.get(Keyword.get(@config, :download_link))
-    :zip.unzip(body, [{:cwd, ~c'#{@root_path}'}])
+    IO.puts "Installing game server files..."
+    :zip.unzip(body, [{:cwd, ~c'#{root_path}'}])
+    IO.puts "Game server installed/updated"
     :ok
   end
 
