@@ -53,7 +53,7 @@ defmodule Mppm.ManiaplanetServerSupervisor do
   end
 
 
-  def handle_info(msg, state) do
+  def handle_info(_msg, state) do
     {:noreply, state}
   end
 

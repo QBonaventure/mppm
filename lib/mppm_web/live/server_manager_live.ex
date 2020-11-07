@@ -1,9 +1,8 @@
 defmodule MppmWeb.ServerManagerLive do
   use Phoenix.LiveView
-  alias Mppm.Repo
+
 
   def render(assigns) do
-    # GenServer.call({:global, {:mp_broker, assigns.server_info.login}}, {:query, :get_current_map_info})
     MppmWeb.ServerManagerView.render("index.html", assigns)
   end
 
@@ -54,27 +53,27 @@ defmodule MppmWeb.ServerManagerLive do
   end
 
 
-  def handle_event("skip-map", params, socket) do
+  def handle_event("skip-map", _params, socket) do
     GenServer.cast(broker_pname(socket.assigns.server_info.login), :skip_map)
     {:noreply, socket}
   end
 
-  def handle_event("restart-map", params, socket) do
+  def handle_event("restart-map", _params, socket) do
     GenServer.cast(broker_pname(socket.assigns.server_info.login), :restart_map)
     {:noreply, socket}
   end
 
-  def handle_event("end-round", params, socket) do
+  def handle_event("end-round", _params, socket) do
     GenServer.cast(broker_pname(socket.assigns.server_info.login), :end_round)
     {:noreply, socket}
   end
 
-  def handle_event("end-warmup", params, socket) do
+  def handle_event("end-warmup", _params, socket) do
     GenServer.cast(broker_pname(socket.assigns.server_info.login), :end_warmup)
     {:noreply, socket}
   end
 
-  def handle_event("end-all-warmup", params, socket) do
+  def handle_event("end-all-warmup", _params, socket) do
     GenServer.cast(broker_pname(socket.assigns.server_info.login), :end_all_warmup)
     {:noreply, socket}
   end
@@ -231,15 +230,6 @@ defmodule MppmWeb.ServerManagerLive do
         {:ok, changeset}
     end
   end
-
-
-
-
-
-defp get_dt(datetime) when is_binary(datetime) do
-  {:ok, dt, _} = DateTime.from_iso8601(datetime<>"Z")
-  DateTime.truncate(dt, :second)
-end
 
 
 def get_data(), do:
