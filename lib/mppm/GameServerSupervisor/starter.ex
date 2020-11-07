@@ -48,7 +48,7 @@ defmodule Mppm.GameServerSupervisor.Starter do
     pids_list = get_pids_list()
     result =
       case pids_list do
-        [] -> "TODO"
+        [] -> []
         pids ->
           Enum.map(pids, & get_processes_xmlrpc_ports(&1))
       end

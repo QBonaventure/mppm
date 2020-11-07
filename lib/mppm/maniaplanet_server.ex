@@ -64,8 +64,10 @@ defmodule Mppm.ManiaplanetServer do
     state =
       case get_listening_ports(os_pid) do
         {:ok, listening_ports} ->
-          Mppm.Broker.child_spec(state.config, listening_ports["xmlrpc"])
-          |> Mppm.ManiaplanetServerSupervisor.start_child()
+          {:ok, _child_pid} =
+            Mppm.Broker.Supervisor.child_spec(state.config, listening_ports["xmlrpc"])
+            |> Mppm.ManiaplanetServerSupervisor.start_child()
+          
           Phoenix.PubSub.broadcast(Mppm.PubSub, "server_status", :update)
           %{state | status: "started", listening_ports: listening_ports, port: port}
         {:error, _} ->
@@ -79,7 +81,7 @@ defmodule Mppm.ManiaplanetServer do
   def handle_cast({:relink_orphan_process, {login, pid, xmlrpc_port}}, state) do
     server_config = Mppm.Repo.get_by(Mppm.ServerConfig, login: login)
 
-    Mppm.Broker.child_spec(state.config, xmlrpc_port)
+    Mppm.Broker.Supervisor.child_spec(state.config, xmlrpc_port)
     |> Mppm.ManiaplanetServerSupervisor.start_child
 
     update_status(login, "started")
@@ -101,7 +103,7 @@ defmodule Mppm.ManiaplanetServer do
   ###################################
 
   def stop_server(state) do
-    GenServer.call({:global, {:mp_broker, state.config.login}}, :stop)
+    GenServer.call({:global, {:broker_requester, state.config.login}}, :stop)
     pid =
       case state.port do
         nil ->
