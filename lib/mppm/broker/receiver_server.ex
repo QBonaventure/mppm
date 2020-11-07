@@ -63,7 +63,6 @@ defmodule Mppm.Broker.ReceiverServer do
 
 
   defp transmit_to_server_supervisor(login, message) do
-    IO.inspect message
     message = XMLRPC.decode! message
 
     case message do
@@ -146,7 +145,6 @@ defmodule Mppm.Broker.ReceiverServer do
 
 
   def start_link([login, _, _] = init_args) do
-    IO.inspect init_args
     GenServer.start_link(__MODULE__, init_args, name: {:global, {:broker_receiver, login}})
   end
 
@@ -161,7 +159,6 @@ defmodule Mppm.Broker.ReceiverServer do
       status: :disconnected,
       incoming_message: nil,
     }
-    |> IO.inspect
     {:ok, init_state}
   end
 

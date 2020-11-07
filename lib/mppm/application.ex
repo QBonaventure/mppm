@@ -85,7 +85,7 @@ defmodule Mppm.Application do
       :ok = File.cp_r("./priv/default_tracks/", Mppm.TracksFiles.mx_path(), fn _, _ -> false end)
     end
 
-     :ok
+    :ok
   end
 
 end
