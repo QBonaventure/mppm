@@ -1,15 +1,6 @@
 defmodule Mppm.Broker.Supervisor do
   use Supervisor
 
-
-  @xmlrpc_conn_opts [:binary, {:active, true}, {:reuseaddr, true}, {:keepalive, true}, {:send_timeout, 20000}]
-
-
-  def open_connection(port) do
-    :gen_tcp.connect({127, 0, 0, 1}, port, @xmlrpc_conn_opts)
-  end
-
-
   def child_spec(game_server_config, xmlrpc_port) do
     %{
       id: __MODULE__,
