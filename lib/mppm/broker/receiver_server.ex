@@ -6,6 +6,12 @@ defmodule Mppm.Broker.ReceiverServer do
 
   @handshake_response <<11,0,0,0>> <> "GBXRemote 2"
   @header_size 8
+  @xmlrpc_conn_opts [:binary, {:active, true}, {:reuseaddr, true}, {:keepalive, true}, {:send_timeout, 20000}]
+
+
+  def open_connection(port) do
+    :gen_tcp.connect({127, 0, 0, 1}, port, @xmlrpc_conn_opts)
+  end
 
 
   def pubsub_topic(server_login), do: "server_status_"<>server_login
@@ -16,6 +22,7 @@ defmodule Mppm.Broker.ReceiverServer do
   end
 
   def handle_info({:tcp, _port, @handshake_response}, state), do: {:noreply, %{state | status: :connected}}
+  def handle_info({:tcp, _port, "GBXRemote 2"}, state), do: {:noreply, %{state | status: :connected}}
 
   def handle_info({:tcp, _port, binary}, %{incoming_message: nil} = state) do
     {:ok, incoming_message} = parse_new_packet(state.login, binary)
@@ -56,7 +63,13 @@ defmodule Mppm.Broker.ReceiverServer do
         {:ok, nil}
       _ ->
         <<end_of_message::binary-size(missing_bytes), next_message::binary>> = binary
-        transmit_to_server_supervisor(login, incoming_message.message <> end_of_message)
+
+        msg_to_transmit =
+          case incoming_message do
+            <<150,0,0,0,255,255,255,255>> -> end_of_message
+            _ -> incoming_message.message <> end_of_message
+          end
+        transmit_to_server_supervisor(login, msg_to_transmit)
         parse_new_packet(login, next_message)
     end
   end
@@ -150,7 +163,7 @@ defmodule Mppm.Broker.ReceiverServer do
 
   def init([login, xmlrpc_port, superadmin_pwd]) do
     Process.flag(:trap_exit, true)
-    {:ok, socket} = Mppm.Broker.Supervisor.open_connection(xmlrpc_port)
+    {:ok, socket} = open_connection(xmlrpc_port)
 
     init_state = %{
       socket: socket,

@@ -103,7 +103,7 @@ defmodule Mppm.ManiaplanetServer do
   ###################################
 
   def stop_server(state) do
-    GenServer.call({:global, {:broker_requester, state.config.login}}, :stop)
+    Supervisor.stop({:global, {:broker_supervisor, state.config.login}})
     pid =
       case state.port do
         nil ->
