@@ -2,7 +2,7 @@ defmodule Mppm.ConnectedUsers do
   use GenServer
 
   def get_connected_users(server_login) do
-    GenServer.call(Mppm.ConnectedUsers, :get_state) |> Map.get(:servers_users) |> Map.get(server_login)
+    GenServer.call(Mppm.ConnectedUsers, :get_state) |> Map.get(:servers_users) |> Map.get(server_login, [])
   end
 
   def get_connected_users() do
