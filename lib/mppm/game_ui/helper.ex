@@ -5,14 +5,14 @@ defmodule Mppm.GameUI.Helper do
     xml = Mppm.XML.to_doc(manialink)
 
     GenServer.call(
-      {:global, {:mp_broker, server_login}},
+      {:global, {:broker_requester, server_login}},
       {:display_to_client_with_login, xml, user_login, false, 0}
     )
   end
 
   def send_to_all(manialink, server_login) do
     xml = Mppm.XML.to_doc(manialink)
-    GenServer.call({:global, {:mp_broker, server_login}}, {:display, xml, false, 0})
+    GenServer.call({:global, {:broker_requester, server_login}}, {:display, xml, false, 0})
   end
 
 

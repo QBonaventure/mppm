@@ -13,8 +13,12 @@ defmodule Mppm.ManiaplanetServerSupervisor do
     DynamicSupervisor.init(strategy: :one_for_one)
   end
 
-  def start_child(mps_spec) do
-    DynamicSupervisor.start_child(__MODULE__, mps_spec)
+  def start_child(%{id: Mppm.ManiaplanetServer} = mps_spec) do
+    {:ok, _child_pid} = DynamicSupervisor.start_child(__MODULE__, mps_spec)
+  end
+
+  def start_child(%{id: Mppm.Broker.Supervisor} = broker_spec) do
+    {:ok, _child_pid} = DynamicSupervisor.start_child(__MODULE__, broker_spec)
   end
 
   def start_server_supervisor(%ServerConfig{} = server_config) do

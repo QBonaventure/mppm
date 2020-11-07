@@ -41,7 +41,7 @@ defmodule Mppm.ConnectedUsers do
   def handle_cast({:user_connection, server_login, user_login}, state) do
     case Mppm.Repo.get_by(Mppm.User, %{login: user_login}) do
       nil ->
-        :ok = GenServer.cast({:global, {:mp_broker, server_login}}, {:request_user_info, user_login})
+        :ok = GenServer.cast({:global, {:broker_requester, server_login}}, {:request_user_info, user_login})
         {:noreply, %{state | unknown_users: add_unknown_user(state, server_login, user_login)}}
       user ->
         {:noreply, %{state | servers_users: add_server_user(state, server_login, user)}}

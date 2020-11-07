@@ -8,7 +8,7 @@ defmodule MppmWeb.ServerManagerLive do
   end
 
   def mount(params, _session, socket) do
-    MppmWeb.Endpoint.subscribe(Mppm.Broker.pubsub_topic(params["server_login"]))
+    MppmWeb.Endpoint.subscribe(Mppm.Broker.ReceiverServer.pubsub_topic(params["server_login"]))
 
     server_config = Mppm.ServerConfig.get_server_config(params["server_login"])
     # TODO: implement the login system and actually select the right user
@@ -38,12 +38,12 @@ defmodule MppmWeb.ServerManagerLive do
       |> assign(respawn_behaviours: Mppm.Repo.all(Mppm.Ruleset.RespawnBehaviour))
       |> assign(chat: Mppm.ChatMessage.get_last_chat_messages(server_config.id))
 
-        GenServer.call({:global, {:mp_broker, server_config.login}}, {:query, :get_current_map_info})
+        GenServer.call({:global, {:broker_requester, server_config.login}}, {:query, :get_current_map_info})
 
     {:ok, socket}
   end
 
-  def broker_pname(server_login), do: {:global, {:mp_broker, server_login}}
+  def broker_pname(server_login), do: {:global, {:broker_requester, server_login}}
 
 
   def handle_event("update-config", params, socket) do
@@ -130,7 +130,7 @@ defmodule MppmWeb.ServerManagerLive do
 
   def handle_event("update-tracklist", params, socket) do
     Mppm.Tracklist.upsert_tracklist(socket.assigns.tracklist)
-    GenServer.call({:global, {:mp_broker, socket.assigns.server_info.login}}, :reload_match_settings)
+    GenServer.call({:global, {:broker_requester, socket.assigns.server_info.login}}, :reload_match_settings)
     {:noreply, socket}
   end
 
@@ -210,7 +210,7 @@ defmodule MppmWeb.ServerManagerLive do
 
   def save_tracklist_change(%Mppm.Tracklist{} = tracklist) do
     tracklist = Mppm.Tracklist.upsert_tracklist(tracklist) |> Mppm.Repo.preload(:server)
-    GenServer.call({:global, {:mp_broker, tracklist.server.login}}, :reload_match_settings)
+    GenServer.call({:global, {:broker_requester, tracklist.server.login}}, :reload_match_settings)
   end
 
   def get_mx_track_map(mx_track_id, tracks_list) when is_integer(mx_track_id) do
