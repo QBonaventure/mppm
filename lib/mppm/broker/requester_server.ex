@@ -1,5 +1,6 @@
 defmodule Mppm.Broker.RequesterServer do
   use GenServer
+  require Logger
 
 
   @handshake_id_bytes <<255,255,255,255>>
@@ -204,6 +205,7 @@ defmodule Mppm.Broker.RequesterServer do
       superadmin_pwd: superadmin_pwd,
       status: :disconnected,
     }
+    Logger.info "Broker requester for "<>login<>" started."
 
     {:ok, init_state, {:continue, :authenticate}}
   end

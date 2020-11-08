@@ -1,4 +1,5 @@
 defmodule Mppm.Broker.ReceiverServer do
+  require Logger
   use GenServer
   alias Mppm.Broker.BinaryMessage
   alias Mppm.ServerConfig
@@ -128,7 +129,9 @@ defmodule Mppm.Broker.ReceiverServer do
       status: :disconnected,
       incoming_message: nil,
     }
+    Logger.info "Broker receiver for "<>login<>" started."
     {:ok, init_state}
   end
+
 
 end
