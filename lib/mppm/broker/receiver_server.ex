@@ -76,65 +76,21 @@ defmodule Mppm.Broker.ReceiverServer do
 
 
   defp transmit_to_server_supervisor(login, message) do
-    message = XMLRPC.decode! message
+    try do
+      XMLRPC.decode! message
+    rescue
+      XMLRPC.DecodeError ->
+        Logger.error message
+        GenServer.stop :error
+    else
+      message -> case message do
+        %XMLRPC.MethodCall{} -> Mppm.Broker.MethodCall.dispatch(login, message)
+        %XMLRPC.MethodResponse{} -> Mppm.Broker.MethodResponse.dispatch(login, message)
+        d -> IO.inspect d
+      end
 
-    case message do
-      %XMLRPC.MethodCall{} ->
-        case message.method_name do
-          "ManiaPlanet.EndMatch" ->
-            Phoenix.PubSub.broadcast(Mppm.PubSub, pubsub_topic(login), {:endmatch})
-          "ManiaPlanet.EndMap" ->
-            Phoenix.PubSub.broadcast(Mppm.PubSub, "maps-status", {:endmap, login, List.first(message.params) |> Map.get("UId")})
-            Phoenix.PubSub.broadcast(Mppm.PubSub, pubsub_topic(login), {:endmap})
-          "ManiaPlanet.BeginMap" ->
-            Phoenix.PubSub.broadcast(Mppm.PubSub, "maps-status", {:beginmap, login, List.first(message.params) |> Map.get("UId")})
-            Phoenix.PubSub.broadcast(Mppm.PubSub, pubsub_topic(login), {:beginmap, List.first(message.params)})
-          "ManiaPlanet.BeginMatch" ->
-            Phoenix.PubSub.broadcast(Mppm.PubSub, pubsub_topic(login), {:beginmatch})
-          "ManiaPlanet.PlayerChat" ->
-            {user, text} =
-              case message.params do
-                [0, _, text, _] ->
-                  [[player_nick, text]] = Regex.scan(~r"\[(.*)\]\s(.*)", text, capture: :all_but_first)
-                  {Mppm.Repo.get_by(Mppm.User, nickname: player_nick), text}
-                [_, player_login, text, _] ->
-                  {Mppm.Repo.get_by(Mppm.User, login: player_login), text}
-              end
-            server = Mppm.Repo.get_by(Mppm.ServerConfig, login: login)
-            {:ok, chat_message} =
-              %Mppm.ChatMessage{}
-              |> Mppm.ChatMessage.changeset(user, server, %{text: text})
-              |> Mppm.Repo.insert
-            Phoenix.PubSub.broadcast(Mppm.PubSub, pubsub_topic(login), {:new_chat_message, chat_message})
-          "ManiaPlanet.PlayerConnect" ->
-            Phoenix.PubSub.broadcast(Mppm.PubSub, "players-status", {:user_connection_to_server, login, List.first(message.params)})
-            GenServer.cast(Mppm.ConnectedUsers, {:user_connection, login, List.first(message.params)})
-          "ManiaPlanet.PlayerDisconnect" ->
-            GenServer.cast(Mppm.ConnectedUsers, {:user_disconnection, login, List.first(message.params)})
-          "ManiaPlanet.ModeScriptCallbackArray" ->
-            case message.params do
-              ["Trackmania.Event.WayPoint", data] ->
-                Phoenix.PubSub.broadcast(Mppm.PubSub, Mppm.TimeTracker.get_pubsub_topic(), {Jason.decode!(data), login})
-              _ ->
-            end
-          _ ->
-        end
-      %XMLRPC.MethodResponse{param: %{"Login" => login, "NickName" => nickname, "PlayerId" => player_id}} ->
-        user = %{login: login, nickname: nickname, player_id: player_id}
-        GenServer.cast(Mppm.ConnectedUsers, {:connected_user_info, user})
-      %XMLRPC.MethodResponse{param: %{"UId" => track_uid} = map_info} ->
-        Phoenix.PubSub.broadcast(Mppm.PubSub, "maps-status", {:update_server_map, login, track_uid})
-        Phoenix.PubSub.broadcast(Mppm.PubSub, pubsub_topic(login), {:current_map_info, map_info})
-      %XMLRPC.MethodResponse{param: [%{"PlayerId" => 0} | remainder] = list} ->
-        Enum.each(
-          remainder,
-          & Phoenix.PubSub.broadcast(Mppm.PubSub, "players-status", {:user_connection_to_server, login, Map.get(&1, "Login")})
-        )
-        Enum.each(remainder, & GenServer.cast(Mppm.ConnectedUsers, {:user_connection, login, Map.get(&1, "Login")}))
-      d ->
+      # GenServer.cast({:global, {:mp_server, login}}, {:incoming_game_message, message})
     end
-
-    GenServer.cast({:global, {:mp_server, login}}, {:incoming_game_message, message})
   end
 
 

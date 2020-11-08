@@ -29,7 +29,7 @@ defmodule Mppm.Broker.Supervisor do
       {Mppm.Broker.ReceiverServer, [login, xmlrpc_port, superadmin_pwd]},
       {Mppm.Broker.RequesterServer, [login, xmlrpc_port, superadmin_pwd]}
     ]
-    Supervisor.init(children, strategy: :one_for_one)
+    Supervisor.init(children, strategy: :rest_for_one)
   end
 
 end
