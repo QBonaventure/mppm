@@ -65,6 +65,10 @@
   </div>
 </section>
 
+
+<%= live_component @socket, MppmWeb.Live.Component.UsersList, server_users: @server_users %>
+
+
 <section id="search-tracks">
   <%= mxo = form_for @mx_query_options, "#", [phx_change: "validate-mx-query", phx_submit: "send-mx-request"] %>
     <%= submit "Search" , disabled: Kernel.not @mx_query_options.valid? %>

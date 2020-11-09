@@ -77,7 +77,7 @@ defmodule Mppm.TimeTracker do
   end
 
   def handle_info({%{"isendlap" => false, "login" => player_login, "racetime" => time}, server_login}, state) do
-    {:noreply, Map.update!(state, player_login, & &1 ++ [time])}
+    {:noreply, Map.update(state, player_login, [time], & &1 ++ [time])}
   end
 
   def handle_info({id, server_login, track_uid}, state) when id in [:beginmap, :update_server_map] do

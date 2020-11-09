@@ -20,14 +20,18 @@ defmodule Mppm.ConnectedUsers do
 
   def add_server_user(state, server_login, %Mppm.User{} = user) do
     server_list = Map.get(state.servers_users, server_login, [])
-    Map.put(state.servers_users, server_login, [user | server_list])
+    servers_users = Map.put(state.servers_users, server_login, Enum.uniq([user | server_list]))
+    Phoenix.PubSub.broadcast(Mppm.PubSub, "players-status", {:servers_users_updated, servers_users})
+    servers_users
   end
 
-  def remove_server_user(state, server_login, user_login) do
+  def remove_server_user(state, server_login, user_struct) do
     server_list =
       Map.get(state.servers_users, server_login)
-      |> Enum.reject(& &1.login == user_login)
-    Map.put(state.servers_users, server_login, server_list)
+      |> Enum.reject(& &1.login == user_struct)
+    servers_users = Map.put(state.servers_users, server_login, server_list)
+    Phoenix.PubSub.broadcast(Mppm.PubSub, "players-status", {:servers_users_updated, servers_users})
+    servers_users
   end
 
   def add_unknown_user(state, server_login, user_login), do:

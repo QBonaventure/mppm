@@ -5,6 +5,11 @@
 
 
 
+:root {
+  --ftc-red-color: #991b15;
+  --ftc-white-color: #e9dfc0;
+}
+
 form > span {
   float: left;
   padding: 15px 10px 5px;
@@ -276,4 +281,24 @@ div.track-author {
 div.track-rewards {
   width: 24px;
   text-align: center;
+}
+
+
+
+
+/********************* USERS LIST **********************/
+
+
+div#users-list-component {
+  right: 0;
+  position: fixed;
+  background-color: var(--ftc-red-color);
+  padding: 2px 5px;
+}
+
+div#users-list-component section {
+  background-color: var(--ftc-white-color);
+  margin: 3px 0;
+  width: 150px;
+  padding: 0px 5px;
 }

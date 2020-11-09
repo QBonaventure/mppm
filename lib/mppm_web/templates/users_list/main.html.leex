@@ -1,0 +1,12 @@
+<div id="users-list-component">
+  <section id="users-list-summary">
+    <b><%= Enum.count(@server_users) %></b> users.
+  </section>
+  <div id="users-list-section">
+    <%= for user <- @server_users do %>
+      <section id="server_users">
+          <%= user.nickname %>
+      </section>
+    <% end %>
+  </div>
+</div>

@@ -1,23 +1,23 @@
 defmodule Mppm.Broker.MethodCall do
 
 
-
   def pubsub_topic(server_login), do: "server_status_"<>server_login
 
 
 
   def dispatch(server_login, %XMLRPC.MethodCall{method_name: "ManiaPlanet.ModeScriptCallbackArray", params: [callback_name, [raw_data]]}) do
     {:ok, data} = Jason.decode(raw_data)
-    IO.inspect callback_name
     dispatch_script_callback(server_login, callback_name, data)
   end
+
+  def dispatch(server_login, %XMLRPC.MethodCall{method_name: method_name, params: data}) do
+    dispatch_message(server_login, method_name, data)
+  end
+
 
 
   def dispatch_script_callback(server_login, "Trackmania.Event.WayPoint", data) do
     Phoenix.PubSub.broadcast(Mppm.PubSub, Mppm.TimeTracker.get_pubsub_topic(), {data, server_login})
-  end
-
-  def dispatch_script_callback(_server_login, "ManiaPlanet.ModeScriptCallbackArray", _data) do
   end
 
   def dispatch_script_callback(_server_login,  "Trackmania.Event.StartLine", _data) do
@@ -32,6 +32,17 @@ defmodule Mppm.Broker.MethodCall do
   def dispatch_script_callback(_server_login, "Trackmania.Event.Respawn", _data) do
   end
 
+
+
+  # "Maniaplanet.StartServer_Start"
+  # %{
+  #   data: %{
+  #     "mode" => %{"name" => "TM_Rounds_Online", "updated" => true},
+  #     "restarted" => true,
+  #     "time" => 6902042
+  #   },
+  #   script_callback: "Maniaplanet.StartServer_Start"
+  # }
   def dispatch_script_callback(_server_login, "Maniaplanet.StartServer_Start", _data) do
   end
 
@@ -48,6 +59,12 @@ defmodule Mppm.Broker.MethodCall do
   end
 
   def dispatch_script_callback(_server_login, "Maniaplanet.LoadingMap_End", _data) do
+  end
+
+  def dispatch_script_callback(_server_login, "Maniaplanet.UnloadingMap_Start", _data) do
+  end
+
+  def dispatch_script_callback(_server_login, "Maniaplanet.UnloadingMap_End", _data) do
   end
 
   def dispatch_script_callback(_server_login, "Maniaplanet.StartMap_Start", _data) do
@@ -110,29 +127,35 @@ defmodule Mppm.Broker.MethodCall do
 
 
 
-  def dispatch(server_login, %XMLRPC.MethodCall{method_name: "ManiaPlanet.EndMatch"}) do
+
+  def dispatch_message(server_login, "ManiaPlanet.StatusChanged", [_status_code, _status_name]) do
+  end
+
+  def dispatch_message(server_login, "ManiaPlanet.MapListModified", [_cur_track_index, _next_map_index, _is_list_modified?]) do
+  end
+
+  def dispatch_message(server_login, "ManiaPlanet.EndMatch", [_list_of_user_ranking, _winning_team_id]) do
     Phoenix.PubSub.broadcast(Mppm.PubSub, pubsub_topic(server_login), {:endmatch})
   end
 
-
-  def dispatch(server_login, %XMLRPC.MethodCall{method_name: "ManiaPlanet.EndMap", params: data}) do
-    Phoenix.PubSub.broadcast(Mppm.PubSub, "maps-status", {:endmap, server_login, List.first(data) |> Map.get("UId")})
+  def dispatch_message(server_login, "ManiaPlanet.EndMap", [%{"UId" => track_uid} = _track_info_map]) do
+    Phoenix.PubSub.broadcast(Mppm.PubSub, "maps-status", {:endmap, server_login, track_uid})
     Phoenix.PubSub.broadcast(Mppm.PubSub, pubsub_topic(server_login), {:endmap})
   end
 
 
-  def dispatch(server_login, %XMLRPC.MethodCall{method_name: "ManiaPlanet.BeginMap", params: data}) do
-    Phoenix.PubSub.broadcast(Mppm.PubSub, "maps-status", {:beginmap, server_login, List.first(data) |> Map.get("UId")})
-    Phoenix.PubSub.broadcast(Mppm.PubSub, pubsub_topic(server_login), {:beginmap, List.first(data)})
+  def dispatch_message(server_login, "ManiaPlanet.BeginMap", [%{"UId" => track_uid} = track_info_map]) do
+    Phoenix.PubSub.broadcast(Mppm.PubSub, "maps-status", {:beginmap, server_login, track_uid})
+    Phoenix.PubSub.broadcast(Mppm.PubSub, pubsub_topic(server_login), {:beginmap, track_info_map})
   end
 
 
-  def dispatch(server_login, %XMLRPC.MethodCall{method_name: "ManiaPlanet.BeginMatch", params: data}) do
+  def dispatch_message(server_login, "ManiaPlanet.BeginMatch", []) do
     Phoenix.PubSub.broadcast(Mppm.PubSub, pubsub_topic(server_login), {:beginmatch})
   end
 
 
-  def dispatch(server_login, %XMLRPC.MethodCall{method_name: "ManiaPlanet.PlayerChat", params: data}) do
+  def dispatch_message(server_login, "ManiaPlanet.PlayerChat", data) do
     {user, text} =
       case data do
         [0, _, text, _] ->
@@ -155,23 +178,23 @@ defmodule Mppm.Broker.MethodCall do
   end
 
 
-  def dispatch(server_login, %XMLRPC.MethodCall{method_name: "ManiaPlanet.PlayerConnect", params: data}) do
-    Phoenix.PubSub.broadcast(Mppm.PubSub, "players-status", {:user_connection_to_server, server_login, List.first(data)})
-    GenServer.cast(Mppm.ConnectedUsers, {:user_connection, server_login, List.first(data)})
+  def dispatch_message(server_login, "ManiaPlanet.PlayerConnect", [user_login, _is_spectator]) do
+    Phoenix.PubSub.broadcast(Mppm.PubSub, "player-status", {:user_connection_to_server, server_login, user_login})
+    GenServer.cast(Mppm.ConnectedUsers, {:user_connection, server_login, user_login})
   end
 
 
-  def dispatch(server_login, %XMLRPC.MethodCall{method_name: "ManiaPlanet.PlayerDisconnect", params: data}) do
-    GenServer.cast(Mppm.ConnectedUsers, {:user_disconnection, server_login, List.first(data)})
+  def dispatch_message(server_login, "ManiaPlanet.PlayerDisconnect", [user_login, _reason]) do
+    GenServer.cast(Mppm.ConnectedUsers, {:user_disconnection, server_login, user_login})
   end
 
 
-  def dispatch(server_login, %XMLRPC.MethodCall{method_name: "ManiaPlanet.PlayerInfoChanged", params: [data]}) do
+  def dispatch_message(server_login, "ManiaPlanet.PlayerInfoChanged", _player_info_map) do
   end
 
 
-  def dispatch(server_login, %XMLRPC.MethodCall{} = message) do
-    IO.inspect message
+  def dispatch_message(server_login, method_name, data) do
+    IO.inspect %{method: method_name, data: data}
   end
 
 

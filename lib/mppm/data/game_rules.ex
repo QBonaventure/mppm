@@ -15,9 +15,10 @@ defmodule Mppm.GameRules do
       ta_forced_laps_nb: "S_ForceLapsNb",
     },
     :rounds => %{
+      rounds_respawn_behaviour_id: "S_RespawnBehaviour",
       rounds_pts_limit: "S_PointsLimit",
       rounds_finish_timeout: "S_FinishTimeout",
-      rounds_forced_laps_nb: "S_ForcedLapsNb",
+      rounds_forced_laps_nb: "S_ForceLapsNb",
       rounds_maps_per_match: "S_MapsPerMatch",
       rounds_rounds_per_map: "S_RoundsPerMap",
       rounds_warmup_nb: "S_WarmUpNb",
@@ -25,6 +26,7 @@ defmodule Mppm.GameRules do
       rounds_pts_repartition: "S_PointsRepartition",
     },
     :team => %{
+      team_respawn_behaviour_id: "S_RespawnBehaviour",
       team_pts_limit: "S_PointsLimit",
       team_max_pts_per_round: "S_MaxPointsPerRound",
       team_points_gap: "S_PointsGap",
@@ -38,7 +40,7 @@ defmodule Mppm.GameRules do
       team_max_players_per_team: "S_NbPlayersPerTeamMax",
       team_min_players_per_team: "S_NbPlayersPerTeamMin",
       team_finish_timeout: "S_FinishTimeout",
-      team_forced_laps_nb: "S_ForcedLapsNb",
+      team_forced_laps_nb: "S_ForceLapsNb",
       team_pts_repartition: "S_PointsRepartition",
     }
   }

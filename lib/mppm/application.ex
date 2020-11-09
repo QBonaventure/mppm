@@ -1,4 +1,5 @@
 defmodule Mppm.Application do
+  require Logger
   # See https://hexdocs.pm/elixir/Application.html
   # for more information on OTP Applications
   @moduledoc false
@@ -57,7 +58,7 @@ defmodule Mppm.Application do
 
 
   def check_install() do
-    IO.puts "Checking directory '#{@root_path}' exists..."
+    Logger.info "Checking directory '#{@root_path}' exists..."
     unless File.exists?(@root_path) do
       case File.mkdir_p!(@root_path) do
         {_, :enoent} -> raise File.Error, "Couldn't create the '#{@root_path}' directory. Please check file permissions, or create the MPPM folder manually.'"
@@ -66,7 +67,7 @@ defmodule Mppm.Application do
       end
     end
 
-    IO.puts "Checking the game server is installed..."
+    Logger.info "Checking the game server is installed..."
     try do Port.open({:spawn_executable, @root_path<>"/TrackmaniaServer"}, [:binary, args: ["/nodaemon"]])
     rescue
       ErlangError ->
@@ -76,12 +77,12 @@ defmodule Mppm.Application do
     :ok == File.mkdir(Mppm.TracksFiles.mx_path())
 
     if {:ok, []} == File.ls(@root_path<>"/UserData/Maps/MX") do
-      IO.puts "Copying your game server first track!"
+      Logger.info "Copying your game server first track!"
       {:ok, _} = File.cp_r("./priv/default_tracks/", @root_path<>"/UserData/Maps/MX", fn _, _ -> false end)
     end
 
     if {:ok, []} == File.ls(Mppm.TracksFiles.mx_path()) do
-      IO.puts "Copying your game server first track..."
+      Logger.info "Copying your game server first track..."
       :ok = File.cp_r("./priv/default_tracks/", Mppm.TracksFiles.mx_path(), fn _, _ -> false end)
     end
 

@@ -12,7 +12,7 @@ defmodule Mppm.Broker.RequesterServer do
       :ok ->
         :ok
       {:error, :closed} ->
-        IO.puts "-----BROKER: an error occured while sending query"
+        Logger.error "An error occured while sending query to "<>broker_state.login
         {:error, :closed}
     end
   end

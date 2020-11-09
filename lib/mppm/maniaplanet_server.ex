@@ -17,6 +17,8 @@ defmodule Mppm.ManiaplanetServer do
   end
 
 
+
+
   def get_listening_ports(pid, tries) when is_integer(pid) and tries >= @max_start_attempts do
     kill_server_process(pid)
     {:error, :unknown_reason}
@@ -38,7 +40,7 @@ defmodule Mppm.ManiaplanetServer do
       %{"xmlrpc" => _xmlrpc, "server" => _server} ->
         {:ok, res}
       _ ->
-        IO.puts @msg_waiting_ports
+        Logger.info @msg_waiting_ports
         Process.sleep(1000)
         get_listening_ports(pid, tries+1)
     end
@@ -71,6 +73,7 @@ defmodule Mppm.ManiaplanetServer do
           Phoenix.PubSub.broadcast(Mppm.PubSub, "server_status", :update)
           %{state | status: "started", listening_ports: listening_ports, port: port}
         {:error, _} ->
+          Logger.info "Server '"<>state.config.login<>"' couldn't start"
           %{state | status: "stopped"}
       end
 
@@ -117,6 +120,8 @@ defmodule Mppm.ManiaplanetServer do
 
     update_status(state.config.login, "stopped")
 
+    Logger.info "Server '"<>state.config.login<>"' has been stopped"
+
     {:ok, %{state | port: nil, status: "stopped"}}
   end
 
@@ -156,12 +161,12 @@ defmodule Mppm.ManiaplanetServer do
   @game_server_download_path "/tmp/tm_server_latest.zip"
 
   def update_game_server(root_path) do
-    IO.puts "Installing lastest Trackmania game server"
-    IO.puts "Downloading files..."
+    Logger.info "Installing lastest Trackmania game server"
+    Logger.info "Downloading files..."
     {:ok, %HTTPoison.Response{body: body}} = HTTPoison.get(Keyword.get(@config, :download_link))
-    IO.puts "Installing game server files..."
+    Logger.info "Installing game server files..."
     :zip.unzip(body, [{:cwd, ~c'#{root_path}'}])
-    IO.puts "Game server installed/updated"
+    Logger.info "Game server installed/updated"
     :ok
   end
 
@@ -171,15 +176,6 @@ defmodule Mppm.ManiaplanetServer do
   ##########################
   #        Callbacks       #
   ##########################
-
-
-  def handle_cast({:incoming_game_message, message}, state) do
-    IO.puts "-----------------------------------------------"
-    IO.inspect message
-    {:noreply, state}
-  end
-
-
 
   def handle_call(:start, _, state) do
     update_status(state.config.login, "starting")

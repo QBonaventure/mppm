@@ -3,8 +3,6 @@ defmodule Mppm.GameUI.Controller do
 
 
   def handle_info({:broker_started, server_login}, state) do
-    IO.inspect Mppm.ConnectedUsers.get_connected_users
-
     {:noreply, state}
   end
 

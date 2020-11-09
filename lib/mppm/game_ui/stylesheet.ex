@@ -9,9 +9,9 @@ defmodule Mppm.GameUI.Stylesheet do
 
   defp get_styles() do
     [
-      [class: "text", textcolor: "EEE", textsize: "1"],
-      [class: "header-text", textcolor: "EEE", textsize: "2"],
-      [class: "background-quad", bgcolor: "222", opacity: "0.3"]
+      [class: "text", textcolor: "EEE", textsize: "0.6"],
+      [class: "header-text", textcolor: "EEE", textsize: "0.8"],
+      [class: "background-quad", bgcolor: "700", opacity: "0.3"]
     ]
   end
 

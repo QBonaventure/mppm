@@ -18,7 +18,7 @@ defmodule Mppm.Broker.ReceiverServer do
   def pubsub_topic(server_login), do: "server_status_"<>server_login
 
   def handle_info({:tcp_closed, port}, state) do
-    IO.puts "------------CLOSING BROKER CONNECTION"
+    Logger.info "Closing broker connection for "<>state.login
     {:noreply, %{state | status: :disconnected}}
   end
 
@@ -89,8 +89,6 @@ defmodule Mppm.Broker.ReceiverServer do
         %XMLRPC.MethodResponse{} -> Mppm.Broker.MethodResponse.dispatch(login, message)
         d -> IO.inspect d
       end
-
-      # GenServer.cast({:global, {:mp_server, login}}, {:incoming_game_message, message})
     end
   end
 

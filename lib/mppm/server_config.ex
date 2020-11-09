@@ -109,7 +109,7 @@ defmodule Mppm.ServerConfig do
 
 
   def propagate_ruleset_changes(%ServerConfig{} = server_config, %Ecto.Changeset{changes: %{ruleset: %Ecto.Changeset{changes: changes}}} = data) do
-    pid = :global.whereis_name({:broker_requester, server_config.login})
+    pid = {:global, {:broker_requester, server_config.login}}
     mode_vars = Mppm.GameRules.get_script_variables_by_mode(server_config.ruleset.mode_id)
 
     to_update =

@@ -7,7 +7,8 @@ defmodule MppmWeb.ServerManagerLive do
   end
 
   def mount(params, _session, socket) do
-    MppmWeb.Endpoint.subscribe(Mppm.Broker.ReceiverServer.pubsub_topic(params["server_login"]))
+    :ok = Phoenix.PubSub.subscribe(Mppm.PubSub, Mppm.Broker.ReceiverServer.pubsub_topic(params["server_login"]))
+    :ok = Phoenix.PubSub.subscribe(Mppm.PubSub, "players-status")
 
     server_config = Mppm.ServerConfig.get_server_config(params["server_login"])
     # TODO: implement the login system and actually select the right user
@@ -36,6 +37,7 @@ defmodule MppmWeb.ServerManagerLive do
       |> assign(game_modes: Mppm.Repo.all(Mppm.Type.GameMode))
       |> assign(respawn_behaviours: Mppm.Repo.all(Mppm.Ruleset.RespawnBehaviour))
       |> assign(chat: Mppm.ChatMessage.get_last_chat_messages(server_config.id))
+      |> assign(server_users: Mppm.ConnectedUsers.get_connected_users(server_config.login))
 
         GenServer.call({:global, {:broker_requester, server_config.login}}, {:query, :get_current_map_info})
 
@@ -162,6 +164,10 @@ defmodule MppmWeb.ServerManagerLive do
 
 
 
+  def handle_info({:servers_users_updated, servers_users}, socket) do
+    {:noreply, assign(socket, server_users: Map.get(servers_users, socket.assigns.server_info.login, []))}
+  end
+
   def handle_info({:endmatch}, socket) do
     {:noreply, assign(socket, current_track_status: :ending)}
   end
@@ -188,6 +194,12 @@ defmodule MppmWeb.ServerManagerLive do
   def handle_info({:new_chat_message, %Mppm.ChatMessage{} = message}, socket) do
     {:noreply, assign(socket, chat: [message] ++ socket.assigns.chat)}
   end
+
+  def handle_info(_unhandled_message, socket) do
+    {:noreply, socket}
+  end
+
+
 
 
   def reorder_tracklist_from_cur_track(tracklist, track_uid) do

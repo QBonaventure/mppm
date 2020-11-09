@@ -48,11 +48,11 @@ defmodule Mppm.GameUI.TimeRecords do
   def user_best_time(time_record), do:
     {
       :frame,
-      [pos: "-160 40", scale: "1.0"],
+      [pos: "-160 40", scale: "1"],
       [
         {:label, [text: "My Best Time", class: "header-text", pos: "10 0"], []},
         {:label, [text: Mppm.TimeRecord.to_string(time_record.lap_time), class: "text", pos: "20 -5"], []},
-        {:quad, [size: "42 9", pos: "1 1", class: "background-quad"], []}
+        {:quad, [size: "35 9", pos: "1 1", class: "background-quad"], []}
       ]
     }
     |> get_user_best_time_root()
@@ -69,7 +69,7 @@ defmodule Mppm.GameUI.TimeRecords do
       |> Enum.sort_by(& &1.lap_time)
       |> Enum.take(10)
 
-    quad_size = "42 "<> Integer.to_string(3*Enum.count(times)+6)
+    quad_size = "35 "<> Integer.to_string(3*Enum.count(times)+6)
 
     base_content =
       [
@@ -87,15 +87,17 @@ defmodule Mppm.GameUI.TimeRecords do
     {
       :frame,
       [id: "records-list", pos: "0 -5"],
-      Enum.map_reduce(times, 0, fn time_record, acc ->
+      Enum.map_reduce(times, 0, fn time_record, index ->
         time_record = Mppm.Repo.preload(time_record, :user)
         line =
-          {:frame, [id: Integer.to_string(acc), size: "50 50", pos: "2 "<>Integer.to_string(-acc*4)], [
-            {:label, [text: Mppm.TimeRecord.to_string(time_record.lap_time), class: "text", pos: "30 0"], []},
-            {:label, [text: Integer.to_string(acc+1) <> ".", class: "text"], []},
-            {:label, [text: time_record.user.nickname, class: "text", pos: "3 0"], []}
+          {:frame, [id: Integer.to_string(index), size: "50 50", pos: "2 "<>Integer.to_string(-index*4)], [
+            # {:label, [text: Integer.to_string(acc+1) <> "888.", class: "text", pos: "5 0", halign: "right"], []},
+              {:label, [text: Integer.to_string(index+1)<>".", class: "text", pos: "6 0", halign: "right"], []},
+            {:label, [text: time_record.user.nickname, class: "text", pos: "7 0", halign: "left"], []},
+            {:label, [text: Mppm.TimeRecord.to_string(time_record.lap_time), class: "text", pos: "33 0", halign: "right"], []}
+            # {:label, [text: "sssssssssss", class: "text", pos: "33 0", halign: "right"], []}
         ]}
-        {line, acc+1}
+        {line, index+1}
       end)
       |> elem(0)
     }
