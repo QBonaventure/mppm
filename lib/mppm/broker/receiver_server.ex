@@ -25,6 +25,7 @@ defmodule Mppm.Broker.ReceiverServer do
   def handle_info({:tcp, _port, @handshake_response}, state), do: {:noreply, %{state | status: :connected}}
   def handle_info({:tcp, _port, "GBXRemote 2"}, state), do: {:noreply, %{state | status: :connected}}
 
+
   def handle_info({:tcp, _port, binary}, %{incoming_message: nil} = state) do
     {:ok, incoming_message} = parse_new_packet(state.login, binary)
     {:noreply, %{state | incoming_message: incoming_message}}
@@ -52,6 +53,11 @@ defmodule Mppm.Broker.ReceiverServer do
         transmit_to_server_supervisor(login, message)
         parse_new_packet(login, next_message)
       end
+  end
+
+  defp parse_new_packet(login, binary) do
+    Logger.error "Dropped packet: "<>binary
+    {:ok, nil}
   end
 
   defp parse_message_next_packet(login, binary, %BinaryMessage{} = incoming_message) do

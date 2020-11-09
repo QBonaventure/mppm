@@ -1,4 +1,5 @@
 defmodule Mppm.ServerConfig do
+  require Logger
   use Ecto.Schema
   import Ecto.Changeset
   import Ecto.Query
@@ -99,8 +100,8 @@ defmodule Mppm.ServerConfig do
     case changeset |> Repo.update do
       {:ok, server_config} ->
         server_config = server_config |> Mppm.Repo.preload(:ruleset, force: true)
-        create_config_file(server_config)
-        create_ruleset_file(server_config)
+        # create_config_file(server_config)
+        # create_ruleset_file(server_config)
         propagate_ruleset_changes(server_config, changeset)
       {:error, changeset} ->
         {:ok, nil}
@@ -198,6 +199,8 @@ defmodule Mppm.ServerConfig do
     |> List.flatten
 
     filename = serv_config.login <> ".txt"
+
+    Logger.info "Writing new config for "<>serv_config.login
     :file.write_file(@config_path <> filename, pp)
 
     filename
@@ -244,6 +247,7 @@ defmodule Mppm.ServerConfig do
       |> :xmerl.export_simple(:xmerl_xml)
       |> List.flatten
 
+    Logger.info "Writing new ruleset for "<>server_config.login
     :file.write_file(target_path, new_xml)
   end
 
@@ -296,6 +300,7 @@ defmodule Mppm.ServerConfig do
     new_xml = {:playlist, [], game_info ++ tracks}
     pp = :xmerl.export_simple([new_xml], :xmerl_xml) |> List.flatten
 
+    Logger.info "Writing new tracklist for "<>login
     :file.write_file(target_path, pp)
   end
 

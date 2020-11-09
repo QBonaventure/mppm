@@ -109,8 +109,15 @@ defmodule Mppm.Broker.RequesterServer do
   def handle_call({:switch_game_mode, %Mppm.Type.GameMode{} = game_mode}, _from, state), do:
     {:reply, make_request("SetScriptName", [game_mode.script_name], state), state}
 
-  def handle_call(:reload_match_settings, _from, state), do:
-    {:reply, make_request("LoadMatchSettings", ["MatchSettings/" <> state.login <> ".txt"], state), state}
+  def handle_cast(:reload_match_settings, state) do
+    Logger.info "----------------RELOAD"
+    Mppm.Repo.get_by(Mppm.ServerConfig, login: state.login)
+    |> Mppm.Repo.preload(ruleset: [:mode])
+    |> Mppm.ServerConfig.create_ruleset_file()
+
+    make_request("LoadMatchSettings", ["MatchSettings/" <> state.login <> ".txt"], state)
+    {:noreply, state}
+  end
 
 
   def handle_call({:write_to_chat, message}, _from, state)

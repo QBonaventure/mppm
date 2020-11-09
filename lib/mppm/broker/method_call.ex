@@ -43,7 +43,8 @@ defmodule Mppm.Broker.MethodCall do
   #   },
   #   script_callback: "Maniaplanet.StartServer_Start"
   # }
-  def dispatch_script_callback(_server_login, "Maniaplanet.StartServer_Start", _data) do
+  def dispatch_script_callback(server_login, "Maniaplanet.StartServer_Start", _data) do
+    GenServer.cast({:global, {:broker_requester, server_login}}, :reload_match_settings)
   end
 
   def dispatch_script_callback(_server_login, "Maniaplanet.StartServer_End", _data) do
@@ -88,7 +89,8 @@ defmodule Mppm.Broker.MethodCall do
   def dispatch_script_callback(_server_login, "Maniaplanet.StartPlayLoop", _data) do
   end
 
-  def dispatch_script_callback(_server_login, "Maniaplanet.EndPlayLoop", _data) do
+  def dispatch_script_callback(server_login, "Maniaplanet.EndPlayLoop", _data) do
+    GenServer.cast({:global, {:broker_requester, server_login}}, :reload_match_settings)
   end
 
   def dispatch_script_callback(_server_login, "Maniaplanet.EndTurn_Start", _data) do

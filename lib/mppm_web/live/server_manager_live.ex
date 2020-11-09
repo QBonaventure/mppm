@@ -131,7 +131,7 @@ defmodule MppmWeb.ServerManagerLive do
 
   def handle_event("update-tracklist", params, socket) do
     Mppm.Tracklist.upsert_tracklist(socket.assigns.tracklist)
-    GenServer.call({:global, {:broker_requester, socket.assigns.server_info.login}}, :reload_match_settings)
+    # GenServer.cast({:global, {:broker_requester, socket.assigns.server_info.login}}, :reload_match_settings)
     {:noreply, socket}
   end
 
@@ -221,7 +221,7 @@ defmodule MppmWeb.ServerManagerLive do
 
   def save_tracklist_change(%Mppm.Tracklist{} = tracklist) do
     tracklist = Mppm.Tracklist.upsert_tracklist(tracklist) |> Mppm.Repo.preload(:server)
-    GenServer.call({:global, {:broker_requester, tracklist.server.login}}, :reload_match_settings)
+    # GenServer.cast({:global, {:broker_requester, tracklist.server.login}}, :reload_match_settings)
   end
 
   def get_mx_track_map(mx_track_id, tracks_list) when is_integer(mx_track_id) do
