@@ -258,6 +258,9 @@ defmodule Mppm.ManiaplanetServer do
   end
 
 
+  def handle_info(_unhandled_message, state), do: {:noreply, state}
+
+
 
 
   def child_spec(%ServerConfig{} = server_config) do
