@@ -7,7 +7,7 @@ defmodule Mppm.Broker.ReceiverServer do
 
   @handshake_response <<11,0,0,0>> <> "GBXRemote 2"
   @header_size 8
-  @xmlrpc_conn_opts [:binary, {:active, true}, {:reuseaddr, true}, {:keepalive, true}, {:send_timeout, 20000}]
+  @xmlrpc_conn_opts [:binary, {:active, true}, {:reuseaddr, true}, {:keepalive, false}, {:send_timeout, 20000}]
 
 
   def open_connection(port) do
@@ -16,6 +16,13 @@ defmodule Mppm.Broker.ReceiverServer do
 
 
   def pubsub_topic(server_login), do: "server_status_"<>server_login
+
+  def handle_info({:connect, xmlrpc_port}, state) do
+    {:ok, socket} = open_connection(xmlrpc_port)
+    Logger.info "TCP connection established for server "<>state.login
+    Phoenix.PubSub.broadcast(Mppm.PubSub, "broker-status", {:connection_established, socket})
+    {:noreply, %{state | socket: socket}}
+  end
 
   def handle_info({:tcp_closed, port}, state) do
     Logger.info "Closing broker connection for "<>state.login
@@ -57,7 +64,7 @@ defmodule Mppm.Broker.ReceiverServer do
 
   defp parse_new_packet(login, binary) do
     Logger.info "Dropped packet: "<>binary
-    {:ok, nil}
+    {:error, nil}
   end
 
   defp parse_message_next_packet(login, binary, %BinaryMessage{} = incoming_message) do
@@ -123,17 +130,17 @@ defmodule Mppm.Broker.ReceiverServer do
   end
 
   def init([login, xmlrpc_port, superadmin_pwd]) do
-    Process.flag(:trap_exit, true)
-    {:ok, socket} = open_connection(xmlrpc_port)
+    # Process.flag(:trap_exit, true)
 
     init_state = %{
-      socket: socket,
+      socket: nil,
       login: login,
       superadmin_pwd: superadmin_pwd,
       status: :disconnected,
       incoming_message: nil,
     }
     Logger.info "Broker receiver for "<>login<>" started."
+    Process.send_after(self, {:connect, xmlrpc_port}, 100)
     {:ok, init_state}
   end
 

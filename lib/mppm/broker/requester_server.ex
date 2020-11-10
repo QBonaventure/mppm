@@ -200,24 +200,31 @@ defmodule Mppm.Broker.RequesterServer do
 
 
 
+  def handle_info({:connection_established, socket}, state) do
+    GenServer.cast(self(), :authenticate)
+    {:noreply, %{state | socket: socket, status: :connected}}
+  end
+
+
+
   def start_link([login,_,_] = init_args), do:
     GenServer.start_link(__MODULE__, init_args, name: {:global, {:broker_requester, login}})
 
   def init([login, xmlrpc_port, superadmin_pwd]) do
-    {:ok, socket} = GenServer.call({:global, {:broker_receiver, login}}, :get_socket)
+    Phoenix.PubSub.subscribe(Mppm.PubSub, "broker-status")
 
     init_state = %{
-      socket: socket,
+      socket: nil,
       login: login,
       superadmin_pwd: superadmin_pwd,
       status: :disconnected,
     }
     Logger.info "Broker requester for "<>login<>" started."
 
-    {:ok, init_state, {:continue, :authenticate}}
+    {:ok, init_state}
   end
 
-  def handle_continue(:authenticate, state) do
+  def handle_cast(:authenticate, state) do
     make_request("Authenticate", ["SuperAdmin", state.superadmin_pwd], state)
     make_request("SetApiVersion", ["2013-04-16"], state)
     make_request("EnableCallbacks", [true], state)
@@ -226,6 +233,7 @@ defmodule Mppm.Broker.RequesterServer do
     make_request("GetCurrentMapInfo", [], state)
     make_request("GetPlayerList", [1000, 0], state)
 
+    Logger.info "Authenticated to the game server for "<>state.login
     Phoenix.PubSub.broadcast(Mppm.PubSub, "server-status", {:broker_started, state.login})
     {:noreply, state}
   end
