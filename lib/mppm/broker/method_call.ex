@@ -6,6 +6,7 @@ defmodule Mppm.Broker.MethodCall do
 
 
   def dispatch(server_login, %XMLRPC.MethodCall{method_name: "ManiaPlanet.ModeScriptCallbackArray", params: [callback_name, [raw_data]]}) do
+    IO.inspect callback_name
     {:ok, data} = Jason.decode(raw_data)
     dispatch_script_callback(server_login, callback_name, data)
   end
@@ -16,20 +17,25 @@ defmodule Mppm.Broker.MethodCall do
 
 
 
-  def dispatch_script_callback(server_login, "Trackmania.Event.WayPoint", data) do
+  def dispatch_script_callback(server_login, "Trackmania.Event.WayPoint", %{"login" => user_login, "checkpointinrace" => waypoint_nb, "laptime" => time} = data) do
+    Phoenix.PubSub.broadcast(Mppm.PubSub, "race-status", {:player_waypoint, server_login, user_login, waypoint_nb, time})
     Phoenix.PubSub.broadcast(Mppm.PubSub, Mppm.TimeTracker.get_pubsub_topic(), {data, server_login})
   end
 
+  # data > %{"accountid" => _account_id, "login" => _login, "time" => _time}
   def dispatch_script_callback(_server_login,  "Trackmania.Event.StartLine", _data) do
   end
 
-  def dispatch_script_callback(_server_login, "Trackmania.Event.GiveUp", _data) do
+  def dispatch_script_callback(_server_login, "Trackmania.Event.GiveUp", data) do
+    IO.inspect data
   end
 
-  def dispatch_script_callback(_server_login, "Trackmania.Event.SkipOutro", _data) do
+  def dispatch_script_callback(_server_login, "Trackmania.Event.SkipOutro", data) do
+    IO.inspect data
   end
 
-  def dispatch_script_callback(_server_login, "Trackmania.Event.Respawn", _data) do
+  def dispatch_script_callback(_server_login, "Trackmania.Event.Respawn", data) do
+    IO.inspect data
   end
 
 
@@ -47,56 +53,74 @@ defmodule Mppm.Broker.MethodCall do
     GenServer.cast({:global, {:broker_requester, server_login}}, :reload_match_settings)
   end
 
-  def dispatch_script_callback(_server_login, "Maniaplanet.StartServer_End", _data) do
+  def dispatch_script_callback(_server_login, "Maniaplanet.StartServer_End", data) do
+    IO.inspect data
   end
 
-  def dispatch_script_callback(_server_login, "Maniaplanet.StartMatch_Start", _data) do
+  def dispatch_script_callback(_server_login, "Maniaplanet.StartMatch_Start", data) do
+    IO.inspect data
   end
 
-  def dispatch_script_callback(_server_login, "Maniaplanet.StartMatch_End", _data) do
+  def dispatch_script_callback(_server_login, "Maniaplanet.StartMatch_End", data) do
+    IO.inspect data
   end
 
-  def dispatch_script_callback(_server_login, "Maniaplanet.LoadingMap_Start", _data) do
+  def dispatch_script_callback(_server_login, "Maniaplanet.LoadingMap_Start", data) do
+    IO.inspect data
   end
 
-  def dispatch_script_callback(_server_login, "Maniaplanet.LoadingMap_End", _data) do
+  def dispatch_script_callback(_server_login, "Maniaplanet.LoadingMap_End", data) do
+    IO.inspect data
   end
 
-  def dispatch_script_callback(_server_login, "Maniaplanet.UnloadingMap_Start", _data) do
+  def dispatch_script_callback(_server_login, "Maniaplanet.UnloadingMap_Start", data) do
+    IO.inspect data
   end
 
-  def dispatch_script_callback(_server_login, "Maniaplanet.UnloadingMap_End", _data) do
+  def dispatch_script_callback(_server_login, "Maniaplanet.UnloadingMap_End", data) do
+    IO.inspect data
   end
 
-  def dispatch_script_callback(_server_login, "Maniaplanet.StartMap_Start", _data) do
+  def dispatch_script_callback(_server_login, "Maniaplanet.StartMap_Start", data) do
+    IO.inspect data
   end
 
-  def dispatch_script_callback(_server_login, "Maniaplanet.StartMap_End", _data) do
+  def dispatch_script_callback(_server_login, "Maniaplanet.StartMap_End", data) do
+    IO.inspect data
   end
 
-  def dispatch_script_callback(_server_login, "Maniaplanet.StartRound_Start", _data) do
+  def dispatch_script_callback(_server_login, "Maniaplanet.StartRound_Start", data) do
+    IO.inspect data
   end
 
-  def dispatch_script_callback(_server_login, "Maniaplanet.StartRound_End", _data) do
+  def dispatch_script_callback(_server_login, "Maniaplanet.StartRound_End", data) do
+    IO.inspect data
   end
 
-  def dispatch_script_callback(_server_login, "Maniaplanet.StartTurn_Start", _data) do
+  def dispatch_script_callback(_server_login, "Maniaplanet.StartTurn_Start", data) do
+    IO.inspect data
   end
 
-  def dispatch_script_callback(_server_login, "Maniaplanet.StartTurn_End", _data) do
+  def dispatch_script_callback(_server_login, "Maniaplanet.StartTurn_End", data) do
+    IO.inspect data
   end
 
-  def dispatch_script_callback(_server_login, "Maniaplanet.StartPlayLoop", _data) do
+  def dispatch_script_callback(server_login, "Maniaplanet.StartPlayLoop", data) do
+    IO.inspect data
+    Phoenix.PubSub.broadcast(Mppm.PubSub, "race-status", {:turn_start, server_login})
   end
 
+  # data = %{"count" => :integer, "time" => :integer}
   def dispatch_script_callback(server_login, "Maniaplanet.EndPlayLoop", _data) do
     GenServer.cast({:global, {:broker_requester, server_login}}, :reload_match_settings)
   end
 
-  def dispatch_script_callback(_server_login, "Maniaplanet.EndTurn_Start", _data) do
+  def dispatch_script_callback(_server_login, "Maniaplanet.EndTurn_Start", data) do
+    IO.inspect data
   end
 
-  def dispatch_script_callback(_server_login, "Maniaplanet.EndTurn_End", _data) do
+  def dispatch_script_callback(_server_login, "Maniaplanet.EndTurn_End", data) do
+    IO.inspect data
   end
 
   def dispatch_script_callback(_server_login, "Maniaplanet.EndRound_Start", _data) do
@@ -181,6 +205,7 @@ defmodule Mppm.Broker.MethodCall do
 
 
   def dispatch_message(server_login, "ManiaPlanet.PlayerConnect", [user_login, _is_spectator]) do
+    IO.puts "PLAYER CONN"
     Phoenix.PubSub.broadcast(Mppm.PubSub, "player-status", {:user_connection_to_server, server_login, user_login})
     GenServer.cast(Mppm.ConnectedUsers, {:user_connection, server_login, user_login})
   end

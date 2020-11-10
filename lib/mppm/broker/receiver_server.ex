@@ -56,7 +56,7 @@ defmodule Mppm.Broker.ReceiverServer do
   end
 
   defp parse_new_packet(login, binary) do
-    Logger.error "Dropped packet: "<>binary
+    Logger.info "Dropped packet: "<>binary
     {:ok, nil}
   end
 

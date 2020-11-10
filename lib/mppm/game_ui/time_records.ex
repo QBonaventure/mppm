@@ -69,11 +69,11 @@ defmodule Mppm.GameUI.TimeRecords do
       |> Enum.sort_by(& &1.lap_time)
       |> Enum.take(10)
 
-    quad_size = "35 "<> Integer.to_string(3*Enum.count(times)+6)
+    quad_size = "36 "<> Integer.to_string(3*Enum.count(times)+6)
 
     base_content =
       [
-        {:label, [text: "Local Records", pos: "10 0", class: "header-text"], []},
+        {:label, [text: "Local Records", pos: "18 0", halign: "center", class: "header-text"], []},
         {:quad, [size: quad_size, pos: "1 1", class: "background-quad"], []}
       ]
       |> List.insert_at(1, display_lines(times))

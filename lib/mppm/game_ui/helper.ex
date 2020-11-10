@@ -31,16 +31,18 @@ defmodule Mppm.GameUI.Helper do
     {:manialinks, [], [
         Mppm.GameUI.TimeRecords.get_table(track_records),
         Mppm.GameUI.TimeRecords.user_best_time(user_record),
+        Mppm.GameUI.LiveRaceRanking.root_wrap(),
     ]}
   end
 
+#   def get_empty_template(), do:
+#     {:manialinks, [], [
+#       {:manialink, [], [
+#         Mppm.GameUI.Stylesheet.get_stylesheet,
+#         Mppm.GameUI.TimeRecords.get_local_records_root(),
+#         Mppm.GameUI.TimeRecords.get_user_best_time_root(),
+#         Mppm.GameUI.LiveRaceRanking.get_root(),
+#       ]}
+#     ]}
 
-  def get_empty_template(), do:
-    {:manialinks, [], [
-      {:manialink, [], [
-        Mppm.GameUI.Stylesheet.get_stylesheet,
-        Mppm.GameUI.TimeRecords.get_local_records_root(),
-        Mppm.GameUI.TimeRecords.get_user_best_time_root(),
-      ]}
-    ]}
 end

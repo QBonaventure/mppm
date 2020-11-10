@@ -7,7 +7,8 @@ defmodule Mppm.GameUI.GameUISupervisor do
   def init(nil) do
     children = [
       Mppm.GameUI.Controller,
-      Mppm.GameUI.TimeRecords
+      Mppm.GameUI.TimeRecords,
+      Mppm.GameUI.LiveRaceRanking
     ]
     Supervisor.init(children, strategy: :one_for_one)
   end
