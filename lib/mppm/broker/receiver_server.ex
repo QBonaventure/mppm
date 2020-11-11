@@ -100,7 +100,8 @@ defmodule Mppm.Broker.ReceiverServer do
       message -> case message do
         %XMLRPC.MethodCall{} -> Mppm.Broker.MethodCall.dispatch(login, message)
         %XMLRPC.MethodResponse{} -> Mppm.Broker.MethodResponse.dispatch(login, message)
-        d -> IO.inspect d
+        d ->
+          # IO.inspect d
       end
     end
   end

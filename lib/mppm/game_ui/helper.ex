@@ -19,7 +19,7 @@ defmodule Mppm.GameUI.Helper do
 
   def get_custom_template(server_login, player_login) do
     user = Mppm.Repo.get_by(Mppm.User, login: player_login)
-    track = GenServer.call(Mppm.TimeTracker, {:get_server_current_track, server_login})
+    track = GenServer.call(Mppm.Tracklist, {:get_server_current_track, server_login})
     track_records = Mppm.Repo.preload(track, :time_records) |> Map.get(:time_records)
 
     user_record =

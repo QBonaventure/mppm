@@ -12,7 +12,7 @@ defmodule Mppm.ServerConfig do
   defrecord(:xmlText, extract(:xmlText, from_lib: "xmerl/include/xmerl.hrl"))
 
   # @app_path Application.get_env(:mppm, :app_path)
-  @root_path Application.get_env(:mppm, :mp_servers_root_path)
+  @root_path Application.get_env(:mppm, :game_servers_root_path)
   @config_path @root_path <> "UserData/Config/"
   @maps_path @root_path <> "UserData/Maps/"
 
@@ -100,9 +100,16 @@ defmodule Mppm.ServerConfig do
     case changeset |> Repo.update do
       {:ok, server_config} ->
         server_config = server_config |> Mppm.Repo.preload(:ruleset, force: true)
-        # create_config_file(server_config)
-        # create_ruleset_file(server_config)
-        propagate_ruleset_changes(server_config, changeset)
+        create_config_file(server_config)
+
+        if ruleset_changes = Map.get(changeset.changes, :ruleset) do
+          propagate_ruleset_changes(server_config, changeset)
+          if Map.has_key?(ruleset_changes.changes, :mode_id) do
+            Phoenix.PubSub.broadcast(Mppm.PubSub, "ruleset-status", {:ruleset_change, server_config.login, server_config.ruleset})
+          end
+        end
+
+        # IO.inspect Kernel.get_in(changeset.changes, [:ruleset, :changes, :mode_id])
       {:error, changeset} ->
         {:ok, nil}
     end
@@ -111,7 +118,9 @@ defmodule Mppm.ServerConfig do
 
   def propagate_ruleset_changes(%ServerConfig{} = server_config, %Ecto.Changeset{changes: %{ruleset: %Ecto.Changeset{changes: changes}}} = data) do
     pid = {:global, {:broker_requester, server_config.login}}
-    mode_vars = Mppm.GameRules.get_script_variables_by_mode(server_config.ruleset.mode_id)
+    mode_vars =
+      GenServer.call({:global, {:game_server, server_config.login}}, :get_current_game_mode_id)
+      |> Mppm.GameRules.get_script_variables_by_mode()
 
     to_update =
       Map.from_struct(server_config.ruleset)
@@ -247,7 +256,7 @@ defmodule Mppm.ServerConfig do
       |> :xmerl.export_simple(:xmerl_xml)
       |> List.flatten
 
-    Logger.info "Writing new ruleset for "<>server_config.login
+    Logger.info "["<>server_config.login<>"] Writing new ruleset"
     :file.write_file(target_path, new_xml)
   end
 
@@ -288,12 +297,8 @@ defmodule Mppm.ServerConfig do
       |> elem(2)
       |> Enum.filter(& Enum.member?([:gameinfos, :mode_script_settings], elem(&1, 0)))
 
-
-
-    tracks = Mppm.Tracklist.get_server_tracklist(login) |> Map.get(:tracks)
-
     tracks =
-      tracks
+      tracklist.tracks
       |> Enum.map(& {:map, [], [{:file, [], [charlist(Mppm.TracksFiles.mx_track_path(&1))]}] })
       |> List.insert_at(0, {:startindex, [], [charlist("1")]})
 

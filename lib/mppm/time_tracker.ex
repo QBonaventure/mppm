@@ -44,21 +44,17 @@ defmodule Mppm.TimeTracker do
       |> Map.get(:time_records)
   end
 
-  def handle_call({:get_server_current_track, server_login}, _, state) do
-    track_uid = Map.get(state.servers_current_tracks, server_login)
-    {:reply, Mppm.Repo.get_by(Mppm.Track, track_uid: track_uid), state}
-  end
 
   def handle_call({:get_server_records, server_login}, _, state), do:
     {:reply, get_server_records(state, server_login), state}
 
-  def handle_info({%{"checkpointinrace" => 0, "login" => player_login, "racetime" => time}, server_login}, state) do
+  def handle_cast({:player_waypoint, server_login, %{"checkpointinrace" => 0, "login" => player_login, "racetime" => time}}, state) do
     {:noreply, Map.put(state, player_login, [time])}
   end
 
-  def handle_info({%{"isendlap" => true, "login" => player_login, "racetime" => time}, server_login}, state) do
+  def handle_cast({:player_waypoint, server_login, %{"isendlap" => true, "login" => player_login, "racetime" => time}}, state) do
     user = Mppm.Repo.get_by(Mppm.User, login: player_login)
-    track = GenServer.call({:global, {:mp_server, server_login}}, :get_current_track)
+    track = GenServer.call(Mppm.Tracklist, {:get_server_current_track, server_login})
 
     case is_new_record?(time, Mppm.Repo.get_by(Mppm.TimeRecord, user_id: user.id, track_id: track.id)) do
       true ->
@@ -76,7 +72,7 @@ defmodule Mppm.TimeTracker do
     end
   end
 
-  def handle_info({%{"isendlap" => false, "login" => player_login, "racetime" => time}, server_login}, state) do
+  def handle_cast({:player_waypoint, server_login, %{"isendlap" => false, "login" => player_login, "racetime" => time}}, state) do
     {:noreply, Map.update(state, player_login, [time], & &1 ++ [time])}
   end
 

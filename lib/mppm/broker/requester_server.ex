@@ -110,14 +110,18 @@ defmodule Mppm.Broker.RequesterServer do
     {:reply, make_request("SetScriptName", [game_mode.script_name], state), state}
 
   def handle_cast(:reload_match_settings, state) do
-    Logger.info "----------------RELOAD"
-    Mppm.Repo.get_by(Mppm.ServerConfig, login: state.login)
-    |> Mppm.Repo.preload(ruleset: [:mode])
-    |> Mppm.ServerConfig.create_ruleset_file()
+    Logger.info "["<>state.login<>"] Reloading match settings"
+    # Mppm.Repo.get_by(Mppm.ServerConfig, login: state.login)
+    # |> Mppm.Repo.preload(ruleset: [:mode])
+    # |> Mppm.ServerConfig.create_ruleset_file
+
+    # GenServer.call(Mppm.Tracklist, {:get_server_tracklist, state.login})
+    # |> Mppm.ServerConfig.create_tracklist()
 
     make_request("LoadMatchSettings", ["MatchSettings/" <> state.login <> ".txt"], state)
     {:noreply, state}
   end
+
 
 
   def handle_call({:write_to_chat, message}, _from, state)
@@ -149,16 +153,16 @@ defmodule Mppm.Broker.RequesterServer do
 
   }
 
-  def handle_call(:stop, _from, state) do
-    res = make_request(@methods[:quit_game], [], state)
-    {:stop, :shutdown, :ok, state}
-  end
-
-  def handle_call({:query, method}, _, state) when :erlang.is_map_key(method, @methods), do:
-    {:reply, make_request(@methods[method], [], state), state}
-
-  def handle_call({:query, method, params}, _, state), do:
-    {:reply, make_request(@methods[method], params, state), state}
+  # def handle_call(:stop, _from, state) do
+  #   res = make_request(@methods[:quit_game], [], state)
+  #   {:stop, :shutdown, :ok, state}
+  # end
+  #
+  # def handle_call({:query, method}, _, state) when :erlang.is_map_key(method, @methods), do:
+  #   {:reply, make_request(@methods[method], [], state), state}
+  #
+  # def handle_call({:query, method, params}, _, state), do:
+  #   {:reply, make_request(@methods[method], params, state), state}
 
   def handle_call(:get_broker_state, _, state), do: {:reply, state, state}
 
@@ -231,6 +235,7 @@ defmodule Mppm.Broker.RequesterServer do
     make_request("TriggerModeScriptEventArray", ["XmlRpc.EnableCallbacks", ["true"]], state)
 
     make_request("GetCurrentMapInfo", [], state)
+    make_request("GetCurrentGameInfo", [], state)
     make_request("GetPlayerList", [1000, 0], state)
 
     Logger.info "Authenticated to the game server for "<>state.login

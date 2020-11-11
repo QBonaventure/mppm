@@ -1,9 +1,9 @@
 defmodule MppmWeb.Live.Component.ServerLine do
   use Phoenix.LiveComponent
   alias MppmWeb.DashboardView
-  alias Mppm.ManiaplanetServerSupervisor
+  alias Mppm.GameServer.Supervisor
 
-  @topic "server_status"
+  @topic "server-status"
 
 
   def mount(socket) do
@@ -17,16 +17,14 @@ defmodule MppmWeb.Live.Component.ServerLine do
 
 
   def handle_event("start-server", _params, socket) do
-    server = Mppm.Repo.get(Mppm.ServerConfig, socket.assigns.server.id)
-    spawn(ManiaplanetServerSupervisor, :start_mp_server, [server])
-    Phoenix.PubSub.broadcast(Mppm.PubSub, "server_status", :update)
-
-    {:noreply, assign(socket, server: server)}
+    GenServer.cast({:global, {:game_server, socket.assigns.server.config.login}}, :start)
+    {:noreply, socket}
   end
 
 
   def handle_event("stop-server", _params, socket) do
-    ManiaplanetServerSupervisor.stop_mp_server(socket.assigns.id)
+    {:global, {:game_server, socket.assigns.server.config.login}}
+    |> GenServer.cast(:stop)
     {:noreply, socket}
   end
 

@@ -1,12 +1,6 @@
-defmodule Mppm.GameServerSupervisor.Starter do
+defmodule Mppm.GameServer.Starter do
   use GenServer
-  alias Mppm.{ServerConfigStore,ManiaplanetServerSupervisor}
   alias __MODULE__
-
-  @moduledoc """
-  Worker starting stored Mppm.ManiaplanetServerSupervisor children
-  on application start.
-  """
 
   def start_link do
     GenServer.start_link(__MODULE__, nil)
@@ -18,11 +12,11 @@ defmodule Mppm.GameServerSupervisor.Starter do
   end
 
   def handle_info(:start_children, _) do
-    ServerConfigStore.all
-    |> Enum.map(fn(server_config) ->
-      {:ok, mp_server_pid} = ManiaplanetServerSupervisor.start_server_supervisor(server_config)
+    Mppm.ServersStatuses.all
+    |> Enum.each(fn {server_login, %{config: server_config}} ->
+      {:ok, server_pid} = Mppm.GameServer.Supervisor.start_server_supervisor(server_config)
     end)
-    relink_lost_processes
+    relink_lost_processes()
 
     {:stop, :normal, %{}}
   end
@@ -39,7 +33,7 @@ defmodule Mppm.GameServerSupervisor.Starter do
   def relink_lost_processes() do
     {:ok, zombie_processes} = get_zombie_processes()
     Enum.each(zombie_processes, fn {login, pid, port} = tup ->
-      GenServer.cast({:global, {:mp_server, login}}, {:relink_orphan_process, tup})
+      GenServer.cast({:global, {:game_server, login}}, {:relink_orphan_process, tup})
     end)
   end
 

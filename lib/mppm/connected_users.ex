@@ -27,7 +27,7 @@ defmodule Mppm.ConnectedUsers do
 
   def remove_server_user(state, server_login, user_struct) do
     server_list =
-      Map.get(state.servers_users, server_login)
+      Map.get(state.servers_users, server_login, [])
       |> Enum.reject(& &1.login == user_struct)
     servers_users = Map.put(state.servers_users, server_login, server_list)
     Phoenix.PubSub.broadcast(Mppm.PubSub, "players-status", {:servers_users_updated, servers_users})

@@ -16,7 +16,7 @@ defmodule Mppm.Broker.MethodResponse do
 
   defp dispatch_response(server_login, %{"UId" => track_uid} = map_info) do
     Phoenix.PubSub.broadcast(Mppm.PubSub, "maps-status", {:update_server_map, server_login, track_uid})
-    Phoenix.PubSub.broadcast(Mppm.PubSub, pubsub_topic(server_login), {:current_map_info, map_info})
+    Phoenix.PubSub.broadcast(Mppm.PubSub, "maps-status", {:current_track_info, server_login, track_uid})
   end
 
 
@@ -26,6 +26,11 @@ defmodule Mppm.Broker.MethodResponse do
       & Phoenix.PubSub.broadcast(Mppm.PubSub, "players-status", {:user_connection_to_server, server_login, Map.get(&1, "Login")})
     )
     Enum.each(remainder, & GenServer.cast(Mppm.ConnectedUsers, {:user_connection, server_login, Map.get(&1, "Login")}))
+  end
+
+  defp dispatch_response(server_login, %{"ScriptName" => script_name}) do
+    game_mode = Mppm.Repo.get_by(Mppm.Type.GameMode, script_name: script_name)
+    Phoenix.PubSub.broadcast(Mppm.PubSub, "server-status", {:current_game_mode, game_mode})
   end
 
 

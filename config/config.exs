@@ -34,7 +34,7 @@ config :phoenix, :json_library, Jason
 
 config :mppm,
   app_path: File.cwd!,
-  mp_servers_root_path: "/opt/mppm/TrackmaniaServer/"
+  game_servers_root_path: "/opt/mppm/TrackmaniaServer/"
 
 config :mppm, Mppm.Trackmania,
   download_link: "http://files.v04.maniaplanet.com/server/TrackmaniaServer_Latest.zip"

@@ -3,7 +3,8 @@ defmodule MppmWeb.DashboardLive do
   alias Mppm.Repo
 
 
-  @topic "server_status"
+  @topic "server-status"
+  @statuses Mppm.ServersStatuses.get_statuses_list
 
 
   def render(assigns) do
@@ -13,15 +14,14 @@ defmodule MppmWeb.DashboardLive do
 
   def mount(_params, _session, socket) do
     MppmWeb.Endpoint.subscribe(@topic)
-    statuses = Mppm.Statuses.all
+    statuses = Mppm.ServersStatuses.all
 
     servers = Repo.all(Mppm.ServerConfig)
     socket =
       socket
       |> assign(changeset: Mppm.ServerConfig.create_server_changeset())
       |> assign(disabled_submit: true)
-      |> assign(servers: servers)
-      |> assign(statuses: statuses)
+      |> assign(servers: Mppm.ServersStatuses.all)
 
     {:ok, socket}
   end
@@ -41,19 +41,23 @@ defmodule MppmWeb.DashboardLive do
 
 
 
-  def handle_info(:update, socket) do
-    {:noreply, assign(socket, statuses: Mppm.Statuses.all)}
-  end
+  def handle_info({server_status, server_login}, socket)
+  when server_status in @statuses, do:
+    {:noreply, assign(socket, servers: Kernel.put_in(socket.assigns.servers, [server_login, :status], server_status))}
+
+
+  def handle_info(_unhandled_info, socket), do:
+    {:noreply, socket}
+
 
 
   def handle_event("create-server", params, socket) do
     {:ok, server_config} = Mppm.ServerConfig.create_new_server(params["server_config"])
-    Mppm.ManiaplanetServerSupervisor.start_server_supervisor(server_config)
+    Mppm.GameServer.Supervisor.start_server_supervisor(server_config)
 
     socket =
       socket
-      |> assign(statuses: Mppm.Statuses.all())
-      |> assign(servers: [server_config | socket.assigns.servers])
+      |> assign(servers: Mppm.ServersStatuses.all)
       |> assign(changeset: Mppm.ServerConfig.create_server_changeset())
 
     {:noreply, socket}

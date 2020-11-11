@@ -1,53 +1,35 @@
 defmodule Mppm.Application do
   require Logger
-  # See https://hexdocs.pm/elixir/Application.html
-  # for more information on OTP Applications
-  @moduledoc false
-
   use Application
 
-  @root_path Application.get_env(:mppm, :mp_servers_root_path)
-  # @root_path "/opt/mppmTest/TrackmaniaServerTest"
+  @root_path Application.get_env(:mppm, :game_servers_root_path)
 
   def start(_type, _args) do
     check_install()
-    # List all child processes to be supervised
+
     children = [
-      # Start the Ecto repository
       Mppm.Repo,
-      # Start the endpoint when the application starts
       MppmWeb.Endpoint,
+      Mppm.Tracklist,
       Mppm.ConnectedUsers,
-      Mppm.ServerConfigStore,
-      Mppm.Statuses,
-      # Starts a worker by calling: Mppm.Worker.start_link(arg)
-      # {Mppm.Worker, arg},
+      Mppm.ServersStatuses,
       {
-        DynamicSupervisor, strategy: :one_for_one, name: Mppm.ManiaplanetServerSupervisor
+        DynamicSupervisor, strategy: :one_for_one, name: Mppm.GameServer.Supervisor
       },
-      # hostname: "localhost", username: "postgres", password: "postgres", database: "postgres"
-      # ,
-      # %{
-      #   id: Mppm.ServerStatusPubSub,
-      #   start: {Phoenix.PubSub, :start_link, []}
-      # }
       Mppm.TracksFiles,
       %{
-        id: Mppm.ManiaplanetServerSupervisorStarter,
-        start: {Mppm.GameServerSupervisor.Starter, :start_link, []},
+        id: Mppm.GameServer.Starter,
+        start: {Mppm.GameServer.Starter, :start_link, []},
         restart: :temporary,
         type: :worker
       },
       Mppm.TimeTracker,
-      Mppm.GameUI.GameUISupervisor
+      Mppm.GameUI.GameUISupervisor,
     ]
 
-    # See https://hexdocs.pm/elixir/Supervisor.html
-    # for other strategies and supported options
     opts = [strategy: :one_for_one, name: Mppm.Supervisor]
     Supervisor.start_link(children, opts)
   end
-
 
   # Tell Phoenix to update the endpoint configuration
   # whenever the application is updated.
@@ -71,7 +53,7 @@ defmodule Mppm.Application do
     try do Port.open({:spawn_executable, @root_path<>"/TrackmaniaServer"}, [:binary, args: ["/nodaemon"]])
     rescue
       ErlangError ->
-        Mppm.ManiaplanetServer.update_game_server(@root_path)
+        Mppm.GameServer.Server.update_game_server(@root_path)
     end
 
     :ok == File.mkdir(Mppm.TracksFiles.mx_path())

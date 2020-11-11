@@ -1,8 +1,7 @@
 defmodule Mppm.TracksFiles do
   use GenServer
 
-  # @maps_path "/var/mppm/maps/"
-  @maps_path Application.get_env(:mppm, :mp_servers_root_path) <> "UserData/Maps/"
+  @maps_path Application.get_env(:mppm, :game_servers_root_path) <> "UserData/Maps/"
   @mx_directory "MX/"
   @mx_path "#{@maps_path}#{@mx_directory}"
 

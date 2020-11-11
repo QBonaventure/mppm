@@ -1,17 +1,17 @@
 <% alias MppmWeb.DashboardView %>
-<section id="<%= "server-#{@server.login}" %>" class="server-card">
+<section id="<%= "server-#{@server.config.login}" %>" class="server-card">
   <span class="server-manager-link">
-    <%= live_patch "Manage", to: Routes.live_path(@socket, MppmWeb.ServerManagerLive, @server.login), do:
+    <%= live_patch "Manage", to: Routes.live_path(@socket, MppmWeb.ServerManagerLive, @server.config.login), do:
       content_tag :span, "Manage >" %>
 
   </span>
-  <span class="login"><%= @server.login %></span>
-  <span class="name"><%= @server.name %></span>
-  <span class="max-pl"><%= @server.max_players %></span>
-  <span class="players-pwd"><%= @server.player_pwd %></span>
-  <span class="spec-pwd"><%= @server.spec_pwd %></span>
+  <span class="login"><%= @server.config.login %></span>
+  <span class="name"><%= @server.config.name %></span>
+  <span class="max-pl"><%= @server.config.max_players %></span>
+  <span class="players-pwd"><%= @server.config.player_pwd %></span>
+  <span class="spec-pwd"><%= @server.config.spec_pwd %></span>
   <span class="server-status">
-    <%= DashboardView.get_status_icon(@status.server, @server.login) %>
+    <%= DashboardView.get_status_icon(@server.status, @server.config.login) %>
   </span>
 
 </section>
