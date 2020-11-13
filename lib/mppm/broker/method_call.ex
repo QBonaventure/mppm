@@ -48,8 +48,9 @@ defmodule Mppm.Broker.MethodCall do
     IO.inspect data
   end
 
-  def dispatch_script_callback(_server_login, "Maniaplanet.StartMatch_Start",
+  def dispatch_script_callback(server_login, "Maniaplanet.StartMatch_Start",
   %{"count" => _count, "time" => _time}) do
+    Phoenix.PubSub.broadcast(Mppm.PubSub, "server-status", {:start_of_match, server_login})
   end
 
   def dispatch_script_callback(server_login, "Maniaplanet.StartMatch_End",

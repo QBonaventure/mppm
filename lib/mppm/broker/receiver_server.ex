@@ -19,13 +19,13 @@ defmodule Mppm.Broker.ReceiverServer do
 
   def handle_info({:connect, xmlrpc_port}, state) do
     {:ok, socket} = open_connection(xmlrpc_port)
-    Logger.info "TCP connection established for server "<>state.login
+    Logger.info "["<>state.login<>"] TCP connection established"
     Phoenix.PubSub.broadcast(Mppm.PubSub, "broker-status", {:connection_established, socket})
     {:noreply, %{state | socket: socket}}
   end
 
   def handle_info({:tcp_closed, port}, state) do
-    Logger.info "Closing broker connection for "<>state.login
+    Logger.info "["<>state.login<>"] Closing broker connection"
     {:noreply, %{state | status: :disconnected}}
   end
 
@@ -63,7 +63,7 @@ defmodule Mppm.Broker.ReceiverServer do
   end
 
   defp parse_new_packet(login, binary) do
-    Logger.info "Dropped packet: "<>binary
+    Logger.info "["<>login<>"] Dropped packet: "<>binary
     {:error, nil}
   end
 
@@ -94,7 +94,7 @@ defmodule Mppm.Broker.ReceiverServer do
       XMLRPC.decode! message
     rescue
       XMLRPC.DecodeError ->
-        Logger.error message
+        Logger.error "["<>login<>"] "<> message
         GenServer.stop :error
     else
       message -> case message do
@@ -140,7 +140,7 @@ defmodule Mppm.Broker.ReceiverServer do
       status: :disconnected,
       incoming_message: nil,
     }
-    Logger.info "Broker receiver for "<>login<>" started."
+    Logger.info "["<>login<>"] Broker receiver started."
     Process.send_after(self, {:connect, xmlrpc_port}, 100)
     {:ok, init_state}
   end

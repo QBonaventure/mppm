@@ -12,7 +12,7 @@ defmodule Mppm.Broker.RequesterServer do
       :ok ->
         :ok
       {:error, :closed} ->
-        Logger.error "An error occured while sending query to "<>broker_state.login
+        Logger.error "["<>broker_state.login<>"] An error occured while sending query"
         {:error, :closed}
     end
   end
@@ -114,9 +114,6 @@ defmodule Mppm.Broker.RequesterServer do
     # Mppm.Repo.get_by(Mppm.ServerConfig, login: state.login)
     # |> Mppm.Repo.preload(ruleset: [:mode])
     # |> Mppm.ServerConfig.create_ruleset_file
-
-    # GenServer.call(Mppm.Tracklist, {:get_server_tracklist, state.login})
-    # |> Mppm.ServerConfig.create_tracklist()
 
     make_request("LoadMatchSettings", ["MatchSettings/" <> state.login <> ".txt"], state)
     {:noreply, state}
@@ -223,7 +220,7 @@ defmodule Mppm.Broker.RequesterServer do
       superadmin_pwd: superadmin_pwd,
       status: :disconnected,
     }
-    Logger.info "Broker requester for "<>login<>" started."
+    Logger.info "["<>login<>"] Broker requester started."
 
     {:ok, init_state}
   end
@@ -238,7 +235,7 @@ defmodule Mppm.Broker.RequesterServer do
     make_request("GetCurrentGameInfo", [], state)
     make_request("GetPlayerList", [1000, 0], state)
 
-    Logger.info "Authenticated to the game server for "<>state.login
+    Logger.info "["<>state.login<>"] Authenticated to the game server"
     Phoenix.PubSub.broadcast(Mppm.PubSub, "server-status", {:broker_started, state.login})
     {:noreply, state}
   end

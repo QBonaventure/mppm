@@ -107,7 +107,6 @@ defmodule Mppm.Tracklist do
   def handle_cast({:insert_track, server_login, %Mppm.Track{} = track, index}, state) do
     tracklist = Map.get(state, server_login) |> add_track(track, index)
     Mppm.Tracklist.upsert_tracklist(tracklist)
-    Mppm.ServerConfig.create_tracklist(tracklist)
     Phoenix.PubSub.broadcast(Mppm.PubSub, "tracklist-status", {:tracklist_change, server_login, tracklist})
     {:noreply, %{state | server_login => tracklist}}
   end

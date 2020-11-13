@@ -209,7 +209,7 @@ defmodule Mppm.ServerConfig do
 
     filename = serv_config.login <> ".txt"
 
-    Logger.info "Writing new config for "<>serv_config.login
+    Logger.info "["<>serv_config.login<>"] Writing new config file"
     :file.write_file(@config_path <> filename, pp)
 
     filename
@@ -305,7 +305,7 @@ defmodule Mppm.ServerConfig do
     new_xml = {:playlist, [], game_info ++ tracks}
     pp = :xmerl.export_simple([new_xml], :xmerl_xml) |> List.flatten
 
-    Logger.info "Writing new tracklist for "<>login
+    Logger.info "["<>login<>"] Writing new tracklist"
     :file.write_file(target_path, pp)
   end
 

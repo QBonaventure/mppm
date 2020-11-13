@@ -53,8 +53,6 @@ defmodule Mppm.GameServer.Server do
   defp start_server(state) do
     ServerConfig.create_config_file(state.config)
     ServerConfig.create_ruleset_file(state.config)
-    GenServer.call(Mppm.Tracklist, {:get_server_tracklist, state.config.login})
-    |> ServerConfig.create_tracklist()
 
     command = get_command(state.config)
     port = Port.open({:spawn, command}, [:binary, :exit_status])
@@ -236,12 +234,16 @@ defmodule Mppm.GameServer.Server do
       true ->
         config = Mppm.Repo.get(Mppm.ServerConfig, state.config.id) |> Mppm.Repo.preload(:ruleset)
         Mppm.ServerConfig.create_ruleset_file(config)
-        Mppm.ServerConfig.create_tracklist(config)
         GenServer.cast({:global, {:broker_requester, server_login}}, :reload_match_settings)
         {:noreply, %{state | config: config, reload_config?: false, reload_ruleset?: false, game_mode_id: get_next_game_mode_id(state.config.id)}}
       _ ->
         {:noreply, %{state | reload_config?: false, reload_ruleset?: false}}
     end
+  end
+
+  def handle_info({:start_of_match, server_login}, state) do
+    GenServer.cast({:global, {:broker_requester, server_login}}, :reload_match_settings)
+    {:noreply, state}
   end
 
   def handle_info({:current_game_mode, %Mppm.Type.GameMode{id: mode_id}}, state) do
