@@ -230,15 +230,17 @@ defmodule Mppm.GameServer.Server do
   end
 
   def handle_info({:end_of_game, server_login}, state) do
-    case server_login == state.config.login and state.reload_ruleset? do
-      true ->
+    # case server_login == state.config.login and state.reload_ruleset? do
+    #   true ->
         config = Mppm.Repo.get(Mppm.ServerConfig, state.config.id) |> Mppm.Repo.preload(:ruleset)
         Mppm.ServerConfig.create_ruleset_file(config)
-        GenServer.cast({:global, {:broker_requester, server_login}}, :reload_match_settings)
-        {:noreply, %{state | config: config, reload_config?: false, reload_ruleset?: false, game_mode_id: get_next_game_mode_id(state.config.id)}}
-      _ ->
-        {:noreply, %{state | reload_config?: false, reload_ruleset?: false}}
-    end
+        Mppm.ServerConfig.create_tracklist(config)
+    #     # GenServer.cast({:global, {:broker_requester, server_login}}, :reload_match_settings)
+    #     {:noreply, %{state | config: config, reload_config?: false, reload_ruleset?: false, game_mode_id: get_next_game_mode_id(state.config.id)}}
+    #   _ ->
+    #     {:noreply, %{state | reload_config?: false, reload_ruleset?: false}}
+    # end
+    {:noreply, %{state | game_mode_id: get_next_game_mode_id(state.config.id)}}
   end
 
   def handle_info({:start_of_match, server_login}, state) do

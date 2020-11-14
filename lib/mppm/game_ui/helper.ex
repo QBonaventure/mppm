@@ -29,9 +29,10 @@ defmodule Mppm.GameUI.Helper do
       end
 
     {:manialinks, [], [
-        Mppm.GameUI.TimeRecords.get_table(track_records),
-        Mppm.GameUI.TimeRecords.user_best_time(user_record),
-        Mppm.GameUI.LiveRaceRanking.root_wrap(),
+      Mppm.GameUI.BasicInfo.root_wrap(),
+      Mppm.GameUI.TimeRecords.get_table(track_records),
+      Mppm.GameUI.TimeRecords.user_best_time(user_record),
+      Mppm.GameUI.LiveRaceRanking.root_wrap(),
     ]}
   end
 

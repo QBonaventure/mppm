@@ -6,6 +6,7 @@ defmodule Mppm.GameUI.GameUISupervisor do
   def start_link(_init_value), do: Supervisor.start_link(__MODULE__, nil, name: __MODULE__)
   def init(nil) do
     children = [
+      Mppm.GameUI.BasicInfo,
       Mppm.GameUI.Controller,
       Mppm.GameUI.TimeRecords,
       Mppm.GameUI.LiveRaceRanking
