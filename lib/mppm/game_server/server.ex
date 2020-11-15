@@ -177,14 +177,13 @@ defmodule Mppm.GameServer.Server do
   ##########################
 
   def handle_cast(:start, state) do
-    {:ok, state} =
-      case :ok == Mppm.ServersStatuses.get_start_flag(state.config.login) do
-        true ->
-          start_server(state)
-          {:noreply, %{state | game_mode_id: get_next_game_mode_id(state.server_config.id)}}
-        false ->
-          {:noreply, state}
-      end
+    case :ok == Mppm.ServersStatuses.get_start_flag(state.config.login) do
+      true ->
+        {:ok, state} = start_server(state)
+        {:noreply, %{state | game_mode_id: get_next_game_mode_id(state.config.id)}}
+      false ->
+        {:noreply, state}
+    end
   end
 
   def handle_cast(:stop, state) do
