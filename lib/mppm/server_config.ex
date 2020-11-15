@@ -289,6 +289,12 @@ defmodule Mppm.ServerConfig do
   def create_tracklist(%Mppm.Tracklist{server: %Ecto.Association.NotLoaded{}} = tracklist), do:
     Mppm.Repo.preload(tracklist, :server) |> create_tracklist()
 
+  def create_tracklist(%Mppm.Tracklist{tracks: []} = tracklist) do
+    tracklist
+    |> Map.put(:tracks, Mppm.Repo.all(from t in Mppm.Track, where: t.id in ^tracklist.tracks_ids))
+    |> create_tracklist()
+  end
+
   def create_tracklist(%Mppm.Tracklist{server: %{login: login}} = tracklist) do
     target_path = "#{@maps_path}MatchSettings/#{login}.txt"
 

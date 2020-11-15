@@ -53,6 +53,8 @@ defmodule Mppm.GameServer.Server do
   defp start_server(state) do
     ServerConfig.create_config_file(state.config)
     ServerConfig.create_ruleset_file(state.config)
+    GenServer.call(Mppm.Tracklist, {:get_server_tracklist, state.config.login})
+    |> Mppm.ServerConfig.create_tracklist()
 
     command = get_command(state.config)
     port = Port.open({:spawn, command}, [:binary, :exit_status])
