@@ -235,7 +235,7 @@ defmodule Mppm.GameServer.Server do
     #   true ->
         config = Mppm.Repo.get(Mppm.ServerConfig, state.config.id) |> Mppm.Repo.preload(:ruleset)
         Mppm.ServerConfig.create_ruleset_file(config)
-        Mppm.ServerConfig.create_tracklist(config)
+        # Mppm.ServerConfig.create_tracklist(config)
     #     # GenServer.cast({:global, {:broker_requester, server_login}}, :reload_match_settings)
     #     {:noreply, %{state | config: config, reload_config?: false, reload_ruleset?: false, game_mode_id: get_next_game_mode_id(state.config.id)}}
     #   _ ->

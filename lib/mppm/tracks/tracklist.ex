@@ -122,6 +122,7 @@ defmodule Mppm.Tracklist do
   when _message in [:current_track_info, :loaded_map] do
     tracklist = reindex_from_current_track(Map.get(state, server_login), track_uid)
     Phoenix.PubSub.broadcast(Mppm.PubSub, "tracklist-status", {:tracklist_change, server_login, tracklist})
+    Mppm.ServerConfig.create_tracklist(tracklist)
     {:noreply, %{state | server_login => tracklist}}
   end
 
