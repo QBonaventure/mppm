@@ -331,6 +331,8 @@ section#server-users > div {
 
 div#all-users-list {
   width: 75%;
+  max-height: 300px;
+  overflow-y: scroll;
 }
 
 
