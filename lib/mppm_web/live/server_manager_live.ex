@@ -39,6 +39,8 @@ defmodule MppmWeb.ServerManagerLive do
       |> assign(respawn_behaviours: Mppm.Repo.all(Mppm.Ruleset.RespawnBehaviour))
       |> assign(chat: Mppm.ChatMessage.get_last_chat_messages(server_config.id))
       |> assign(server_users: Mppm.ConnectedUsers.get_connected_users(server_config.login))
+      |> assign(users: Mppm.Repo.all(Mppm.User) |> Mppm.Repo.preload(:roles))
+      |> assign(available_roles: Mppm.Repo.all(Mppm.UserRole))
 
     {:ok, socket}
   end
@@ -80,6 +82,34 @@ defmodule MppmWeb.ServerManagerLive do
   end
 
 
+  def handle_event("add-role", %{"user_id" => user_id, "role_id" => role_id}, socket) do
+    {user_id, _} = Integer.parse(user_id)
+    {role_id, _} = Integer.parse(role_id)
+
+    {:ok, updated_user} =
+      Enum.find(socket.assigns.users, & &1.id == user_id)
+      |> Mppm.User.add_role(Enum.find(socket.assigns.available_roles, & &1.id == role_id))
+
+    user_index = Enum.find_index(socket.assigns.users, & &1.id == user_id)
+
+    {:noreply, assign(socket, users: List.replace_at(socket.assigns.users, user_index, updated_user))}
+  end
+
+
+
+
+  def handle_event("remove-role", %{"user-id" => user_id, "role-id" => role_id}, socket) do
+    {user_id, _} = Integer.parse(user_id)
+    {role_id, _} = Integer.parse(role_id)
+
+    {:ok, updated_user} =
+      Enum.find(socket.assigns.users, & &1.id == user_id)
+      |> Mppm.User.remove_role(Enum.find(socket.assigns.available_roles, & &1.id == role_id))
+
+    user_index = Enum.find_index(socket.assigns.users, & &1.id == user_id)
+
+    {:noreply, assign(socket, users: List.replace_at(socket.assigns.users, user_index, updated_user))}
+  end
 
 
 

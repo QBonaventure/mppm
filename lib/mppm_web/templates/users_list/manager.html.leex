@@ -1,0 +1,24 @@
+<div id="all-users-list">
+  <%= for user <- @users do %>
+
+    <div id="user-<%= user.id %>" class="user-row">
+      <div class="user-nickname"><%= user.nickname %></div>
+      <div class="user-roles" phx-hook="role_dropzone" id="dropzone-user-<%= Integer.to_string(user.id) %>">
+        <%= for role <- Enum.sort_by(user.roles, & &1.id) do %>
+          <div class="user-role">
+            <span><%= role.name %></span>
+            <span class="remove-button" phx-click="remove-role" phx-target="#all-users-list" phx-value-role-id="<%= role.id %>" phx-value-user-id="<%= user.id %>">X</span>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  <% end %>
+</div>
+
+<div id="available-roles" class="clearfix">
+  <%= for role <- Mppm.Repo.all(Mppm.UserRole) do %>
+    <span draggable="true" phx-hook="draggable_role_hook" id="<%= "available-role-"<>Integer.to_string(role.id) %>"><%= role.name %></span>
+  <% end %>
+</div>
+
+<div style="clear: both;" />

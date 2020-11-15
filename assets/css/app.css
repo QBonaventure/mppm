@@ -302,3 +302,97 @@ div#users-list-component section {
   width: 150px;
   padding: 0px 5px;
 }
+
+
+/********************** SERVER USERS **************************/
+.clearfix {
+   overflow: auto;
+}
+.clearfix::after {
+  content: "";
+  clear: both;
+  display: table;
+}
+
+section#server-users {
+  clear: both;
+  width: 100%;
+  border: 1px solid grey;
+  position: relative;
+}
+
+section#server-users h1 {
+  text-align: center;
+}
+
+section#server-users > div {
+  position: relative;
+}
+
+div#all-users-list {
+  width: 75%;
+}
+
+
+section#server-users div.user-row {
+  border-bottom: 1px solid lightgray;
+  padding: 5px 10px;
+  height: 38px;
+  clear: both;
+}
+
+section#server-users div.user-row div {
+  float: left;
+}
+
+section#server-users div.user-nickname {
+  width: 10%;
+}
+
+section#server-users .user-role {
+  border: 1px solid var(--ftc-red-color);
+  padding: 0px 8px;
+  border-radius: 7px;
+  margin-left: 10px;
+}
+
+section#server-users .user-roles {
+  width: 90%;
+  height: 32px;
+}
+
+section#server-users .remove-button {
+  background-color: var(--ftc-red-color);
+  color: white;
+  border-radius: 9px;
+  width: 18px;
+  height: 18px;
+  display: inline-block;
+  padding-left: 4px;
+  line-height: 19px;
+}
+
+section#server-users .remove-button:hover {
+  background-color: white;
+  color: var(--ftc-red-color);
+  border: 1px solid var(--ftc-red-color);
+}
+
+
+div#available-roles {
+  width: 23%;
+  background-color: gainsboro;
+  top: -30px;
+  position: absolute;
+  right: 10px;
+}
+
+
+
+div#available-roles span {
+  clear: both;
+  display: inline-block;
+  width: 100%;
+  text-align: center;
+  margin: 5px 0;
+}

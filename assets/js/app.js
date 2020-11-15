@@ -22,6 +22,41 @@ import NProgress from "nprogress"
 
 let Hooks = {}
 
+
+
+Hooks.draggable_role_hook = {
+  mounted() {
+    this.el.addEventListener("dragstart", e => {
+      e.dataTransfer.effectAllowed = "copy";
+      e.dataTransfer.dropEffect = "copy";
+      e.dataTransfer.setData("text/plain", e.target.id); // save the elements id as a payload
+    })
+  }
+}
+
+Hooks.role_dropzone = {
+  mounted() {
+    this.el.addEventListener("dragover", e => {
+      e.preventDefault();
+      e.dataTransfer.effectAllowed = "copy";
+      e.dataTransfer.dropEffect = "copy";
+    })
+
+    this.el.addEventListener("dragover", e => {
+      e.preventDefault();
+      e.dataTransfer.effectAllowed = "copy";
+      e.dataTransfer.dropEffect = "copy";
+    })
+
+    this.el.addEventListener("drop", e => {
+      e.preventDefault();
+      var role_id = e.dataTransfer.getData("text/plain").replace("available-role-", "")
+      var user_id = e.currentTarget.parentNode.id.replace("user-", "")
+      this.pushEvent("add-role", {user_id: user_id, role_id: role_id});
+    })
+  }
+}
+
 function get_placeholder() {
   let li = document.createElement('div');
   li.className = 'track-placeholder';
@@ -64,7 +99,6 @@ Hooks.draggable_server_track_hook = {
 Hooks.track_dropzone = {
   mounted() {
     this.el.addEventListener("dragstart", e => {
-
       e.currentTarget.classList.add("sss");
     })
 
