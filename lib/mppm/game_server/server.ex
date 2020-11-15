@@ -71,7 +71,7 @@ defmodule Mppm.GameServer.Server do
           %{state | status: :started, listening_ports: listening_ports, port: port, os_pid: os_pid}
         {:error, _} ->
           Mppm.ServersStatuses.update_server_status(state.config.login, :failed)
-          Logger.info "Server '"<>state.config.login<>"' couldn't start"
+          Logger.info "["<>state.config.login<>"] Server couldn't start"
           %{state | status: :stopped}
       end
     {:ok, state}
