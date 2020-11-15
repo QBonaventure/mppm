@@ -63,7 +63,7 @@ function get_placeholder() {
   return li;
 }
 
-function remove_all_placeholders(document) {
+function remove_all_placeholders() {
   var ph = document.getElementsByClassName("track-placeholder")
   while (ph[0]) {
     ph[0].parentNode.removeChild(ph[0])
