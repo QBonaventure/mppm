@@ -15,7 +15,10 @@ defmodule Mppm.ConnectedUsers do
     |> Enum.find(fn {_, users} ->
       Enum.any?(users, & &1.login == user_login)
     end)
-    |> elem(0)
+    |> case do
+      {server_login, [_user]} -> server_login
+      _ -> nil
+    end
   end
 
   def add_server_user(state, server_login, %Mppm.User{} = user) do

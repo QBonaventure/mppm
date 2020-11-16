@@ -230,6 +230,9 @@ defmodule Mppm.Broker.MethodCall do
   def dispatch_message(server_login, "ManiaPlanet.PlayerInfoChanged", _player_info_map) do
   end
 
+  def dispatch_message(server_login, "ManiaPlanet.PlayerManialinkPageAnswer", [_, user_login, method_call, params]), do:
+    Mppm.GameUI.Actions.handle_action(method_call, server_login, user_login, params)
+
 
   def dispatch_message(server_login, method_name, data) do
     IO.inspect %{method: method_name, data: data}
