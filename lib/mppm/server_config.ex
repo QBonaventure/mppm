@@ -186,7 +186,7 @@ defmodule Mppm.ServerConfig do
       |> List.keyreplace(:name, 0, {:name, [], [charlist(serv_config.name)]})
       |> List.keyreplace(:comment, 0, {:comment, [], [charlist(serv_config.comment)]})
       |> List.keyreplace(:max_players, 0, {:max_players, [], [charlist(serv_config.max_players)]})
-      |> List.keyreplace(:password_spectator, 0, {:password_spectator, [], []})
+      |> List.keyreplace(:password_spectator, 0, {:password_spectator, [], [charlist(serv_config.spec_pwd)]})
       |> List.keyreplace(:password, 0, {:password, [], [charlist(serv_config.player_pwd)]})
       |> List.keyreplace(:disable_horns, 0, {:disable_horns, [], [charlist(serv_config.disable_horns)]})
       |> List.keyreplace(:keep_player_slots, 0, {:keep_player_slots, [], [charlist(serv_config.keep_player_slot)]})
