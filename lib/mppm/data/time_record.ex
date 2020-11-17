@@ -36,9 +36,26 @@ defmodule Mppm.TimeRecord do
     |> Map.get(:time_records)
   end
 
+  def compare(time_a, time_b) do
+    case time_a - time_b do
+      _diff when _diff < 0 -> :ahead
+      _diff when _diff > 0 -> :behind
+      0 -> :equal
+    end
+  end
+
+
+  def get_sign(time) when is_integer(time) do
+    case time < 0 do
+      true -> "-"
+      false -> "+"
+    end
+  end
+
   def to_string(time) when is_integer(time) do
     [sec, ms] =
       time
+      |> Kernel.abs
       |> Integer.digits
       |> Enum.split(-3)
       |> Tuple.to_list

@@ -1,6 +1,16 @@
 defmodule Mppm.GameUI.Helper do
 
 
+
+  def send_to_user(manialink, server_login, user_login, timeout) do
+    xml = Mppm.XML.to_doc(manialink)
+
+    GenServer.call(
+      {:global, {:broker_requester, server_login}},
+      {:display_to_client_with_login, xml, user_login, false, timeout}
+    )
+  end
+
   def send_to_user(manialink, server_login, user_login) do
     xml = Mppm.XML.to_doc(manialink)
 
@@ -29,6 +39,7 @@ defmodule Mppm.GameUI.Helper do
       end
 
     {:manialinks, [], [
+      Mppm.GameUI.TimePartialsDiffs.root_wrap(),
       Mppm.GameUI.BasicInfo.get_info(server_login, user),
       Mppm.GameUI.TimeRecords.get_table(track_records),
       Mppm.GameUI.TimeRecords.user_best_time(user_record),

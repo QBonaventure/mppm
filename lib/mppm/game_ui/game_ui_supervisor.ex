@@ -9,7 +9,8 @@ defmodule Mppm.GameUI.GameUISupervisor do
       Mppm.GameUI.BasicInfo,
       Mppm.GameUI.Controller,
       Mppm.GameUI.TimeRecords,
-      Mppm.GameUI.LiveRaceRanking
+      Mppm.GameUI.LiveRaceRanking,
+      Mppm.GameUI.TimePartialsDelta,
     ]
     Supervisor.init(children, strategy: :one_for_one)
   end

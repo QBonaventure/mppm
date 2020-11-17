@@ -8,14 +8,16 @@ defmodule Mppm.GameUI.TimeRecords do
 
 
   def handle_info({:new_time_record, server_login, time}, state) do
-    records = GenServer.call(Mppm.TimeTracker, {:get_server_records, server_login})
+    records =
+      GenServer.call(Mppm.TimeTracker, {:get_server_records, server_login})
+      |> Enum.sort_by(& &1.lap_time)
 
     records
     |> get_table()
     |> Mppm.GameUI.Helper.send_to_all(server_login)
 
-    time = Mppm.Repo.preload(time, :user)
-    time
+    time =
+    Mppm.Repo.preload(time, :user)
     |> user_best_time
     |> Mppm.GameUI.Helper.send_to_user(server_login, time.user.login)
 
@@ -23,7 +25,9 @@ defmodule Mppm.GameUI.TimeRecords do
   end
 
   def handle_info({:beginmap, server_login, _}, state) do
-    records = GenServer.call(Mppm.TimeTracker, {:get_server_records, server_login})
+    records =
+      GenServer.call(Mppm.TimeTracker, {:get_server_records, server_login})
+      |> Enum.sort_by(& &1.lap_time)
 
     records
     |> get_table()
@@ -36,10 +40,17 @@ defmodule Mppm.GameUI.TimeRecords do
       |> Mppm.GameUI.Helper.send_to_user(server_login, user.login)
     end)
 
+    state = Map.put(state, server_login, %{records: records})
     {:noreply, state}
   end
-  #
+
+
   def handle_info(_, state), do: {:noreply, state}
+
+
+  def handle_call({:get_best_time, server_login}, from, state) do
+    {:reply, Kernel.get_in(state, ["ftc_tm20_1", :records]) |> List.first(), state}
+  end
 
 
 
@@ -68,17 +79,12 @@ defmodule Mppm.GameUI.TimeRecords do
 
   def get_table(time_records) do update_table(time_records) end
   def update_table(time_records) do
-    times =
-      time_records
-      |> Enum.sort_by(& &1.lap_time)
-      |> Enum.take(10)
-
     base_content =
       [
         {:label, [text: "Local Records", class: "header-text"], []},
         {:quad, [size: "36 4.5", pos: "1 1", class: "background-quad"], []}
       ]
-      |> List.insert_at(1, display_lines(times))
+      |> List.insert_at(1, display_lines(time_records))
       |> List.flatten
 
     {:frame, [pos: "-160 -25"], base_content}
@@ -116,6 +122,7 @@ defmodule Mppm.GameUI.TimeRecords do
     :ok = Phoenix.PubSub.subscribe(Mppm.PubSub, "records-status")
     :ok = Phoenix.PubSub.subscribe(Mppm.PubSub, "maps-status")
     :ok = Phoenix.PubSub.subscribe(Mppm.PubSub, "time-status")
+    :ok = Phoenix.PubSub.subscribe(Mppm.PubSub, "race-status")
     {:ok, %{}}
   end
 
