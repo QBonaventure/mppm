@@ -17,12 +17,12 @@ defmodule Mppm.GameUI.BasicInfo do
   defp current_track({track_one, track_two}) do
     {:frame, [id: "maps", pos: "-160 90"], [
       {:frame, [id: "current-map"], [
-        {:label, [class: "text", pos: "1.5 -1", text: track_text(track_one)], []},
-        {:quad, [class: "background-quad", pos: "0.5 -0.5", size: "40 3.2"], []},
+        {:label, [class: "text", pos: "1.5 -1", size: "36 3.2", text: track_text(track_one)], []},
+        {:quad, [class: "background-quad", pos: "0.5 -0.5", size: "36 3.2"], []},
       ]},
       {:frame, [id: "next-map", pos: "0 -3.7"], [
-        {:label, [class: "text", pos: "1.5 -1", text: track_text(track_two), opacity: "0.5"], []},
-        {:quad, [class: "background-quad", pos: "0.5 -0.5", size: "40 3.2", opacity: "0.1"], []},
+        {:label, [class: "text", pos: "1.5 -1", size: "36 3.2", text: track_text(track_two), opacity: "0.5"], []},
+        {:quad, [class: "background-quad", pos: "0.5 -0.5", size: "36 3.2", opacity: "0.1"], []},
       ]}
     ]}
   end

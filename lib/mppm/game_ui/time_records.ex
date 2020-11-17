@@ -4,6 +4,9 @@ defmodule Mppm.GameUI.TimeRecords do
   import Ecto.Query
 
 
+  @max_local_records_nb 10
+
+
   def handle_info({:new_time_record, server_login, time}, state) do
     records = GenServer.call(Mppm.TimeTracker, {:get_server_records, server_login})
 
@@ -50,9 +53,10 @@ defmodule Mppm.GameUI.TimeRecords do
       :frame,
       [pos: "-160 40", scale: "1"],
       [
-        {:label, [text: "My Best Time", class: "header-text", pos: "10 0"], []},
-        {:label, [text: Mppm.TimeRecord.to_string(time_record.lap_time), class: "text", pos: "20 -5"], []},
-        {:quad, [size: "35 9", pos: "1 1", class: "background-quad"], []}
+        {:label, [text: "My Best Time", class: "header-text"], []},
+        {:label, [text: Mppm.TimeRecord.to_string(time_record.lap_time), class: "text", pos: "20 -5", halign: "center"], []},
+        {:quad, [size: "36 4.5", pos: "1 1", class: "background-quad"], []},
+        {:quad, [size: "36 4.5", pos: "1 -3.5", class: "background-quad-black"], []}
       ]
     }
     |> get_user_best_time_root()
@@ -69,32 +73,34 @@ defmodule Mppm.GameUI.TimeRecords do
       |> Enum.sort_by(& &1.lap_time)
       |> Enum.take(10)
 
-    quad_size = "36 "<> Integer.to_string(3*Enum.count(times)+6)
-
     base_content =
       [
-        {:label, [text: "Local Records", pos: "18 0", halign: "center", class: "header-text"], []},
-        {:quad, [size: quad_size, pos: "1 1", class: "background-quad"], []}
+        {:label, [text: "Local Records", class: "header-text"], []},
+        {:quad, [size: "36 4.5", pos: "1 1", class: "background-quad"], []}
       ]
       |> List.insert_at(1, display_lines(times))
       |> List.flatten
 
-    {:frame, [pos: "-160 30"], base_content}
+    {:frame, [pos: "-160 -25"], base_content}
     |> get_local_records_root
   end
+
+  def display_lines(times) when length(times) > @max_local_records_nb, do:
+    times |> Enum.slice(0, @max_local_records_nb) |> display_lines()
 
   def display_lines(times) do
     {
       :frame,
-      [id: "records-list", pos: "0 -5"],
+      [id: "records-list", pos: "0 -3.6"],
       Enum.map_reduce(times, 0, fn time_record, index ->
         time_record = Mppm.Repo.preload(time_record, :user)
         line =
-          {:frame, [id: Integer.to_string(index), size: "50 50", pos: "2 "<>Integer.to_string(-index*4)], [
+          {:frame, [id: Integer.to_string(index), size: "50 50", pos: "0 "<>Float.to_string(-index*3.5)], [
             # {:label, [text: Integer.to_string(acc+1) <> "888.", class: "text", pos: "5 0", halign: "right"], []},
-              {:label, [text: Integer.to_string(index+1)<>".", class: "text", pos: "6 0", halign: "right"], []},
-            {:label, [text: time_record.user.nickname, class: "text", pos: "7 0", halign: "left"], []},
-            {:label, [text: Mppm.TimeRecord.to_string(time_record.lap_time), class: "text", pos: "33 0", halign: "right"], []}
+            {:label, [text: Integer.to_string(index+1)<>".", class: "text", pos: "6 -0.7", halign: "right"], []},
+            {:label, [text: time_record.user.nickname, class: "text", pos: "7 -0.7", halign: "left"], []},
+            {:label, [text: Mppm.TimeRecord.to_string(time_record.lap_time), class: "text", pos: "33 -0.7", halign: "right"], []},
+            {:quad, [size: "36 4.5", pos: "1 1", class: "background-quad-black"], []}
             # {:label, [text: "sssssssssss", class: "text", pos: "33 0", halign: "right"], []}
         ]}
         {line, index+1}
