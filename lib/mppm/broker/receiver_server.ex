@@ -101,23 +101,9 @@ defmodule Mppm.Broker.ReceiverServer do
         %XMLRPC.MethodCall{} -> Mppm.Broker.MethodCall.dispatch(login, message)
         %XMLRPC.MethodResponse{} -> Mppm.Broker.MethodResponse.dispatch(login, message)
         d ->
-          # IO.inspect d
       end
     end
   end
-
-
-  defp get_response_payload(socket, size) do
-    {:ok, res} = :gen_tcp.recv(socket, size, 10000)
-    {:ok, XMLRPC.decode! res}
-  end
-
-  defp get_response_header(socket) do
-    {:ok, <<a::little-32, b::little-32>>} = :gen_tcp.recv(socket, @header_size, 10000)
-    {:ok, %{size: a, id: b}}
-  end
-
-
 
   def handle_call(:get_socket, _, state) do
     {:reply, {:ok, state.socket}, state}
@@ -131,8 +117,6 @@ defmodule Mppm.Broker.ReceiverServer do
   end
 
   def init([login, xmlrpc_port, superadmin_pwd]) do
-    # Process.flag(:trap_exit, true)
-
     init_state = %{
       socket: nil,
       login: login,

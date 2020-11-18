@@ -82,6 +82,7 @@ defmodule Mppm.GameUI.TimeRecords do
 
   def get_table(time_records) do update_table(time_records) end
   def update_table(time_records) do
+
     base_content =
       [
         {:label, [text: "Local Records", class: "header-text"], []},

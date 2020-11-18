@@ -20,17 +20,6 @@ defmodule Mppm.Tracklist do
   end
 
 
-
-
-  # def get(server_login) do
-  #   case Mppm.Tracklist.fetch_data(server_login)
-  # end
-
-  def fetch_tracks_data(server_login) do
-
-  end
-
-
   def upsert_tracklist(%Mppm.Tracklist{} = tracklist) do
     mx_tracks_ids = Enum.map(tracklist.tracks, & Map.get(&1, :mx_track_id))
     tracks = Mppm.Repo.all(from t in Mppm.Track, where: t.mx_track_id in ^mx_tracks_ids)
