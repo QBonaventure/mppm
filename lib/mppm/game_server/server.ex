@@ -79,8 +79,6 @@ defmodule Mppm.GameServer.Server do
 
 
   def handle_cast({:relink_orphan_process, {login, pid, xmlrpc_port}}, state) do
-    server_config = Mppm.ServersStatuses.get_server_config(login)
-
     Mppm.Broker.Supervisor.child_spec(state.config, xmlrpc_port)
     |> Mppm.GameServer.Supervisor.start_child
 
