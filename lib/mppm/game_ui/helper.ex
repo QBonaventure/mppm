@@ -39,7 +39,7 @@ defmodule Mppm.GameUI.Helper do
       end
 
     {:manialinks, [], [
-      Mppm.GameUI.TimePartialsDiffs.root_wrap(),
+      Mppm.GameUI.TimePartialsDelta.root_wrap(),
       Mppm.GameUI.BasicInfo.get_info(server_login, user),
       Mppm.GameUI.TimeRecords.get_table(track_records),
       Mppm.GameUI.TimeRecords.user_best_time(user_record),
