@@ -8,6 +8,7 @@ defmodule Mppm.GameUI.TimeRecords do
 
 
   def handle_info({:new_time_record, server_login, time}, state) do
+    time = Mppm.Repo.preload(time, :user)
     records =
       GenServer.call(Mppm.TimeTracker, {:get_server_records, server_login})
       |> Enum.sort_by(& &1.lap_time)
@@ -16,7 +17,7 @@ defmodule Mppm.GameUI.TimeRecords do
     |> get_table()
     |> Mppm.GameUI.Helper.send_to_all(server_login)
 
-    Mppm.Repo.preload(time, :user)
+    time
     |> user_best_time
     |> Mppm.GameUI.Helper.send_to_user(server_login, time.user.login)
 
