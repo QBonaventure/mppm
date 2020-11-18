@@ -60,6 +60,8 @@ defmodule Mppm.GameUI.TimeRecords do
 
   def user_best_time(nil), do:
     get_user_best_time_root()
+  def user_best_time(%Mppm.TimeRecord{user: %Ecto.Association.NotLoaded{}} = time_record), do:
+    time_record |> Mppm.Repo.preload(:user, force: true) |> user_best_time()
   def user_best_time(time_record), do:
     {
       :frame,

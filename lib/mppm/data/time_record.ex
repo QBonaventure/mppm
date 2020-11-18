@@ -36,6 +36,13 @@ defmodule Mppm.TimeRecord do
     |> Map.get(:time_records)
   end
 
+
+  def compare(time_a, nil), do:
+    :missing_time
+
+  def compare(%Mppm.TimeRecord{lap_time: time_a}, %Mppm.TimeRecord{lap_time: time_b}), do:
+    compare(time_a, time_b)
+
   def compare(time_a, time_b) do
     case time_a - time_b do
       _diff when _diff < 0 -> :ahead

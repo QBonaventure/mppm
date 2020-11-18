@@ -1,6 +1,6 @@
 defmodule Mppm.GameUI.TimePartialsDelta do
   use GenServer
-
+  import Ecto.Query
 
   @background_style %{
     ahead: "background-positive",
@@ -30,17 +30,55 @@ defmodule Mppm.GameUI.TimePartialsDelta do
   end
 
 
+  def handle_cast({:set_new_top_record, server_login, %Mppm.TimeRecord{} = new_time}, state) do
+    {:noreply, Map.put(state, server_login, new_time)}
+  end
+
+
+  def handle_info({:loaded_map, server_login, track_uid}, state) do
+    top_record = Mppm.Repo.one(
+      from t in Mppm.TimeRecord,
+      join: m in assoc(t, :track),
+      where: m.track_uid == ^track_uid,
+      order_by: {:asc, t.lap_time},
+      limit: 1)
+
+    IO.inspect top_record
+        IO.inspect track_uid
+    {:noreply, Map.put(state, server_login, top_record)}
+  end
+
+
+  def handle_info({:new_time_record, server_login, time}, state) do
+    case Mppm.TimeRecord.compare(time, Map.get(state, server_login)) do
+      :ahead -> {:noreply, Map.put(state, server_login, time)}
+      _ -> {:noreply, state}
+    end
+  end
 
   def handle_info({:player_waypoint, server_login, user_login, waypoint_nb, time}, state) do
-    GenServer.call(Mppm.GameUI.TimeRecords, {:get_best_time, server_login})
-    |> Map.get(:checkpoints)
-    |> Enum.at(waypoint_nb)
-    |> case do
-      nil -> nil
-      ref_time ->
-        get_display(ref_time, time)
-        |> Mppm.GameUI.Helper.send_to_user(server_login, user_login, 2000)
+    best_time =
+      case Map.get(state, server_login, :no_key) do
+        %Mppm.TimeRecord{} = best_time -> best_time
+        :no_key ->
+           best_time = GenServer.call(Mppm.TimeTracker, {:get_server_top_record, server_login})
+           GenServer.cast(self(), {:set_new_top_record, server_login, best_time})
+           best_time
+        _ ->
+          nil
       end
+
+    if !is_nil(best_time) do
+      best_time
+      |> Map.get(:checkpoints)
+      |> Enum.at(waypoint_nb)
+      |> case do
+        nil -> nil
+        ref_time ->
+          get_display(ref_time, time)
+          |> Mppm.GameUI.Helper.send_to_user(server_login, user_login, 2000)
+        end
+    end
 
     {:noreply, state}
   end

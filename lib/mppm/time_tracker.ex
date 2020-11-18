@@ -42,9 +42,13 @@ defmodule Mppm.TimeTracker do
           track
       end
       |> Map.get(:time_records)
-      |> Enum.sort_by(& &1.lap_time) 
+      |> Enum.sort_by(& &1.lap_time)
   end
 
+
+
+  def handle_call({:get_server_top_record, server_login}, _, state), do:
+    {:reply, get_server_records(state, server_login) |> Enum.sort_by(& &1.lap_time) |> List.first, state}
 
   def handle_call({:get_server_records, server_login}, _, state), do:
     {:reply, get_server_records(state, server_login), state}
