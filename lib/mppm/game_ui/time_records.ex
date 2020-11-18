@@ -49,7 +49,7 @@ defmodule Mppm.GameUI.TimeRecords do
 
 
   def handle_call({:get_best_time, server_login}, from, state) do
-    {:reply, Kernel.get_in(state, ["ftc_tm20_1", :records]) |> List.first(), state}
+    {:reply, Kernel.get_in(state, [server_login, :records]) |> List.first(), state}
   end
 
 
@@ -95,6 +95,8 @@ defmodule Mppm.GameUI.TimeRecords do
     times |> Enum.slice(0, @max_local_records_nb) |> display_lines()
 
   def display_lines(times) do
+    times = Enum.sort_by(times, & &1.lap_time)
+
     {
       :frame,
       [id: "records-list", pos: "0 -3.6"],
