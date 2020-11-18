@@ -221,7 +221,7 @@ defmodule Mppm.GameServer.Server do
 
 
   def handle_info({_message, server_login, ruleset_or_tracklist}, state)
-  when _message in [:tracklist_change, :ruleset_change] do
+  when _message in [:tracklist_change, :tracklist_update, :ruleset_change] do
     case server_login == state.config.login do
       true -> {:noreply, %{state | reload_ruleset?: true}}
       false -> {:noreply, state}
