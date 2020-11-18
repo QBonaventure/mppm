@@ -73,6 +73,13 @@ defmodule Mppm.GameUI.BasicInfo do
     {:noreply, state}
   end
 
+  def handle_info({:servers_users_updated, servers_users}, state) do
+    Enum.each(servers_users, fn {server_login, users} ->
+      Enum.each(users, & get_info(server_login, &1) |> Mppm.GameUI.Helper.send_to_user(server_login, &1.login))
+    end)
+    {:noreply, state}
+  end
+
   def handle_info(_unhandled_message, state) do
     {:noreply, state}
   end
