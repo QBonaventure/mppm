@@ -16,7 +16,6 @@ defmodule Mppm.GameUI.TimeRecords do
     |> get_table()
     |> Mppm.GameUI.Helper.send_to_all(server_login)
 
-    time =
     Mppm.Repo.preload(time, :user)
     |> user_best_time
     |> Mppm.GameUI.Helper.send_to_user(server_login, time.user.login)
@@ -24,7 +23,8 @@ defmodule Mppm.GameUI.TimeRecords do
     {:noreply, state}
   end
 
-  def handle_info({:beginmap, server_login, _}, state) do
+  def handle_info({message, server_login, _}, state)
+  when message in [:beginmap, :update_server_map] do
     records =
       GenServer.call(Mppm.TimeTracker, {:get_server_records, server_login})
       |> Enum.sort_by(& &1.lap_time)
@@ -119,11 +119,17 @@ defmodule Mppm.GameUI.TimeRecords do
 
   def start_link(_init_value), do: GenServer.start_link(__MODULE__, nil, name: __MODULE__)
   def init(_) do
+    state =
+      Mppm.ServersStatuses.get_list_of_running()
+      |> Enum.map(& {&1, GenServer.call(Mppm.TimeTracker, {:get_server_records, &1})})
+      |> Map.new
+
+
     :ok = Phoenix.PubSub.subscribe(Mppm.PubSub, "records-status")
     :ok = Phoenix.PubSub.subscribe(Mppm.PubSub, "maps-status")
     :ok = Phoenix.PubSub.subscribe(Mppm.PubSub, "time-status")
     :ok = Phoenix.PubSub.subscribe(Mppm.PubSub, "race-status")
-    {:ok, %{}}
+    {:ok, state}
   end
 
 end
