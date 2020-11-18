@@ -42,6 +42,7 @@ defmodule Mppm.TimeTracker do
           track
       end
       |> Map.get(:time_records)
+      |> Enum.sort_by(& &1.lap_time) 
   end
 
 
