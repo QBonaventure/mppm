@@ -19,13 +19,13 @@ defmodule Mppm.User do
 
   def remove_role(%User{} = user, %Mppm.UserRole{} = role) do
     user = update_role(user, List.delete(user.roles, role))
-    Phoenix.PubSub.broadcast(Mppm.PubSub, "player-status", {:role_removed, elem(user, 1), role})
+    Phoenix.PubSub.broadcast(Mppm.PubSub, "players-status", {:role_removed, elem(user, 1), role})
     user
   end
 
   def add_role(%User{} = user, %Mppm.UserRole{} = role) do
     user = update_role(user, [role | user.roles])
-    Phoenix.PubSub.broadcast(Mppm.PubSub, "player-status", {:role_granted, elem(user, 1), role})
+    Phoenix.PubSub.broadcast(Mppm.PubSub, "players-status", {:role_granted, elem(user, 1), role})
     user
   end
 

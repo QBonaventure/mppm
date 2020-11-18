@@ -217,7 +217,7 @@ defmodule Mppm.Broker.MethodCall do
 
   def dispatch_message(server_login, "ManiaPlanet.PlayerConnect", [user_login, _is_spectator]) do
     IO.puts "PLAYER CONN"
-    Phoenix.PubSub.broadcast(Mppm.PubSub, "player-status", {:user_connection_to_server, server_login, user_login})
+    Phoenix.PubSub.broadcast(Mppm.PubSub, "players-status", {:user_connection_to_server, server_login, user_login})
     GenServer.cast(Mppm.ConnectedUsers, {:user_connection, server_login, user_login})
   end
 
