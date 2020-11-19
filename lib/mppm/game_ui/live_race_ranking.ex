@@ -77,8 +77,7 @@ defmodule Mppm.GameUI.LiveRaceRanking do
 
 
   def start_link(_init_value), do: GenServer.start_link(__MODULE__, nil, name: __MODULE__)
-  def init(a) do
-    IO.inspect a
+  def init(_) do
     :ok = Phoenix.PubSub.subscribe(Mppm.PubSub, "race-status")
     {:ok, %{}}
   end

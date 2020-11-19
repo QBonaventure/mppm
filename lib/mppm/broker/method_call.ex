@@ -6,7 +6,6 @@ defmodule Mppm.Broker.MethodCall do
 
 
   def dispatch(server_login, %XMLRPC.MethodCall{method_name: "ManiaPlanet.ModeScriptCallbackArray", params: [callback_name, [raw_data]]}) do
-    IO.inspect callback_name
     {:ok, data} = Jason.decode(raw_data)
     dispatch_script_callback(server_login, callback_name, data)
   end
@@ -216,7 +215,6 @@ defmodule Mppm.Broker.MethodCall do
 
 
   def dispatch_message(server_login, "ManiaPlanet.PlayerConnect", [user_login, _is_spectator]) do
-    IO.puts "PLAYER CONN"
     Phoenix.PubSub.broadcast(Mppm.PubSub, "players-status", {:user_connection_to_server, server_login, user_login})
     GenServer.cast(Mppm.ConnectedUsers, {:user_connection, server_login, user_login})
   end

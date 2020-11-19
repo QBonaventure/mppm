@@ -35,7 +35,7 @@ defmodule Mppm.Broker.MethodResponse do
 
 
   defp dispatch_response(server_login, message) do
-    IO.inspect message
+    IO.inspect %{unhandled_message: message}
   end
 
 

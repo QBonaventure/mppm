@@ -43,8 +43,6 @@ defmodule Mppm.GameUI.TimePartialsDelta do
       order_by: {:asc, t.lap_time},
       limit: 1)
 
-    IO.inspect top_record
-        IO.inspect track_uid
     {:noreply, Map.put(state, server_login, top_record)}
   end
 

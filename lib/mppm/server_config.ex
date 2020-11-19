@@ -127,7 +127,6 @@ defmodule Mppm.ServerConfig do
           end
         end
 
-        # IO.inspect Kernel.get_in(changeset.changes, [:ruleset, :changes, :mode_id])
       {:error, changeset} ->
         {:ok, nil}
     end

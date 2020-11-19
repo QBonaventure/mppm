@@ -150,16 +150,6 @@ defmodule Mppm.Broker.RequesterServer do
 
   }
 
-  # def handle_call(:stop, _from, state) do
-  #   res = make_request(@methods[:quit_game], [], state)
-  #   {:stop, :shutdown, :ok, state}
-  # end
-  #
-  # def handle_call({:query, method}, _, state) when :erlang.is_map_key(method, @methods), do:
-  #   {:reply, make_request(@methods[method], [], state), state}
-  #
-  # def handle_call({:query, method, params}, _, state), do:
-  #   {:reply, make_request(@methods[method], params, state), state}
 
   def handle_call(:get_broker_state, _, state), do: {:reply, state, state}
 
