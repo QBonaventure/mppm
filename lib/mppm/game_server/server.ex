@@ -51,12 +51,13 @@ defmodule Mppm.GameServer.Server do
   end
 
   defp start_server(state) do
-    ServerConfig.create_config_file(state.config)
-    ServerConfig.create_ruleset_file(state.config)
-    GenServer.call(Mppm.Tracklist, {:get_server_tracklist, state.config.login})
+    config = Mppm.Repo.get(Mppm.ServerConfig, state.config.id) |> Mppm.Repo.preload(:ruleset)
+    ServerConfig.create_config_file(config)
+    ServerConfig.create_ruleset_file(config)
+    GenServer.call(Mppm.Tracklist, {:get_server_tracklist, config.login})
     |> Mppm.ServerConfig.create_tracklist()
 
-    command = get_command(state.config)
+    command = get_command(config)
     port = Port.open({:spawn, command}, [:binary, :exit_status])
     {:os_pid, os_pid} = Port.info(port, :os_pid)
     Port.monitor(port)
@@ -74,7 +75,7 @@ defmodule Mppm.GameServer.Server do
           Logger.info "["<>state.config.login<>"] Server couldn't start"
           %{state | status: :stopped}
       end
-    {:ok, state}
+    {:ok, Map.put(state, :config, config)}
   end
 
 

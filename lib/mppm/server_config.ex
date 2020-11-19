@@ -30,13 +30,23 @@ defmodule Mppm.ServerConfig do
     field :superadmin_pass, :string
     field :admin_pass, :string
     field :user_pass, :string
-    field :keep_player_slot, :boolean
-    field :disable_horns, :boolean
+    field :keep_player_slot, :boolean, default: false
+    field :disable_horns, :boolean, default: true
     field :ip_address, EctoNetwork.INET
     field :bind_ip, EctoNetwork.INET
-    field :autosave_replays, :boolean
-    field :autosave_validation_replays, :boolean
-
+    field :autosave_replays, :boolean, default: false
+    field :autosave_validation_replays, :boolean, default: false
+    field :client_inputs_max_latency, :integer, default: 100
+    field :connection_upload_rate, :integer, default: 500000
+    field :connection_download_rate, :integer, default: 500000
+    field :packet_assembly_multithread, :boolean, default: true
+    field :packets_per_frame, :integer, default: 0
+    field :full_packets_per_frame, :integer, default: 10
+    field :visuals_delay, :integer, default: 400
+    field :trust_client_to_server_sending_rate, :integer, default: 64
+    field :visuals_server_to_client_sending_rate, :integer, default: 64
+    field :disable_replay_recording, :boolean, default: true
+    field :workers_nb, :integer, default: 2
   end
 
   def get_all() do
@@ -64,7 +74,10 @@ defmodule Mppm.ServerConfig do
     |> cast(data, [
       :login, :password, :name, :comment, :player_pwd, :spec_pwd,
       :max_players, :superadmin_pass, :admin_pass, :user_pass,
-      :ip_address
+      :ip_address, :client_inputs_max_latency, :connection_upload_rate,
+      :connection_download_rate, :packet_assembly_multithread, :packets_per_frame,
+      :full_packets_per_frame, :visuals_delay, :trust_client_to_server_sending_rate,
+      :visuals_server_to_client_sending_rate, :disable_replay_recording, :workers_nb,
       ])
     |> put_assoc(:ruleset, %Mppm.GameRules{mode_id: 1})
     |> validate_required(@required)
@@ -72,7 +85,12 @@ defmodule Mppm.ServerConfig do
 
   def changeset(%ServerConfig{} = config, params) do
     config
-    |> cast(params, [:name, :comment, :player_pwd, :spec_pwd, :max_players, :ip_address])
+    |> cast(params, [:name, :comment, :player_pwd, :spec_pwd, :max_players, :ip_address,
+    :client_inputs_max_latency, :connection_upload_rate,
+    :connection_download_rate, :packet_assembly_multithread, :packets_per_frame,
+    :full_packets_per_frame, :visuals_delay, :trust_client_to_server_sending_rate,
+    :visuals_server_to_client_sending_rate, :disable_replay_recording, :workers_nb,
+    ])
     |> cast_assoc(:ruleset)
   end
 
@@ -192,6 +210,7 @@ defmodule Mppm.ServerConfig do
       |> List.keyreplace(:keep_player_slots, 0, {:keep_player_slots, [], [charlist(serv_config.keep_player_slot)]})
       |> List.keyreplace(:autosave_replays, 0, {:autosave_replays, [], [charlist(serv_config.autosave_replays)]})
       |> List.keyreplace(:autosave_validation_replays, 0, {:autosave_validation_replays, [], [charlist(serv_config.autosave_validation_replays)]})
+      |> List.keyreplace(:clientinputs_maxlatency, 0, {:clientinputs_maxlatency, [], [charlist(serv_config.client_inputs_max_latency)]})
     server_options = {:server_options, [], server_options}
 
     system_config =
@@ -199,7 +218,15 @@ defmodule Mppm.ServerConfig do
       |> List.keyfind(:system_config, 0)
       |> elem(2)
       |> List.keyreplace(:force_ip_address, 0, {:force_ip_address, [], [charlist(serv_config.ip_address)]})
-
+      |> List.keyreplace(:connection_uploadrate, 0, {:connection_uploadrate, [], [charlist(serv_config.connection_upload_rate)]})
+      |> List.keyreplace(:connection_downloadrate, 0, {:connection_downloadrate, [], [charlist(serv_config.connection_download_rate)]})
+      |> List.keyreplace(:workerthreadcount, 0, {:workerthreadcount, [], [charlist(serv_config.workers_nb)]})
+      |> List.keyreplace(:packetassembly_multithread, 0, {:packetassembly_multithread, [], [charlist(serv_config.packet_assembly_multithread)]})
+      |> List.keyreplace(:packetassembly_packetsperframe, 0, {:packetassembly_packetsperframe, [], [charlist(serv_config.packets_per_frame)]})
+      |> List.keyreplace(:packetassembly_fullpacketsperframe, 0, {:packetassembly_fullpacketsperframe, [], [charlist(serv_config.full_packets_per_frame)]})
+      |> List.keyreplace(:delayedvisuals_s2c_sendingrate, 0, {:delayedvisuals_s2c_sendingrate, [], [charlist(serv_config.visuals_server_to_client_sending_rate)]})
+      |> List.keyreplace(:trustclientsimu_c2s_sendingrate, 0, {:trustclientsimu_c2s_sendingrate, [], [charlist(serv_config.trust_client_to_server_sending_rate)]})
+      |> List.keyreplace(:disable_replay_recording, 0, {:disable_replay_recording, [], [charlist(serv_config.disable_replay_recording)]})
     system_config = {:system_config, [], system_config}
 
     new_xml = {:dedicated, [], [authorization_levels, masterserver_account, server_options, system_config]}

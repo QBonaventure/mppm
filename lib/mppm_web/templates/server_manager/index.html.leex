@@ -293,6 +293,63 @@
           Bind to IP: <%= text_input f, :bind_ip %>
         </label>
         <%= error_tag f, :bind_ip %>
+
+
+
+        <label>
+          Conn. U/L rate: <%= text_input f, :connection_upload_rate %>
+        </label>
+        <%= error_tag f, :connection_upload_rate %>
+
+        <label>
+          Conn. D/L rate: <%= text_input f, :connection_download_rate %>
+        </label>
+        <%= error_tag f, :connection_download_rate %>
+
+        <label>
+          Cl. inp. max latency: <%= text_input f, :client_inputs_max_latency %>
+        </label>
+        <%= error_tag f, :client_inputs_max_latency %>
+
+        <label>
+          Pck ass. multith.: <%= select f, :packet_assembly_multithread, [true, false] %>
+        </label>
+        <%= error_tag f, :packet_assembly_multithread %>
+
+        <label>
+          Packets/frame: <%= text_input f, :packets_per_frame %>
+        </label>
+        <%= error_tag f, :packets_per_frame %>
+
+        <label>
+          Full packets/frame: <%= text_input f, :full_packets_per_frame %>
+        </label>
+        <%= error_tag f, :full_packets_per_frame %>
+
+        <label>
+          Visuals delays: <%= text_input f, :visuals_delay %>
+        </label>
+        <%= error_tag f, :visuals_delay %>
+
+        <label>
+          Trust, C2S send/: <%= text_input f, :trust_client_to_server_sending_rate %>
+        </label>
+        <%= error_tag f, :trust_client_to_server_sending_rate %>
+
+        <label>
+          Visuals, S2C send/: <%= text_input f, :visuals_server_to_client_sending_rate %>
+        </label>
+        <%= error_tag f, :visuals_server_to_client_sending_rate %>
+
+        <label>
+          Worker nb.: <%= text_input f, :workers_nb %>
+        </label>
+        <%= error_tag f, :workers_nb %>
+
+        <label>
+          Disable replay recording: <%= select f, :disable_replay_recording, [true, false] %>
+        </label>
+        <%= error_tag f, :disable_replay_recording %>
       </section>
 
     </form>
