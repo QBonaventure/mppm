@@ -215,7 +215,7 @@ defmodule MppmWeb.ServerManagerLive do
     {:noreply, assign(socket, chat: [message] ++ socket.assigns.chat)}
   end
 
-  def handle_info({:tracklist_change, server_login, %Mppm.Tracklist{} = tracklist}, socket) do
+  def handle_info({:tracklist_update, server_login, %Mppm.Tracklist{} = tracklist}, socket) do
     case server_login == socket.assigns.server_info.login do
       true -> {:noreply, assign(socket, tracklist: tracklist)}
       false -> {:noreply, socket}

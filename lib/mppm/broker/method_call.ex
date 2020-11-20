@@ -141,17 +141,20 @@ defmodule Mppm.Broker.MethodCall do
   %{"count" => _count, "time" => _time}) do
   end
 
-  def dispatch_script_callback(_server_login, "Maniaplanet.Podium_Start",
+  def dispatch_script_callback(server_login, "Maniaplanet.Podium_Start",
   %{"time" => _time}) do
+    Phoenix.PubSub.broadcast(Mppm.PubSub, "server-status", {:podium_start, server_login})
   end
 
-  def dispatch_script_callback(_server_login, "Maniaplanet.Podium_End",
+  def dispatch_script_callback(server_login, "Maniaplanet.Podium_End",
   %{"time" => _time}) do
+    Phoenix.PubSub.broadcast(Mppm.PubSub, "server-status", {:podium_end, server_login})
   end
 
-  def dispatch_script_callback(_server_login, "Trackmania.Scores",
+  def dispatch_script_callback(server_login, "Trackmania.Scores",
   %{"players" => _players_map_list, "responseid" => _response_id, "section" => _section, "teams" => _teams_list,
-  "useteams" => _use_teams?, "winnerplayer" => _winner_player, "winnerteam" => _winning_team}) do
+  "useteams" => _use_teams?, "winnerplayer" => _winner_player, "winnerteam" => _winning_team} = data) do
+    Phoenix.PubSub.broadcast(Mppm.PubSub, "server-status", {:score, server_login})
   end
 
 

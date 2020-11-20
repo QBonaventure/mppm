@@ -90,8 +90,10 @@ defmodule Mppm.GameServer.Server do
       listening_ports: %{"xmlrpc" => xmlrpc_port},
       port: nil,
       os_pid: pid,
-      reload_ruleset?: false,
-      reload_config?: false,
+      rewrite_ruleset?: false,
+      rewrite_config?: false,
+      rewrite_tracklist?: false,
+      reload_match_settings?: false,
       game_mode_id: nil
     }
 
@@ -221,25 +223,44 @@ defmodule Mppm.GameServer.Server do
 
 
 
-  def handle_info({_message, server_login, ruleset_or_tracklist}, state)
-  when _message in [:tracklist_change, :tracklist_update, :ruleset_change] do
+  def handle_info({:ruleset_change, server_login, ruleset_or_tracklist}, state) do
     case server_login == state.config.login do
-      true -> {:noreply, %{state | reload_ruleset?: true}}
+      true -> {:noreply, %{state | rewrite_ruleset?: true}}
       false -> {:noreply, state}
     end
   end
 
+  def handle_info({:tracklist_update, server_login, ruleset_or_tracklist}, state) do
+    case server_login == state.config.login do
+      true ->
+        Mppm.ServerConfig.create_tracklist(ruleset_or_tracklist)
+        {:noreply, %{state | rewrite_tracklist?: true}}
+      false -> {:noreply, state}
+    end
+  end
+
+
+
+  def handle_info({:podium_start, server_login}, state) do
+    Mppm.ServerConfig
+    |> Mppm.Repo.get(state.config.id)
+    |> Mppm.Repo.preload(:ruleset)
+    |> Mppm.ServerConfig.create_ruleset_file()
+    {:noreply, state}
+  end
+
+
+
+  def handle_info({:podium_end, server_login}, state) do
+    GenServer.cast({:global, {:broker_requester, server_login}}, :reload_match_settings)
+    {:noreply, %{state | reload_match_settings?: false}}
+  end
+
+
+
   def handle_info({:end_of_game, server_login}, state) do
-    # case server_login == state.config.login and state.reload_ruleset? do
-    #   true ->
-        config = Mppm.Repo.get(Mppm.ServerConfig, state.config.id) |> Mppm.Repo.preload(:ruleset)
-        Mppm.ServerConfig.create_ruleset_file(config)
-        # Mppm.ServerConfig.create_tracklist(config)
-    #     # GenServer.cast({:global, {:broker_requester, server_login}}, :reload_match_settings)
-    #     {:noreply, %{state | config: config, reload_config?: false, reload_ruleset?: false, game_mode_id: get_next_game_mode_id(state.config.id)}}
-    #   _ ->
-    #     {:noreply, %{state | reload_config?: false, reload_ruleset?: false}}
-    # end
+    config = Mppm.Repo.get(Mppm.ServerConfig, state.config.id) |> Mppm.Repo.preload(:ruleset)
+
     {:noreply, %{state | game_mode_id: get_next_game_mode_id(state.config.id)}}
   end
 
@@ -320,8 +341,10 @@ defmodule Mppm.GameServer.Server do
       xmlrpc_port: nil,
       status: :stopped,
       config: server_config,
-      reload_ruleset?: false,
-      reload_config?: false,
+      rewrite_ruleset?: false,
+      rewrite_config?: false,
+      rewrite_tracklist?: false,
+      reload_match_settings?: false,
       game_mode_id: nil
     }
 

@@ -111,9 +111,6 @@ defmodule Mppm.Broker.RequesterServer do
 
   def handle_cast(:reload_match_settings, state) do
     Logger.info "["<>state.login<>"] Reloading match settings"
-    # Mppm.Repo.get_by(Mppm.ServerConfig, login: state.login)
-    # |> Mppm.Repo.preload(ruleset: [:mode])
-    # |> Mppm.ServerConfig.create_ruleset_file
 
     make_request("LoadMatchSettings", ["MatchSettings/" <> state.login <> ".txt"], state)
     {:noreply, state}

@@ -46,7 +46,6 @@ defmodule Mppm.Tracklist do
       |> Mppm.Repo.insert(on_conflict: [set: [tracks_ids: mxds]], conflict_target: :server_id)
 
     Phoenix.PubSub.broadcast(Mppm.PubSub, "tracklist-state", {:tracklist_update, tracklist})
-    Mppm.ServerConfig.create_tracklist(tracklist)
     tracklist
   end
 
@@ -91,18 +90,16 @@ defmodule Mppm.Tracklist do
     {:reply, Map.get(state, server_login), state}
   end
 
-
-
   def handle_cast({:insert_track, server_login, %Mppm.Track{} = track, index}, state) do
     tracklist = Map.get(state, server_login) |> add_track(track, index)
     Mppm.Tracklist.upsert_tracklist(tracklist)
-    Phoenix.PubSub.broadcast(Mppm.PubSub, "tracklist-status", {:tracklist_change, server_login, tracklist})
+    Phoenix.PubSub.broadcast(Mppm.PubSub, "tracklist-status", {:tracklist_update, server_login, tracklist})
     {:noreply, %{state | server_login => tracklist}}
   end
 
   def handle_cast({:upsert_tracklist, server_login, tracklist}, state) do
     tracklist = Mppm.Tracklist.upsert_tracklist(tracklist) |> Mppm.Repo.preload(:server)
-    Phoenix.PubSub.broadcast(Mppm.PubSub, "tracklist-status", {:tracklist_change, server_login, tracklist})
+    Phoenix.PubSub.broadcast(Mppm.PubSub, "tracklist-status", {:tracklist_update, server_login, tracklist})
     {:noreply, %{state | server_login => tracklist}}
   end
 
@@ -110,7 +107,8 @@ defmodule Mppm.Tracklist do
   def handle_info({_message, server_login, track_uid}, state)
   when _message in [:current_track_info, :loaded_map] do
     tracklist = reindex_from_current_track(Map.get(state, server_login), track_uid)
-    Phoenix.PubSub.broadcast(Mppm.PubSub, "tracklist-status", {:tracklist_change, server_login, tracklist})
+    Phoenix.PubSub.broadcast(Mppm.PubSub, "tracklist-status", {:tracklist_update, server_login, tracklist})
+
     Mppm.ServerConfig.create_tracklist(tracklist)
     {:noreply, %{state | server_login => tracklist}}
   end
