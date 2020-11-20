@@ -109,6 +109,12 @@ defmodule Mppm.Broker.RequesterServer do
   def handle_call({:switch_game_mode, %Mppm.Type.GameMode{} = game_mode}, _from, state), do:
     {:reply, make_request("SetScriptName", [game_mode.script_name], state), state}
 
+
+  def handle_cast({:force_spectator_to_target, player_login, user_login}, state) do
+    make_request("ForceSpectatorTarget", [player_login, user_login, 0], state)
+    {:noreply, state}
+  end
+
   def handle_cast(:reload_match_settings, state) do
     Logger.info "["<>state.login<>"] Reloading match settings"
 
