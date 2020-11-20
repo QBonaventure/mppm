@@ -7,7 +7,7 @@ defmodule Mppm.GameServer.Server do
   @root_path Application.get_env(:mppm, :game_servers_root_path)
   @config Application.get_env(:mppm, Mppm.Trackmania)
   @msg_waiting_ports "Waiting for game server ports to open..."
-  @max_start_attempts 10
+  @max_start_attempts 20
 
   ###################################
   ##### START FUNCTIONS #############
