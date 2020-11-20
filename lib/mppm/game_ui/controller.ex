@@ -6,7 +6,7 @@ defmodule Mppm.GameUI.Controller do
     {:noreply, state}
   end
 
-  def handle_info({:user_connection_to_server, server_login, user_login}, state) do
+  def handle_info({:user_connection_to_server, server_login, user_login, is_spectator?}, state) do
     xml = Mppm.GameUI.Helper.get_custom_template(server_login, user_login)
     Mppm.GameUI.Helper.send_to_user(xml, server_login, user_login)
     {:noreply, state}

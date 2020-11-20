@@ -9,9 +9,10 @@ defmodule Mppm.Broker.MethodResponse do
 
 
 
-  defp dispatch_response(server_login, %{"Login" => login, "NickName" => nickname, "PlayerId" => player_id}) do
+  defp dispatch_response(server_login, %{"Login" => login, "NickName" => nickname, "PlayerId" => player_id, "SpectatorStatus" => is_spectator?} = ee) do
+    IO.inspect ee
     user = %{login: login, nickname: nickname, player_id: player_id}
-    GenServer.cast(Mppm.ConnectedUsers, {:connected_user_info, user})
+    GenServer.cast(Mppm.ConnectedUsers, {:connected_user_info, user, is_spectator?})
   end
 
   defp dispatch_response(server_login, %{"UId" => track_uid} = map_info) do
@@ -20,12 +21,12 @@ defmodule Mppm.Broker.MethodResponse do
   end
 
 
-  defp dispatch_response(server_login, [%{"PlayerId" => 0} | remainder] = list) do
+  defp dispatch_response(server_login, [%{"PlayerId" => 0} | remainder]) do
     Enum.each(
       remainder,
-      & Phoenix.PubSub.broadcast(Mppm.PubSub, "players-status", {:user_connection_to_server, server_login, Map.get(&1, "Login")})
+      & Phoenix.PubSub.broadcast(Mppm.PubSub, "players-status", {:user_connection_to_server, server_login, Map.get(&1, "Login"), Map.get(&1, "SpectatorStatus") != 0})
     )
-    Enum.each(remainder, & GenServer.cast(Mppm.ConnectedUsers, {:user_connection, server_login, Map.get(&1, "Login")}))
+    Enum.each(remainder, & GenServer.cast(Mppm.ConnectedUsers, {:user_connection, server_login, Map.get(&1, "Login"), Map.get(&1, "SpectatorStatus") != 0}))
   end
 
   defp dispatch_response(server_login, %{"ScriptName" => script_name}) do

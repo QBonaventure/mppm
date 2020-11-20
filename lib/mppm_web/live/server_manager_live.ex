@@ -190,7 +190,7 @@ defmodule MppmWeb.ServerManagerLive do
 
 
 
-  def handle_info({:servers_users_updated, servers_users}, socket) do
+  def handle_info({:servers_users_updated, server_login, servers_users}, socket) do
     {:noreply, assign(socket, server_users: Map.get(servers_users, socket.assigns.server_info.login, []))}
   end
 

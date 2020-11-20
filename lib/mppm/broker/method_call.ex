@@ -217,9 +217,9 @@ defmodule Mppm.Broker.MethodCall do
   end
 
 
-  def dispatch_message(server_login, "ManiaPlanet.PlayerConnect", [user_login, _is_spectator]) do
-    Phoenix.PubSub.broadcast(Mppm.PubSub, "players-status", {:user_connection_to_server, server_login, user_login})
-    GenServer.cast(Mppm.ConnectedUsers, {:user_connection, server_login, user_login})
+  def dispatch_message(server_login, "ManiaPlanet.PlayerConnect", [user_login, is_spectator?]) do
+    Phoenix.PubSub.broadcast(Mppm.PubSub, "players-status", {:user_connection_to_server, server_login, user_login, is_spectator?})
+    GenServer.cast(Mppm.ConnectedUsers, {:user_connection, server_login, user_login, is_spectator?})
   end
 
 
@@ -228,7 +228,13 @@ defmodule Mppm.Broker.MethodCall do
   end
 
 
-  def dispatch_message(server_login, "ManiaPlanet.PlayerInfoChanged", _player_info_map) do
+  def dispatch_message(server_login, "ManiaPlanet.PlayerInfoChanged", [player_info_map]) do
+    case player_info_map do
+      %{"SpectatorStatus" => 0, "Login" => user_login} ->
+        GenServer.cast(Mppm.ConnectedUsers, {:user_is_player, server_login, user_login})
+      %{"Login" => user_login} ->
+        GenServer.cast(Mppm.ConnectedUsers, {:user_is_spectator, server_login, user_login})
+    end
   end
 
   def dispatch_message(server_login, "ManiaPlanet.PlayerManialinkPageAnswer", [_, user_login, method_call, params]), do:
