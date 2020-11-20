@@ -82,9 +82,7 @@ defmodule Mppm.GameUI.LiveRaceRanking do
       Mppm.ConnectedUsers.get_connected_users(server_login)
       |> Enum.find(& &1.login == user_login)
       |> Map.get(:nickname)
-    state =
-      Map.put(state, server_login, %{})
-      |> Kernel.put_in([server_login, user_login], %{waypoint_nb: waypoint_nb, time: time, nickname: user_nickname, login: user_login})
+    state = Kernel.put_in(state, [server_login, user_login], %{waypoint_nb: waypoint_nb, time: time, nickname: user_nickname, login: user_login})
     GenServer.cast(self(), {:update_table, server_login, state})
     {:noreply, state}
   end
