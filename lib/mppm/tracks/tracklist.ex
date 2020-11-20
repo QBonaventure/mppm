@@ -45,7 +45,7 @@ defmodule Mppm.Tracklist do
       |> Mppm.Repo.preload(:server)
       |> Mppm.Repo.insert(on_conflict: [set: [tracks_ids: mxds]], conflict_target: :server_id)
 
-    Phoenix.PubSub.broadcast(Mppm.PubSub, "tracklist-state", {:tracklist_update, tracklist})
+    Phoenix.PubSub.broadcast(Mppm.PubSub, "tracklist-status", {:tracklist_update, tracklist})
     tracklist
   end
 

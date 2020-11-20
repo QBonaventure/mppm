@@ -56,6 +56,14 @@ defmodule Mppm.GameUI.BasicInfo do
       GenServer.call(Mppm.Tracklist, {:get_server_next_track, server_login})
     }
 
+  def handle_info({:tracklist_update, tracklist}, state) do
+    tracklist = tracklist |> Mppm.Repo.preload(:server)
+    Mppm.ConnectedUsers.get_connected_users("ftc_tm20_1")
+    |> Enum.each(& get_info(tracklist.server.login, &1) |> Mppm.GameUI.Helper.send_to_user(tracklist.server.login, &1.login))
+
+    {:noreply, state}
+  end
+
 
   def handle_info({:loaded_map, server_login, _map_uid}, state) do
     Mppm.ConnectedUsers.get_connected_users(server_login)
@@ -88,6 +96,7 @@ defmodule Mppm.GameUI.BasicInfo do
   def start_link(_init_value), do: GenServer.start_link(__MODULE__, nil, name: __MODULE__)
   def init(_) do
     :ok = Phoenix.PubSub.subscribe(Mppm.PubSub, "maps-status")
+    :ok = Phoenix.PubSub.subscribe(Mppm.PubSub, "tracklist-status")
     :ok = Phoenix.PubSub.subscribe(Mppm.PubSub, "players-status")
     {:ok, %{}}
   end
