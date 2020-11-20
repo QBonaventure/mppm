@@ -58,7 +58,7 @@ defmodule Mppm.GameUI.BasicInfo do
 
   def handle_info({:tracklist_update, tracklist}, state) do
     tracklist = tracklist |> Mppm.Repo.preload(:server)
-    Mppm.ConnectedUsers.get_connected_users("ftc_tm20_1")
+    Mppm.ConnectedUsers.get_connected_users(tracklist.server.login)
     |> Enum.each(& get_info(tracklist.server.login, &1) |> Mppm.GameUI.Helper.send_to_user(tracklist.server.login, &1.login))
 
     {:noreply, state}
