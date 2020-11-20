@@ -159,7 +159,7 @@ defmodule Mppm.Broker.MethodCall do
 
 
   def dispatch_script_callback(_server_login, unknown_callback, data) do
-    IO.inspect %{script_callback: unknown_callback, data: data, jjj: "dsqsd"}
+    IO.inspect %{script_callback: unknown_callback, data: data}
   end
 
 
