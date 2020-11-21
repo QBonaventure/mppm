@@ -93,6 +93,13 @@ defmodule Mppm.GameUI.LiveRaceRanking do
     {:noreply, state}
   end
 
+  def handle_info({:started, server_login}, state) do
+    case Map.has_key?(state, server_login) do
+      true -> {:noreply, state}
+      false -> {:noreply, Map.put(state, server_login, %{})}
+    end
+  end
+
 
   def handle_info(_unhandled_message, state), do:
     {:noreply, state}
@@ -117,6 +124,7 @@ defmodule Mppm.GameUI.LiveRaceRanking do
   def init(_) do
     :ok = Phoenix.PubSub.subscribe(Mppm.PubSub, "race-status")
     :ok = Phoenix.PubSub.subscribe(Mppm.PubSub, "players-status")
+    :ok = Phoenix.PubSub.subscribe(Mppm.PubSub, "server-status")
     {:ok, %{}}
   end
 
