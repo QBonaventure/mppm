@@ -41,7 +41,7 @@ defmodule Mppm.GameUI.LiveRaceRanking do
       |> Enum.sort_by(&{-&1.waypoint_nb, &1.time})
       |> Enum.map_reduce(0, fn player_waypoint, index ->
         line =
-          case is_spectator? do
+          case is_spectator? and player_waypoint.login != user_login do
             true ->
               {:frame, [id: Integer.to_string(index+1), size: "50 50", pos: "0 "<>Float.to_string(-index*3.5)], [
                 {:quad, [valign: "center", halign: "center", size: "8 8", pos: "3.5 -1.7", image: @camcorder_img_url, keepratio: "Fit", action: "spectate "<>player_waypoint.login], []},
