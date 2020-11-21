@@ -22,6 +22,16 @@ config :mppm, MppmWeb.Endpoint,
   ]
 
 
+config :oauth2, debug: true
+
+config :mppm, Mppm.Service.Trackmania,
+  redirect_uri: "http://192.168.1.90:4000/auth/trackmania/callback",
+  authorize_url: "https://api.trackmania.com/oauth/authorize",
+  token_url: "https://api.trackmania.com/api/access_token",
+  site: "https://trackmania.com",
+  response_type: "code"
+
+
 # Watch static and templates for browser reloading.
 config :mppm, MppmWeb.Endpoint,
   live_reload: [

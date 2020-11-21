@@ -6,14 +6,16 @@ defmodule MppmWeb.ServerManagerLive do
     MppmWeb.ServerManagerView.render("index.html", assigns)
   end
 
-  def mount(params, _session, socket) do
+  def mount(params, session, socket) do
     :ok = Phoenix.PubSub.subscribe(Mppm.PubSub, Mppm.Broker.ReceiverServer.pubsub_topic(params["server_login"]))
     :ok = Phoenix.PubSub.subscribe(Mppm.PubSub, "players-status")
     :ok = Phoenix.PubSub.subscribe(Mppm.PubSub, "tracklist-status")
 
     server_config = Mppm.ServerConfig.get_server_config(params["server_login"])
     # TODO: implement the login system and actually select the right user
-    user = Mppm.Repo.get(Mppm.User, 1)
+
+    user_session = Mppm.Session.AgentStore.get(session["current_user"])
+    user = Mppm.Repo.get(Mppm.User, user_session.id)
     changeset = Ecto.Changeset.change(server_config)
 
     mxo =
@@ -26,6 +28,7 @@ defmodule MppmWeb.ServerManagerLive do
 
     socket =
       socket
+      |> assign(user_session: session)
       |> assign(user: user)
       |> assign(new_chat_message: new_chat_message)
       |> assign(changeset: changeset)

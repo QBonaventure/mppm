@@ -2,30 +2,39 @@ defmodule MppmWeb.Router do
   use MppmWeb, :router
 
   pipeline :browser do
-    plug :put_root_layout, {MppmWeb.LayoutView, :root}
     plug :accepts, ["html"]
     plug :fetch_session
     plug :fetch_live_flash
-    # plug :fetch_flash
-    # plug Phoenix.LiveView.Flash
     plug :protect_from_forgery
     plug :put_secure_browser_headers
+  end
+
+  pipeline :with_session do
+    plug :put_root_layout, {MppmWeb.LayoutView, :root}
+    plug Mppm.Session.UserSession
+  end
+
+  pipeline :auth do
   end
 
   pipeline :api do
     plug :accepts, ["json"]
   end
 
+  scope "/auth", MppmWeb do
+    pipe_through [:browser, :auth]
+
+    get "/login.html", AuthController, :login
+    get "/logout", AuthController, :logout
+    get "/:service/callback", AuthController, :callback
+  end
+
   scope "/", MppmWeb do
-    pipe_through :browser
+    pipe_through [:browser, :with_session]
 
     live "/", DashboardLive
 
     live "/:server_login", ServerManagerLive
   end
 
-  # Other scopes may use custom stacks.
-  # scope "/api", MppmWeb do
-  #   pipe_through :api
-  # end
 end

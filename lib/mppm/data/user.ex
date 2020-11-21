@@ -7,13 +7,13 @@ defmodule Mppm.User do
   schema "users" do
     field :login, :string
     field :nickname, :string
-    field :player_id, :integer
+    field :uuid, Ecto.UUID, autogenerate: false
     many_to_many :roles, Mppm.UserRole, [join_through: Mppm.Relationship.UsersRoles, on_replace: :delete]
   end
 
   def changeset(%User{} = message, data \\ []) do
     message
-    |> cast(data, [:login, :nickname, :player_id])
+    |> cast(data, [:login, :nickname, :uuid])
   end
 
 
@@ -34,6 +34,15 @@ defmodule Mppm.User do
     |> Ecto.Changeset.change()
     |> Ecto.Changeset.put_assoc(:roles, new_roles)
     |> Mppm.Repo.update()
+  end
+
+  def find(%Mppm.User{} = user) do
+    case Mppm.Repo.one(from u in Mppm.User, where: u.uuid == ^user.uuid or u.nickname == ^user.nickname) do
+      nil ->
+        {:not_found, nil}
+      found_user ->
+        {:found, found_user}
+    end
   end
 
 end

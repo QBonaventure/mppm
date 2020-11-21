@@ -1,0 +1,10 @@
+<% alias Plug.Conn  %>
+
+<nav role="session-management">
+  <%= case Mppm.Session.AgentStore.get(@user_session["current_user"]) do
+    %Mppm.Session.UserSession{nickname: nickname} ->
+      render MppmWeb.AuthView, "logout.html", nickname: nickname
+    _ ->
+      render MppmWeb.AuthView, "login.html"
+  end %>
+</nav>

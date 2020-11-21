@@ -11,20 +11,7 @@
   </head>
   <body>
     <header>
-      <div class="container">
-        <div id="user-session">
-          <%= live_render(@conn, MppmWeb.UserSessionLive, user_session: @user_session) %>
-        </div>
-        <a href="/" id="app-logo">
-          MPPM
-        </a>
-        <%= if MppmWeb.AuthView.user_logged_in? @conn do %>
-          <nav id="main-menu">
-            <ul>
-            </ul>
-          </nav>
-        <% end %>
-      </div>
+
     </header>
     <main role="main" class="container">
       <p class="alert alert-info" role="alert"><%= get_flash(@conn, :info) %></p>

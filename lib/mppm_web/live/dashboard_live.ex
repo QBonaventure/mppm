@@ -12,7 +12,7 @@ defmodule MppmWeb.DashboardLive do
   end
 
 
-  def mount(_params, _session, socket) do
+  def mount(_params, session, socket) do
     MppmWeb.Endpoint.subscribe(@topic)
     statuses = Mppm.ServersStatuses.all
 
@@ -22,6 +22,7 @@ defmodule MppmWeb.DashboardLive do
       |> assign(changeset: Mppm.ServerConfig.create_server_changeset())
       |> assign(disabled_submit: true)
       |> assign(servers: Mppm.ServersStatuses.all)
+      |> assign(user_session: session)
 
     {:ok, socket}
   end
