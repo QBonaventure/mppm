@@ -36,7 +36,7 @@ defmodule Mppm.ServerConfig do
     field :bind_ip, EctoNetwork.INET
     field :autosave_replays, :boolean, default: false
     field :autosave_validation_replays, :boolean, default: false
-    field :client_inputs_max_latency, :integer, default: 100
+    field :client_inputs_max_latency, :integer, default: 250
     field :connection_upload_rate, :integer, default: 500000
     field :connection_download_rate, :integer, default: 500000
     field :packet_assembly_multithread, :boolean, default: true
