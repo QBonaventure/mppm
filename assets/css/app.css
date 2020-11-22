@@ -335,6 +335,10 @@ div#all-users-list {
   overflow-y: scroll;
 }
 
+div#all-users-list .user-row.disconnected {
+  opacity: 0.4;
+}
+
 
 section#server-users div.user-row {
   border-bottom: 1px solid lightgray;

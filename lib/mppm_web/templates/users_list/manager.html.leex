@@ -1,7 +1,11 @@
 <div id="all-users-list">
+  <div id="users-summary">
+    <span>Connected users: <%= Enum.count(@users, & &1.is_connected?) %></span>
+  </div>
+
   <%= for user <- @users do %>
 
-    <div id="user-<%= user.id %>" class="user-row">
+    <div id="user-<%= user.id %>" class="user-row <%= if !user.is_connected? do "disconnected" end %>">
       <div class="user-nickname"><%= user.nickname %></div>
       <div class="user-roles" phx-hook="role_dropzone" id="dropzone-user-<%= Integer.to_string(user.id) %>">
         <%= for role <- Enum.sort_by(user.roles, & &1.id) do %>
