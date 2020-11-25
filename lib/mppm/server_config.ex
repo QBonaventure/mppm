@@ -127,13 +127,13 @@ defmodule Mppm.ServerConfig do
           end
         end
 
-      {:error, changeset} ->
+      {:error, _changeset} ->
         {:ok, nil}
     end
   end
 
 
-  def propagate_ruleset_changes(%ServerConfig{} = server_config, %Ecto.Changeset{changes: %{ruleset: %Ecto.Changeset{changes: changes}}} = data) do
+  def propagate_ruleset_changes(%ServerConfig{} = server_config, %Ecto.Changeset{changes: %{ruleset: %Ecto.Changeset{changes: changes}}}) do
     pid = {:global, {:broker_requester, server_config.login}}
     mode_vars =
       GenServer.call({:global, {:game_server, server_config.login}}, :get_current_game_mode_id)
@@ -141,12 +141,11 @@ defmodule Mppm.ServerConfig do
 
     to_update =
       Map.from_struct(server_config.ruleset)
-      |> Enum.filter(fn {key, value} -> Map.has_key?(mode_vars, key) end)
+      |> Enum.filter(fn {key, _value} -> Map.has_key?(mode_vars, key) end)
 
     GenServer.call(pid, {:update_ruleset, to_update})
-    case switch_game_mode?(changes) do
-      true -> GenServer.call(pid, {:switch_game_mode, Mppm.Repo.get(Mppm.Type.GameMode, changes.mode_id)})
-      false ->
+    if switch_game_mode?(changes) do
+      GenServer.call(pid, {:switch_game_mode, Mppm.Repo.get(Mppm.Type.GameMode, changes.mode_id)})
     end
 
     {:ok, to_update}
@@ -291,7 +290,7 @@ defmodule Mppm.ServerConfig do
     "#{@maps_path}MatchSettings/#{server_login}.txt"
     |> get_default_xml
     |> elem(2)
-    |> Enum.filter(fn {key, attr, value} -> key == :map end)
+    |> Enum.filter(fn {key, _attr, _value} -> key == :map end)
     |> Enum.map(fn {:map, _, [{_, _, [track_path]}]} ->
       %Mppm.Track{
         name: clear_filename(track_path)

@@ -1,5 +1,4 @@
 defmodule Mppm.TimeRecord do
-  use GenServer
   use Ecto.Schema
   import Ecto.Query
   import Ecto.Changeset
@@ -37,7 +36,7 @@ defmodule Mppm.TimeRecord do
   end
 
 
-  def compare(time_a, nil), do:
+  def compare(_time_a, nil), do:
     :missing_time
 
   def compare(%Mppm.TimeRecord{lap_time: time_a}, %Mppm.TimeRecord{lap_time: time_b}), do:
@@ -45,8 +44,8 @@ defmodule Mppm.TimeRecord do
 
   def compare(time_a, time_b) do
     case time_a - time_b do
-      _diff when _diff < 0 -> :ahead
-      _diff when _diff > 0 -> :behind
+      diff when diff < 0 -> :ahead
+      diff when diff > 0 -> :behind
       0 -> :equal
     end
   end

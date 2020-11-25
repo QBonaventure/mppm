@@ -2,7 +2,7 @@ defmodule Mppm.GameServer.Server do
   require Logger
   import Ecto.Query
   use GenServer
-  alias Mppm.{ServerConfig,ServersStatuses}
+  alias Mppm.ServerConfig
 
   @root_path Application.get_env(:mppm, :game_servers_root_path)
   @config Application.get_env(:mppm, Mppm.Trackmania)
@@ -23,11 +23,12 @@ defmodule Mppm.GameServer.Server do
   end
 
 
+  def get_listening_ports(pid, tries \\ 0)
   def get_listening_ports(pid, tries) when is_integer(pid) and tries >= @max_start_attempts do
     kill_server_process(pid)
     {:error, :unknown_reason}
   end
-  def get_listening_ports(pid, tries \\ 0) when is_integer(pid) do
+  def get_listening_ports(pid, tries) when is_integer(pid) do
     res = :os.cmd('ss -lpn | grep "pid=#{pid}" | awk {\'print$5\'} | cut -d: -f2')
     |> to_string
     |> String.split("\n", trim: true)
@@ -79,28 +80,6 @@ defmodule Mppm.GameServer.Server do
   end
 
 
-  def handle_cast({:relink_orphan_process, {login, pid, xmlrpc_port}}, state) do
-    Mppm.Broker.Supervisor.child_spec(state.config, xmlrpc_port)
-    |> Mppm.GameServer.Supervisor.start_child
-
-    Mppm.ServersStatuses.update_server_status(login, :started)
-    state = %{state |
-      status: :started,
-      xmlrpc_port: xmlrpc_port,
-      listening_ports: %{"xmlrpc" => xmlrpc_port},
-      port: nil,
-      os_pid: pid,
-      rewrite_ruleset?: false,
-      rewrite_config?: false,
-      rewrite_tracklist?: false,
-      reload_match_settings?: false,
-      game_mode_id: nil
-    }
-
-    {:noreply, state}
-  end
-
-
 
   ###################################
   ##### STOP FUNCTIONS ##############
@@ -126,11 +105,6 @@ defmodule Mppm.GameServer.Server do
   end
 
   def kill_server_process(pid) when is_integer(pid), do: System.cmd("kill", ["#{pid}"])
-
-  def handle_cast(:closing_port, state) do
-    Mppm.ServersStatuses.update_server_status(state.config.login, :stopped)
-    {:noreply, %{state | exit_status: :port_closed, status: :stopped}}
-  end
 
 
 
@@ -158,7 +132,6 @@ defmodule Mppm.GameServer.Server do
    end)
   end
 
-  @game_server_download_path "/tmp/tm_server_latest.zip"
 
   def update_game_server(root_path) do
     Logger.info "Installing lastest Trackmania game server"
@@ -176,6 +149,32 @@ defmodule Mppm.GameServer.Server do
   ##########################
   #        Callbacks       #
   ##########################
+
+  def handle_cast({:relink_orphan_process, {login, pid, xmlrpc_port}}, state) do
+    Mppm.Broker.Supervisor.child_spec(state.config, xmlrpc_port)
+    |> Mppm.GameServer.Supervisor.start_child
+
+    Mppm.ServersStatuses.update_server_status(login, :started)
+    state = %{state |
+      status: :started,
+      xmlrpc_port: xmlrpc_port,
+      listening_ports: %{"xmlrpc" => xmlrpc_port},
+      port: nil,
+      os_pid: pid,
+      rewrite_ruleset?: false,
+      rewrite_config?: false,
+      rewrite_tracklist?: false,
+      reload_match_settings?: false,
+      game_mode_id: nil
+    }
+
+    {:noreply, state}
+  end
+
+  def handle_cast(:closing_port, state) do
+    Mppm.ServersStatuses.update_server_status(state.config.login, :stopped)
+    {:noreply, %{state | exit_status: :port_closed, status: :stopped}}
+  end
 
   def handle_cast(:start, state) do
     case :ok == Mppm.ServersStatuses.get_start_flag(state.config.login) do
@@ -223,7 +222,7 @@ defmodule Mppm.GameServer.Server do
 
 
 
-  def handle_info({:ruleset_change, server_login, ruleset_or_tracklist}, state) do
+  def handle_info({:ruleset_change, server_login, _ruleset_or_tracklist}, state) do
     case server_login == state.config.login do
       true -> {:noreply, %{state | rewrite_ruleset?: true}}
       false -> {:noreply, state}
@@ -241,7 +240,7 @@ defmodule Mppm.GameServer.Server do
 
 
 
-  def handle_info({:podium_start, server_login}, state) do
+  def handle_info({:podium_start, _server_login}, state) do
     Mppm.ServerConfig
     |> Mppm.Repo.get(state.config.id)
     |> Mppm.Repo.preload(:ruleset)
@@ -250,24 +249,22 @@ defmodule Mppm.GameServer.Server do
   end
 
 
-
   def handle_info({:podium_end, server_login}, state) do
     GenServer.cast({:global, {:broker_requester, server_login}}, :reload_match_settings)
     {:noreply, %{state | reload_match_settings?: false}}
   end
 
 
-
-  def handle_info({:end_of_game, server_login}, state) do
-    config = Mppm.Repo.get(Mppm.ServerConfig, state.config.id) |> Mppm.Repo.preload(:ruleset)
-
+  def handle_info({:end_of_game, _server_login}, state) do
     {:noreply, %{state | game_mode_id: get_next_game_mode_id(state.config.id)}}
   end
+
 
   def handle_info({:start_of_match, server_login}, state) do
     GenServer.cast({:global, {:broker_requester, server_login}}, :reload_match_settings)
     {:noreply, state}
   end
+
 
   def handle_info({:current_game_mode, %Mppm.Type.GameMode{id: mode_id}}, state) do
     {:noreply, %{state | game_mode_id: mode_id}}
@@ -287,7 +284,7 @@ defmodule Mppm.GameServer.Server do
   end
 
   # Callback for info upon normally stopping a game server.
-  def handle_info({:DOWN, _ref, :port, port, :normal}, state) do
+  def handle_info({:DOWN, _ref, :port, _port, :normal}, state) do
     {:noreply, %{state | status: :stopped}}
   end
 

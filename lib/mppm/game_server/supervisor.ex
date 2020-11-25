@@ -1,7 +1,5 @@
 defmodule Mppm.GameServer.Supervisor do
-  use DynamicSupervisor
   alias Mppm.ServerConfig
-  alias __MODULE__
 
 
   def start_link(_arg) do

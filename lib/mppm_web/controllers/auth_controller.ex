@@ -1,6 +1,5 @@
 defmodule MppmWeb.AuthController do
   use MppmWeb, :controller
-  alias Mppm.{Repo,User}
   plug :put_layout, "auth.html"
 
 
@@ -24,7 +23,7 @@ defmodule MppmWeb.AuthController do
   end
 
 
-  def login(conn, gg) do
+  def login(conn, _) do
     conn
     |> render("login.html")
   end

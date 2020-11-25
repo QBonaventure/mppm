@@ -1,7 +1,6 @@
 defmodule Mppm.MXQuery do
   use Ecto.Schema
   import Ecto.Changeset
-  alias __MODULE__
 
   @mx_maps_info "https://trackmania.exchange/api/maps/get_map_info/multi/"
   @mx_track_search_uri "https://trackmania.exchange/mapsearch2/search"

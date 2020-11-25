@@ -13,14 +13,13 @@ defmodule Mppm.TracksFiles do
   end
 
 
-  def handle_call({:update_server_tracks, tracklist}, _from, state) do
-
+  def handle_call({:update_server_tracks, _tracklist}, _from, state) do
     {:noreply, state, state}
   end
 
 
 
-  def download_mx_track(%Mppm.Track{mx_track_id: track_id} = track) do
+  def download_mx_track(%Mppm.Track{mx_track_id: _track_id} = track) do
     case Mppm.MXQuery.download_track(track) do
       {:ok, http_resp} ->
           @maps_path <> mx_track_path(track)

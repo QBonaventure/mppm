@@ -64,7 +64,7 @@ defmodule Mppm.ServersStatuses do
 
   def start_link(_init_value) do
     servers =
-      fetch_all_configs
+      fetch_all_configs()
       |> Enum.map(& {&1.login, %{config: &1, next_config: nil, status: :stopped}})
       |> Map.new
     Agent.start_link(fn-> servers end, name: __MODULE__)

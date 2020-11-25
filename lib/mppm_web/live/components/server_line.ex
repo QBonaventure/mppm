@@ -1,7 +1,6 @@
 defmodule MppmWeb.Live.Component.ServerLine do
   use Phoenix.LiveComponent
   alias MppmWeb.DashboardView
-  alias Mppm.GameServer.Supervisor
 
   @topic "server-status"
 

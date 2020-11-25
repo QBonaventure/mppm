@@ -34,15 +34,14 @@ defmodule Mppm.TimeTracker do
 
   defp get_server_records(state, server_login) do
     track_uid = Map.get(state.servers_current_tracks, server_login)
-    records =
-      case Enum.find(state.tracks, & &1.track_uid == track_uid) do
-        nil ->
-          Mppm.Track.get_by_uid(track_uid) |> Mppm.Repo.preload(:time_records)
-        track ->
-          track
-      end
-      |> Map.get(:time_records)
-      |> Enum.sort_by(& &1.lap_time)
+    case Enum.find(state.tracks, & &1.track_uid == track_uid) do
+      nil ->
+        Mppm.Track.get_by_uid(track_uid) |> Mppm.Repo.preload(:time_records)
+      track ->
+        track
+    end
+    |> Map.get(:time_records)
+    |> Enum.sort_by(& &1.lap_time)
   end
 
 
@@ -50,10 +49,12 @@ defmodule Mppm.TimeTracker do
   def handle_call({:get_server_top_record, server_login}, _, state), do:
     {:reply, get_server_records(state, server_login) |> Enum.sort_by(& &1.lap_time) |> List.first, state}
 
+
   def handle_call({:get_server_records, server_login}, _, state), do:
     {:reply, get_server_records(state, server_login), state}
 
-  def handle_cast({:player_waypoint, server_login, %{"checkpointinrace" => 0, "login" => player_login, "racetime" => time}}, state) do
+
+  def handle_cast({:player_waypoint, _server_login, %{"checkpointinrace" => 0, "login" => player_login, "racetime" => time}}, state) do
     {:noreply, Map.put(state, player_login, [time])}
   end
 
@@ -77,9 +78,16 @@ defmodule Mppm.TimeTracker do
     end
   end
 
-  def handle_cast({:player_waypoint, server_login, %{"isendlap" => false, "login" => player_login, "racetime" => time}}, state) do
+  def handle_cast({:player_waypoint, _server_login, %{"isendlap" => false, "login" => player_login, "racetime" => time}}, state) do
     {:noreply, Map.update(state, player_login, [time], & &1 ++ [time])}
   end
+
+
+  def handle_cast({:track_server_time, server_login, track_uid}, state) do
+    {:noreply, add_track(state, track_uid, server_login)}
+  end
+
+
 
   def handle_info({id, server_login, track_uid}, state) when id in [:beginmap, :update_server_map] do
     state = add_track(state, track_uid, server_login)
@@ -92,10 +100,7 @@ defmodule Mppm.TimeTracker do
 
   def handle_info(_, state), do: {:noreply, state}
 
-
-  def handle_cast({:track_server_time, server_login, track_uid}, state) do
-    {:noreply, add_track(state, track_uid, server_login)}
-  end
+  
 
   def get_pubsub_topic(), do: @topic
 

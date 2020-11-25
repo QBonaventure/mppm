@@ -1,6 +1,5 @@
 defmodule Mppm.UserRole do
   use Ecto.Schema
-  import Ecto.Changeset
 
   schema "ref_users_roles" do
     field :name, :string

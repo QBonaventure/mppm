@@ -2,11 +2,9 @@ defmodule Mppm.Broker.ReceiverServer do
   require Logger
   use GenServer
   alias Mppm.Broker.BinaryMessage
-  alias Mppm.ServerConfig
 
 
   @handshake_response <<11,0,0,0>> <> "GBXRemote 2"
-  @header_size 8
   @xmlrpc_conn_opts [:binary, {:active, true}, {:reuseaddr, true}, {:keepalive, false}, {:send_timeout, 20000}]
 
 
@@ -24,7 +22,7 @@ defmodule Mppm.Broker.ReceiverServer do
     {:noreply, %{state | socket: socket}}
   end
 
-  def handle_info({:tcp_closed, port}, state) do
+  def handle_info({:tcp_closed, _port}, state) do
     Logger.info "["<>state.login<>"] Closing broker connection"
     {:noreply, %{state | status: :disconnected}}
   end
@@ -50,7 +48,7 @@ defmodule Mppm.Broker.ReceiverServer do
 
   defp parse_new_packet(login, <<size::little-32,id::little-32,msg::binary>>) do
     case size - byte_size(msg) do
-      _offset when _offset > 0 ->
+      offset when offset > 0 ->
         {:ok, %BinaryMessage{message: msg, size: size, id: id}}
       0 ->
         transmit_to_server_supervisor(login, msg)
@@ -70,7 +68,7 @@ defmodule Mppm.Broker.ReceiverServer do
   defp parse_message_next_packet(login, binary, %BinaryMessage{} = incoming_message) do
     missing_bytes = incoming_message.size - byte_size(incoming_message.message)
     case missing_bytes - byte_size(binary) do
-      _offset when _offset > 0 ->
+      offset when offset > 0 ->
         {:ok, %{incoming_message | message: incoming_message.message <> binary}}
       0 ->
         transmit_to_server_supervisor(login, incoming_message.message <> binary)
@@ -100,7 +98,7 @@ defmodule Mppm.Broker.ReceiverServer do
       message -> case message do
         %XMLRPC.MethodCall{} -> Mppm.Broker.MethodCall.dispatch(login, message)
         %XMLRPC.MethodResponse{} -> Mppm.Broker.MethodResponse.dispatch(login, message)
-        d ->
+        _unhandled_message ->
       end
     end
   end
@@ -125,7 +123,7 @@ defmodule Mppm.Broker.ReceiverServer do
       incoming_message: nil,
     }
     Logger.info "["<>login<>"] Broker receiver started."
-    Process.send_after(self, {:connect, xmlrpc_port}, 100)
+    Process.send_after(self(), {:connect, xmlrpc_port}, 100)
     {:ok, init_state}
   end
 

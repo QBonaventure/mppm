@@ -81,7 +81,7 @@ defmodule Mppm.GameUI.BasicInfo do
     {:noreply, state}
   end
 
-  def handle_info({:servers_users_updated, server_login, servers_users}, state) do
+  def handle_info({:servers_users_updated, _server_login, servers_users}, state) do
     Enum.each(servers_users, fn {server_login, users} ->
       Enum.each(users, & get_info(server_login, &1) |> Mppm.GameUI.Helper.send_to_user(server_login, &1.login))
     end)

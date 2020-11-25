@@ -88,7 +88,7 @@ defmodule Mppm.GameUI.LiveRaceRanking do
   end
 
 
-  def handle_info({:servers_users_updated, server_login, servers_users}, state) do
+  def handle_info({:servers_users_updated, server_login, _servers_users}, state) do
     GenServer.cast(self(), {:update_table, server_login, state})
     {:noreply, state}
   end

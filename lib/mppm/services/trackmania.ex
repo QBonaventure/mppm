@@ -39,7 +39,6 @@ defmodule Mppm.Service.Trackmania do
   end
 
   def get_user(%{access_token: token}) do
-    IO.inspect token
     "https://api.trackmania.com/api/user"
     |> HTTPoison.get(get_user_request_headers(token))
     |> parse_user_response()

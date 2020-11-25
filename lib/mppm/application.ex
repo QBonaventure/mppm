@@ -56,7 +56,7 @@ defmodule Mppm.Application do
         Mppm.GameServer.Server.update_game_server(@root_path)
     end
 
-    :ok == File.mkdir(Mppm.TracksFiles.mx_path())
+    # :ok = File.mkdir(Mppm.TracksFiles.mx_path())
 
     if {:ok, []} == File.ls(@root_path<>"/UserData/Maps/MX") do
       Logger.info "Copying your game server first track!"

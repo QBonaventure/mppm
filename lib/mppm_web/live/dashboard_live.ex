@@ -1,10 +1,7 @@
 defmodule MppmWeb.DashboardLive do
   use Phoenix.LiveView
-  alias Mppm.Repo
 
-
-  @topic "server-status"
-  @statuses Mppm.ServersStatuses.get_statuses_list
+  @statuses Mppm.ServersStatuses.get_statuses_list()
 
 
   def render(assigns) do
@@ -13,10 +10,8 @@ defmodule MppmWeb.DashboardLive do
 
 
   def mount(_params, session, socket) do
-    MppmWeb.Endpoint.subscribe(@topic)
-    statuses = Mppm.ServersStatuses.all
+    MppmWeb.Endpoint.subscribe("server-status")
 
-    servers = Repo.all(Mppm.ServerConfig)
     socket =
       socket
       |> assign(changeset: Mppm.ServerConfig.create_server_changeset())

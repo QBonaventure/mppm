@@ -13,7 +13,7 @@ defmodule Mppm.Tracklist do
   end
 
 
-  def changeset(%Mppm.Tracklist{} = tracklist, params \\ %{} ) do
+  def changeset(%Mppm.Tracklist{} = tracklist, params \\ %{}) do
     tracklist
     |> cast(params, [:tracks_ids, :server_id, :tracks])
     |> cast_assoc(:server)
@@ -76,6 +76,17 @@ defmodule Mppm.Tracklist do
     )
   end
 
+  def reindex_from_current_track(%Mppm.Tracklist{} = tracklist, track_uid) do
+    tracks = Map.get(tracklist, :tracks)
+    cur_track_index = tracks |> Enum.find_index(& &1.track_uid == track_uid)
+    {to_last, to_first} = Enum.split(tracks, cur_track_index)
+
+    Map.put(tracklist, :tracks, to_first ++ to_last)
+  end
+
+
+
+
   def handle_call({:get_server_current_track, server_login}, _from, state) do
     track = Map.get(state, server_login) |> Map.get(:tracks) |> List.first()
     {:reply, track, state}
@@ -104,21 +115,13 @@ defmodule Mppm.Tracklist do
   end
 
 
-  def handle_info({_message, server_login, track_uid}, state)
-  when _message in [:current_track_info, :loaded_map] do
+  def handle_info({message, server_login, track_uid}, state)
+  when message in [:current_track_info, :loaded_map] do
     tracklist = reindex_from_current_track(Map.get(state, server_login), track_uid)
     Phoenix.PubSub.broadcast(Mppm.PubSub, "tracklist-status", {:tracklist_update, server_login, tracklist})
 
     Mppm.ServerConfig.create_tracklist(tracklist)
     {:noreply, %{state | server_login => tracklist}}
-  end
-
-  def reindex_from_current_track(%Mppm.Tracklist{} = tracklist, track_uid) do
-    tracks = Map.get(tracklist, :tracks)
-    cur_track_index = tracks |> Enum.find_index(& &1.track_uid == track_uid)
-    {to_last, to_first} = Enum.split(tracks, cur_track_index)
-
-    Map.put(tracklist, :tracks, to_first ++ to_last)
   end
 
   def handle_info(_unhandled_message, state) do
@@ -137,11 +140,10 @@ defmodule Mppm.Tracklist do
 
 
   defp fetch_all_tracklists() do
-    tracklists = Mppm.Repo.all(
+    Mppm.Repo.all(
       from tl in Mppm.Tracklist,
       join: sc in Mppm.ServerConfig, on: tl.server_id == sc.id,
-      select: {sc.login, tl}
-    )
+      select: {sc.login, tl})
     |> Enum.map(fn {server_login, tracklist} ->
       {server_login, Map.put(
         tracklist,
@@ -155,4 +157,6 @@ defmodule Mppm.Tracklist do
     end)
     |> Map.new
   end
+
+
 end

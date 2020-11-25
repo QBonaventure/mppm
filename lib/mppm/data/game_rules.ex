@@ -1,10 +1,7 @@
 defmodule Mppm.GameRules do
   use Ecto.Schema
   import Ecto.Changeset
-  import Ecto.Query
   alias __MODULE__
-  alias Mppm.Repo
-  import Record
 
   @script_settings %{
     :time_attack => %{

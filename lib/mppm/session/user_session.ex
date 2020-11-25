@@ -3,7 +3,6 @@ defmodule Mppm.Session.UserSession do
   alias Mppm.Repo
   alias Mppm.Session.AgentStore
   alias Ecto.Changeset
-  import Ecto.Query
   import Plug.Conn
 
   defstruct [
@@ -21,7 +20,7 @@ defmodule Mppm.Session.UserSession do
     %{error: opts[:error] || "Not authorized"}
   end
 
-  def call(conn, opts\\ []) do
+  def call(conn, _opts\\ []) do
     if user = get_user(conn) do
       assign(conn, :current_user, user)
     else
@@ -76,27 +75,25 @@ defmodule Mppm.Session.UserSession do
 
   @spec create_user_session(%Mppm.User{}) :: {%UserSession{}, String.t}
   defp create_user_session(%Mppm.User{} = user) do
-    {user_session, message} =
-      case Mppm.User.find(user) do
-        {:unfound, nil} ->
-          {:ok, created_user} =
-            %Mppm.User{}
-            |> User.registration_changeset(%{nickname: user.nickname, uuid: user.uuid})
-            |> Repo.insert
-          {UserSession.from_user(created_user), greet(created_user)}
-        {:found, loaded_user} ->
-          loaded_user =
-            case is_nil(loaded_user.uuid) do
-              true ->
-                {:ok, loaded_user} =
-                  loaded_user
-                  |> Mppm.User.changeset(%{uuid: user.uuid})
-                  |> Mppm.Repo.update
-              false ->
-                loaded_user
-            end
-          {UserSession.from_user(loaded_user), greet(loaded_user)}
-      end
+    case Mppm.User.find(user) do
+      {:unfound, nil} ->
+        {:ok, created_user} =
+          %Mppm.User{}
+          |> Mppm.User.changeset(%{nickname: user.nickname, uuid: user.uuid})
+          |> Repo.insert
+        {UserSession.from_user(created_user), greet(created_user)}
+      {:found, loaded_user} ->
+        loaded_user =
+          case is_nil(loaded_user.uuid) do
+            true ->
+              loaded_user
+              |> Mppm.User.changeset(%{uuid: user.uuid})
+              |> Mppm.Repo.update
+            false ->
+              loaded_user
+          end
+        {UserSession.from_user(loaded_user), greet(loaded_user)}
+    end
   end
 
 

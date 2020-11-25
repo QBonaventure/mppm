@@ -1,6 +1,6 @@
 defmodule Mppm.GameServer.Starter do
   use GenServer
-  alias __MODULE__
+
 
   def start_link do
     GenServer.start_link(__MODULE__, nil)
@@ -13,8 +13,8 @@ defmodule Mppm.GameServer.Starter do
 
   def handle_info(:start_children, _) do
     Mppm.ServersStatuses.all
-    |> Enum.each(fn {server_login, %{config: server_config}} ->
-      {:ok, server_pid} = Mppm.GameServer.Supervisor.start_server_supervisor(server_config)
+    |> Enum.each(fn {_server_login, %{config: server_config}} ->
+      {:ok, _server_pid} = Mppm.GameServer.Supervisor.start_server_supervisor(server_config)
     end)
     relink_lost_processes()
 
@@ -32,8 +32,8 @@ defmodule Mppm.GameServer.Starter do
 
   def relink_lost_processes() do
     {:ok, zombie_processes} = get_zombie_processes()
-    Enum.each(zombie_processes, fn {login, pid, port} = tup ->
-      GenServer.cast({:global, {:game_server, login}}, {:relink_orphan_process, tup})
+    Enum.each(zombie_processes, fn {login, _pid, _port} = tuple ->
+      GenServer.cast({:global, {:game_server, login}}, {:relink_orphan_process, tuple})
     end)
   end
 

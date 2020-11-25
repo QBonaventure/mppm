@@ -14,7 +14,7 @@
   </section>
 
   <div id="servers-list" phx-update="append">
-    <%= for {server_login, server} <- @servers do %>
+    <%= for {_server_login, server} <- @servers do %>
       <%= live_component @socket, MppmWeb.Live.Component.ServerLine, id: server.config.id, server: server %>
     <% end %>
   </div>

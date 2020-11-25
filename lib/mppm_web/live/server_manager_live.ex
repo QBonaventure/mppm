@@ -135,7 +135,7 @@ defmodule MppmWeb.ServerManagerLive do
     {user_id, _} = Integer.parse(user_id)
     {role_id, _} = Integer.parse(role_id)
 
-    {:ok, updated_user} =
+    {:ok, _updated_user} =
       Enum.find(socket.assigns.users, & &1.id == user_id)
       |> Mppm.User.add_role(Enum.find(socket.assigns.available_roles, & &1.id == role_id))
 
@@ -147,7 +147,7 @@ defmodule MppmWeb.ServerManagerLive do
     {user_id, _} = Integer.parse(user_id)
     {role_id, _} = Integer.parse(role_id)
 
-    {:ok, updated_user} =
+    {:ok, _updated_user} =
       Enum.find(socket.assigns.users, & &1.id == user_id)
       |> Mppm.User.remove_role(Enum.find(socket.assigns.available_roles, & &1.id == role_id))
 
@@ -199,7 +199,7 @@ defmodule MppmWeb.ServerManagerLive do
     {:noreply, assign(socket, tracklist: tracklist)}
   end
 
-  def handle_event("update-tracklist", params, socket) do
+  def handle_event("update-tracklist", _params, socket) do
     Mppm.Tracklist.upsert_tracklist(socket.assigns.tracklist)
     {:noreply, socket}
   end
@@ -243,7 +243,7 @@ defmodule MppmWeb.ServerManagerLive do
 
 
 
-  def handle_info({:servers_users_updated, server_login, servers_users}, socket) do
+  def handle_info({:servers_users_updated, server_login, _servers_users}, socket) do
     {:noreply, assign(socket, users: get_users_lists(server_login))}
   end
 
@@ -255,7 +255,7 @@ defmodule MppmWeb.ServerManagerLive do
     {:noreply, assign(socket, current_track_status: :unloading)}
   end
 
-  def handle_info({:beginmap, %{"UId" => track_uid}}, socket) do
+  def handle_info({:beginmap, %{"UId" => _track_uid}}, socket) do
     {:noreply, assign(socket, current_track_status: :loading)}
   end
 

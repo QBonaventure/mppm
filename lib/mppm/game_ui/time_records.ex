@@ -1,7 +1,5 @@
 defmodule Mppm.GameUI.TimeRecords do
   use GenServer
-  alias Mppm.TimeTracker
-  import Ecto.Query
 
 
   @max_local_records_nb 10
@@ -49,7 +47,7 @@ defmodule Mppm.GameUI.TimeRecords do
   def handle_info(_, state), do: {:noreply, state}
 
 
-  def handle_call({:get_best_time, server_login}, from, state) do
+  def handle_call({:get_best_time, server_login}, _from, state) do
     {:reply, Kernel.get_in(state, [server_login, :records]) |> List.first(), state}
   end
 

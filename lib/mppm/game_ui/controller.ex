@@ -2,11 +2,11 @@ defmodule Mppm.GameUI.Controller do
   use GenServer
 
 
-  def handle_info({:broker_started, server_login}, state) do
+  def handle_info({:broker_started, _server_login}, state) do
     {:noreply, state}
   end
 
-  def handle_info({:user_connection_to_server, server_login, user_login, is_spectator?}, state) do
+  def handle_info({:user_connection_to_server, server_login, user_login, _is_spectator?}, state) do
     xml = Mppm.GameUI.Helper.get_custom_template(server_login, user_login)
     Mppm.GameUI.Helper.send_to_user(xml, server_login, user_login)
     {:noreply, state}
@@ -19,9 +19,6 @@ defmodule Mppm.GameUI.Controller do
   def init(_) do
     :ok = Phoenix.PubSub.subscribe(Mppm.PubSub, "players-status")
     :ok = Phoenix.PubSub.subscribe(Mppm.PubSub, "server-status")
-    # :ok = Phoenix.PubSub.subscribe(Mppm.PubSub, "records-status")
-    # :ok = Phoenix.PubSub.subscribe(Mppm.PubSub, "maps-status")
-    # :ok = Phoenix.PubSub.subscribe(Mppm.PubSub, "time-status")
     {:ok, %{}}
   end
 

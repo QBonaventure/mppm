@@ -24,7 +24,7 @@ defmodule Mppm.ConnectedUsers do
   def add_server_user(state, server_login, %Mppm.User{} = user, is_spectator?) do
     server_list = Map.get(state.servers_users, server_login, [])
     servers_users = Map.put(state.servers_users, server_login, Enum.uniq([Map.put(user, :is_spectator?, is_spectator?) | server_list]))
-    IO.inspect servers_users
+
     Phoenix.PubSub.broadcast(Mppm.PubSub, "players-status", {:servers_users_updated, server_login, servers_users})
     servers_users
   end

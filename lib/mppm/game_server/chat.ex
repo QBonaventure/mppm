@@ -13,11 +13,8 @@ defmodule Mppm.GameServer.Chat do
   end
 
 
-  def init(%ServerConfig{} = server_config) do
-    state = %{
-    }
-
-    {:ok, state}
+  def init(%ServerConfig{}) do
+    {:ok, %{}}
   end
 
 end

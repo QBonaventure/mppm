@@ -1,8 +1,6 @@
 defmodule MppmWeb.UserSessionLive do
   use Phoenix.LiveView
-  alias __MODULE__
   alias MppmWeb.AuthView
-  alias Mppm.{Repo}
   alias Mppm.Session.UserSession
 
   def render(assigns) do
@@ -26,7 +24,7 @@ defmodule MppmWeb.UserSessionLive do
 
 
   @spec update_user_session_with_pid(%UserSession{}) :: %UserSession{}
-  defp update_user_session_with_pid(%UserSession{nickname: nickname, component_pid: nil} = session) do
+  defp update_user_session_with_pid(%UserSession{nickname: _nickname, component_pid: nil} = session) do
     %UserSession{session | component_pid: self()}
     |> UserSession.update_user_session
   end

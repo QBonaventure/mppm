@@ -1,9 +1,9 @@
 defmodule Mppm.GameUI.Actions do
 
-  def handle_action("skip-map", server_login, user_login, []), do:
+  def handle_action("skip-map", server_login, _user_login, []), do:
     GenServer.cast({:global, {:broker_requester, server_login}}, :skip_map)
 
-  def handle_action("restart-map", server_login, user_login, []), do:
+  def handle_action("restart-map", server_login, _user_login, []), do:
     GenServer.cast({:global, {:broker_requester, server_login}}, :restart_map)
 
   def handle_action(method, server_login, user_login, [])

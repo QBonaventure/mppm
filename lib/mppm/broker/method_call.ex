@@ -104,7 +104,7 @@ defmodule Mppm.Broker.MethodCall do
     Phoenix.PubSub.broadcast(Mppm.PubSub, "race-status", {:turn_start, server_login})
   end
 
-  def dispatch_script_callback(server_login, "Maniaplanet.EndPlayLoop",
+  def dispatch_script_callback(_server_login, "Maniaplanet.EndPlayLoop",
   %{"count" => _count, "time" => _time}) do
     # GenServer.cast({:global, {:broker_requester, server_login}}, :reload_match_settings)
   end
@@ -134,7 +134,7 @@ defmodule Mppm.Broker.MethodCall do
   %{"map" => _track_map, "count" => _count, "time" => _time}) do
   end
 
-  def dispatch_script_callback(_server_login, "Maniaplanet.EndMatch_Start", data) do
+  def dispatch_script_callback(_server_login, "Maniaplanet.EndMatch_Start", _data) do
   end
 
   def dispatch_script_callback(_server_login, "Maniaplanet.EndMatch_End",
@@ -153,7 +153,7 @@ defmodule Mppm.Broker.MethodCall do
 
   def dispatch_script_callback(server_login, "Trackmania.Scores",
   %{"players" => _players_map_list, "responseid" => _response_id, "section" => _section, "teams" => _teams_list,
-  "useteams" => _use_teams?, "winnerplayer" => _winner_player, "winnerteam" => _winning_team} = data) do
+  "useteams" => _use_teams?, "winnerplayer" => _winner_player, "winnerteam" => _winning_team}) do
     Phoenix.PubSub.broadcast(Mppm.PubSub, "server-status", {:score, server_login})
   end
 
@@ -167,10 +167,10 @@ defmodule Mppm.Broker.MethodCall do
 
 
 
-  def dispatch_message(server_login, "ManiaPlanet.StatusChanged", [_status_code, _status_name]) do
+  def dispatch_message(_server_login, "ManiaPlanet.StatusChanged", [_status_code, _status_name]) do
   end
 
-  def dispatch_message(server_login, "ManiaPlanet.MapListModified", [_cur_track_index, _next_map_index, _is_list_modified?]) do
+  def dispatch_message(_server_login, "ManiaPlanet.MapListModified", [_cur_track_index, _next_map_index, _is_list_modified?]) do
   end
 
   def dispatch_message(server_login, "ManiaPlanet.EndMatch", [_list_of_user_ranking, _winning_team_id]) do
@@ -241,7 +241,7 @@ defmodule Mppm.Broker.MethodCall do
     Mppm.GameUI.Actions.handle_action(method_call, server_login, user_login, params)
 
 
-  def dispatch_message(server_login, method_name, data) do
+  def dispatch_message(_server_login, method_name, data) do
     IO.inspect %{method: method_name, data: data}
   end
 

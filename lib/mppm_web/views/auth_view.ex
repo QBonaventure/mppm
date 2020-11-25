@@ -1,28 +1,21 @@
 defmodule MppmWeb.AuthView do
   use MppmWeb, :view
-  alias Plug.Conn
-  alias Mppm.Session.{AgentStore,UserSession}
 
-  def ext_service_login_link(ext_service) do
-    Mppm.Service.Trackmania.authorize_url
-
-  end
-
-  def user_logged_in?(%Conn{} = conn) do
-    case Conn.get_session(conn, :current_user) do
+  def user_logged_in?(%Plug.Conn{} = conn) do
+    case Plug.Conn.get_session(conn, :current_user) do
       nil -> false
       _key -> true
     end
   end
 
-  @spec get_session(%Conn{}) :: nil | %UserSession{}
+  @spec get_session(%Plug.Conn{}) :: nil | %Mppm.Session.UserSession{}
   def get_session(conn) do
-    case Conn.get_session(conn, :current_user) do
+    case Plug.Conn.get_session(conn, :current_user) do
       nil -> nil
       key ->
-        case session = AgentStore.get(key) do
+        case session = Mppm.Session.AgentStore.get(key) do
           nil ->
-            UserSession.clear(conn)
+            Mppm.Session.UserSession.clear(conn)
             nil
           _ -> session
 
