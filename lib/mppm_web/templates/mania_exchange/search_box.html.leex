@@ -1,0 +1,37 @@
+<section id="search-tracks">
+  <%= mxo = form_for @mx_query_options, "#", [phx_change: "validate-mx-query", phx_submit: "send-mx-request", phx_target: @myself] %>
+    <%= submit "Search" , disabled: Kernel.not @mx_query_options.valid? %>
+
+    <label>
+      Name <%= text_input mxo, :map_name %>
+    </label>
+    <%= error_tag mxo, :map_name %>
+    <label>
+      <% track_style_options = @track_style_options |> Enum.map(&{&1.name, &1.id})
+      track_style_options = [{"", nil} | track_style_options] %>
+      Style <%= select mxo, :track_style_id, track_style_options %>
+    </label>
+    <%= error_tag mxo, :track_style_id %>
+    <label>
+      Author <%= text_input mxo, :author_name %>
+    </label>
+    <%= error_tag mxo, :author_name %>
+
+  </form>
+  <section id="search-tracks-results">
+    <div class="row header">
+      <div class="track-id">ID</div>
+      <div class="track-author">Author</div>
+      <div class="track-name">Name</div>
+      <div class="track-rewards">🏆</div>
+    </div>
+    <%= for track <- @mx_tracks_result.tracks do %>
+      <div id=<%= "mx-#{track.mx_track_id}"%> class="row track-search-item" draggable="true" phx-hook="draggable_mx_track_hook">
+        <div class="track-id"><%= track.mx_track_id %></div>
+        <div class="track-author"><%= track.author_nickname %></div>
+        <div class="track-name"><%= track.name %></div>
+        <div class="track-rewards"><%= track.awards_nb %></div>
+      </div>
+    <% end %>
+  </section>
+</section>

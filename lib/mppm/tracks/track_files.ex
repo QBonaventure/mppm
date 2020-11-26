@@ -20,7 +20,7 @@ defmodule Mppm.TracksFiles do
 
 
   def download_mx_track(%Mppm.Track{mx_track_id: _track_id} = track) do
-    case Mppm.MXQuery.download_track(track) do
+    case Mppm.Service.ManiaExchange.download_track(track) do
       {:ok, http_resp} ->
           @maps_path <> mx_track_path(track)
           |> File.write(http_resp.body)
@@ -62,7 +62,7 @@ defmodule Mppm.TracksFiles do
       maps_list
       |> Enum.filter(fn track -> not is_map(track)  end)
       |> Enum.map(fn {id, _} -> id end)
-      |> Mppm.MXQuery.get_maps_info()
+      |> Mppm.Service.ManiaExchange.get_maps_info()
 
     Enum.map(maps_list, fn map ->
       case map do

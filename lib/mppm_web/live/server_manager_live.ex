@@ -7,6 +7,7 @@ defmodule MppmWeb.ServerManagerLive do
   end
 
   def mount(params, session, socket) do
+    :ok = Phoenix.PubSub.subscribe(Mppm.PubSub, socket.id)
     :ok = Phoenix.PubSub.subscribe(Mppm.PubSub, Mppm.Broker.ReceiverServer.pubsub_topic(params["server_login"]))
     :ok = Phoenix.PubSub.subscribe(Mppm.PubSub, "players-status")
     :ok = Phoenix.PubSub.subscribe(Mppm.PubSub, "tracklist-status")
@@ -18,25 +19,19 @@ defmodule MppmWeb.ServerManagerLive do
     user = Mppm.Repo.get(Mppm.User, user_session.id)
     changeset = Ecto.Changeset.change(server_config)
 
-    mxo =
-      %Mppm.MXQuery{}
-      |> Mppm.MXQuery.changeset
-
     new_chat_message =
       %Mppm.ChatMessage{}
       |> Mppm.ChatMessage.changeset(user, server_config)
 
     socket =
       socket
+      |> assign(mx_searchbox_tracklist: [])
       |> assign(user_session: session)
       |> assign(user: user)
       |> assign(new_chat_message: new_chat_message)
       |> assign(changeset: changeset)
       |> assign(server_info: server_config)
-      |> assign(mx_query_options: mxo)
-      |> assign(track_style_options: Mppm.Repo.all(Mppm.TrackStyle))
       |> assign(tracklist: GenServer.call(Mppm.Tracklist, {:get_server_tracklist, server_config.login}))
-      |> assign(mx_tracks_result: get_data())
       |> assign(current_track_status: :loading)
       |> assign(game_modes: Mppm.Repo.all(Mppm.Type.GameMode))
       |> assign(respawn_behaviours: Mppm.Repo.all(Mppm.Ruleset.RespawnBehaviour))
@@ -66,9 +61,6 @@ defmodule MppmWeb.ServerManagerLive do
   def broker_pname(server_login), do: {:global, {:broker_requester, server_login}}
 
 
-  def get_mx_track_map(mx_track_id, tracks_list) when is_integer(mx_track_id) do
-    Enum.find(tracks_list, & &1.mx_track_id == mx_track_id)
-  end
 
   def get_changeset(server_id, params) do
     changeset =
@@ -156,26 +148,9 @@ defmodule MppmWeb.ServerManagerLive do
 
 
 
-  def handle_event("validate-mx-query", params, socket) do
-    {:noreply, assign(
-      socket,
-      mx_query_options: Mppm.MXQuery.changeset(socket.assigns.mx_query_options.data, params["mx_query"]
-    ))}
-  end
-
-  def handle_event("send-mx-request", params, socket) do
-    res =
-      socket.assigns.mx_query_options.data
-      |> Mppm.MXQuery.changeset(params["mx_query"])
-      |> Ecto.Changeset.apply_changes
-      |> Mppm.MXQuery.make_request
-
-    {:noreply, assign(socket, mx_tracks_result: res)}
-  end
-
   def handle_event("add-mx-track", params, socket) do
     {mx_track_id, ""} = params["data"] |> String.split("-") |> List.last |> Integer.parse
-    track = get_mx_track_map(mx_track_id, socket.assigns.mx_tracks_result.tracks)
+    track = Enum.find(socket.assigns.mx_searchbox_tracklist, & &1.mx_track_id == mx_track_id)
 
     Mppm.Tracklist
     |> GenServer.cast({:insert_track, socket.assigns.server_info.login, track, params["index"]-1})
@@ -241,6 +216,9 @@ defmodule MppmWeb.ServerManagerLive do
   ################### INFOS ######################
   ################################################
 
+
+  def handle_info({:mx_searchbox_tracklist, tracklist}, socket), do:
+    {:noreply, assign(socket, mx_searchbox_tracklist: tracklist)}
 
 
   def handle_info({:servers_users_updated, server_login, _servers_users}, socket) do

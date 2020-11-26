@@ -4,7 +4,7 @@ defmodule MppmWeb.Live.Component.CreateServerForm do
 
 
   def render(assigns) do
-    DashboardView.render("create-server-form.html", assigns)
+    DashboardView.render("index.html", assigns)
   end
 
 
