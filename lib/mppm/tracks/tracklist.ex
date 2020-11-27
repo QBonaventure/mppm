@@ -85,6 +85,13 @@ defmodule Mppm.Tracklist do
   end
 
 
+  def reindex_for_next_track(%Mppm.Tracklist{} = tracklist, track_uid) do
+    [curr_track | tracks] = Map.get(tracklist, :tracks)
+    next_track_index = tracks |> Enum.find_index(& &1.id == track_uid)
+    {to_last, to_first} = Enum.split(tracks, next_track_index)
+    Map.put(tracklist, :tracks, [curr_track] ++ to_first ++ to_last)
+  end
+
 
 
   def handle_call({:get_server_current_track, server_login}, _from, state) do

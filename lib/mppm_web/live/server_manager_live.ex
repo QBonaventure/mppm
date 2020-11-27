@@ -179,6 +179,17 @@ defmodule MppmWeb.ServerManagerLive do
     {:noreply, socket}
   end
 
+
+  def handle_event("play-track", %{"track-id" => track_id}, socket) do
+    {track_id, ""} = Integer.parse(track_id)
+    tracklist = Mppm.Tracklist.reindex_for_next_track(socket.assigns.tracklist, track_id)
+
+    GenServer.cast(Mppm.Tracklist, {:upsert_tracklist, socket.assigns.server_info.login, tracklist})
+    GenServer.cast(broker_pname(socket.assigns.server_info.login), :skip_map)
+
+    {:noreply, assign(socket, tracklist: tracklist)}
+  end
+
   def handle_event("remove-track-from-list", params, socket) do
     {track_id, ""} = Integer.parse(Map.get(params, "track-id"))
     tracklist = Mppm.Tracklist.remove_track(socket.assigns.tracklist, track_id)

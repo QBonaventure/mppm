@@ -196,6 +196,20 @@ section#tracklist .track-remove:hover {
 }
 
 
+section#tracklist .track-play {
+  margin: 0 10px;;
+}
+
+section#tracklist .track-play:hover {
+  cursor: pointer;
+}
+
+section#tracklist img {
+  width: 15px;
+  height: 15px;
+}
+
+
 /*********** Chat Section ******************/
 
 section#game-server-chat {
