@@ -35,7 +35,7 @@ defmodule Mppm.Broker.MethodCall do
   end
 
   def dispatch_script_callback(_server_login, "Trackmania.Event.SkipOutro", data) do
-    IO.inspect data
+    IO.inspect {"SkipOutro", data}
   end
 
   def dispatch_script_callback(server_login, "Maniaplanet.StartServer_Start",
@@ -43,8 +43,8 @@ defmodule Mppm.Broker.MethodCall do
     Phoenix.PubSub.broadcast(Mppm.PubSub, "server-status", {:end_of_game, server_login})
   end
 
-  def dispatch_script_callback(_server_login, "Maniaplanet.StartServer_End", data) do
-    IO.inspect data
+  def dispatch_script_callback(_server_login, "Maniaplanet.StartServer_End",
+  %{"mode" => %{"name" => _mode_name, "updated" => _updated}, "restarted" => _restarted?, "time" => _time}) do
   end
 
   def dispatch_script_callback(server_login, "Maniaplanet.StartMatch_Start",
