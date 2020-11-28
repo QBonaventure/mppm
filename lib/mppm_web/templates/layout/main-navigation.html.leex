@@ -1,0 +1,21 @@
+<nav id="main-menu">
+  <ul>
+      <li>
+        <span><%= live_patch "Dashboard", to: Routes.live_path(@socket, MppmWeb.DashboardLive, %{}), do: nil %></span>
+      </li>
+      <li>
+        <span>Servers</span>
+        <ul>
+          <%= for {id, name} <- @servers do %>
+            <li><a href="/<%= name %>"><%= name %></a></li>
+          <% end %>
+        </ul>
+      </li>
+      <li>
+        <span><%= live_patch "Settings", to: Routes.live_path(@socket, MppmWeb.AppSettingsLive, %{}), do: nil %></span>
+      </li>
+      <li>
+        <span><a href="/dashboard" target="_blank">Sys. info</a></span>
+      </li>
+  </ul>
+</nav>
