@@ -1,4 +1,2 @@
 <h1>Hello <%= @nickname %>!</h1>
-<section>
-  <%= link "Logout", to: "/auth/logout" %>
-</section>
+<%= link "Logout", to: "/auth/logout" %>

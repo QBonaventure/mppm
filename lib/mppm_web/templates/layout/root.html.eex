@@ -12,18 +12,13 @@
   <body>
     <header>
       <div class="container">
-        <div id="user-session">
-          <%= live_render(@conn, MppmWeb.UserSessionLive, user_session: @user_session) %>
-        </div>
+        <%= live_render(@conn, MppmWeb.UserSessionLive, user_session: @user_session) %>
         <a href="/" id="app-logo">
           MPPM
         </a>
-        <%= if MppmWeb.AuthView.user_logged_in? @conn do %>
-          <nav id="main-menu">
-            <ul>
-            </ul>
-          </nav>
-        <% end %>
+
+        <%= live_render(@conn, MppmWeb.MainNavigationLive, user_session: @user_session) %>
+
       </div>
     </header>
     <main role="main" class="container">

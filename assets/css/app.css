@@ -4,6 +4,80 @@
 @import "../node_modules/nprogress/nprogress.css";
 
 
+body > header {
+  height: 30px;
+}
+
+/********************************************************/
+/********************** USER SESSION ********************/
+/********************************************************/
+
+nav[role=session-management] {
+  position: absolute;
+  right: 0;
+}
+
+nav[role=session-management] h1 {
+  font-size: 16px;
+}
+
+nav[role=session-management] > * {
+  float: left;
+  padding: 5px 10px;
+  margin: 0;
+  line-height: 1.25;
+  background-color: var(--ftc-white-color);
+}
+
+
+/********************************************************/
+/*********************** MAIN MENU **********************/
+/********************************************************/
+
+nav#main-menu {
+  position: absolute;
+  top: 0;
+  left: 80px;
+  z-index: 100;
+}
+
+nav#main-menu > ul > li {
+background-color: white;
+  float: left;
+  width: 100px;
+  text-align: center;
+}
+
+nav#main-menu > ul > li > span {
+  float: left;
+  width: 100px;
+  border: 1px solid lightgrey;
+}
+
+nav#main-menu li > ul {
+  width: 100px;
+  margin: 28px 0 0;
+  padding-bottom: 10px;
+  border: 1px solid lightgrey;
+  border-top: 0;
+  text-align: center;
+}
+
+nav#main-menu li > ul {
+  display: none;
+}
+
+nav#main-menu li:hover > ul {
+  display: block;
+}
+
+nav#main-menu li > ul a {
+  text-align: center;
+}
+
+
+
+
 
 :root {
   --ftc-red-color: #991b15;
