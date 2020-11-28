@@ -20,7 +20,7 @@ defmodule Mppm.MixProject do
   def application do
     [
       mod: {Mppm.Application, []},
-      extra_applications: [:logger, :runtime_tools, :logger_file_backend,]
+      extra_applications: [:logger, :runtime_tools, :logger_file_backend, :os_mon]
     ]
   end
 
@@ -43,6 +43,7 @@ defmodule Mppm.MixProject do
       {:oauth2, "~> 2.0"},
       {:postgrex, ">= 0.0.0"},
       {:phoenix_html, "~> 2.13"},
+      {:phoenix_live_dashboard, "~> 0.1"},
       {:phoenix_live_reload, "~> 1.2", only: :dev},
       {:phoenix_live_view, "~> 0.14"},
       {:gettext, "~> 0.11"},

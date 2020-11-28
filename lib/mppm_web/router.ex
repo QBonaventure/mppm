@@ -1,5 +1,6 @@
 defmodule MppmWeb.Router do
   use MppmWeb, :router
+  import Phoenix.LiveDashboard.Router
 
   pipeline :browser do
     plug :accepts, ["html"]
@@ -33,7 +34,9 @@ defmodule MppmWeb.Router do
     pipe_through [:browser, :with_session]
 
     live "/", DashboardLive
-
+    live_dashboard "/dashboard"
+    live "/system_overview", SystemOverviewLive
+    live "/app_settings", AppSettingsLive
     live "/:server_login", ServerManagerLive
   end
 
