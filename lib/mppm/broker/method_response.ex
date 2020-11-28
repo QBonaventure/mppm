@@ -8,9 +8,15 @@ defmodule Mppm.Broker.MethodResponse do
   end
 
 
+  # For GetPlayerInfo response
+  defp dispatch_response(_server_login, %{"Login" => login, "NickName" => nickname, "SpectatorStatus" => is_spectator?}) do
+    user = %Mppm.User{login: login, nickname: nickname}
+    GenServer.cast(Mppm.ConnectedUsers, {:connected_user_info, user, is_spectator?})
+  end
 
-  defp dispatch_response(_server_login, %{"Login" => login, "NickName" => nickname, "PlayerId" => player_id, "SpectatorStatus" => is_spectator?}) do
-    user = %{login: login, nickname: nickname, player_id: player_id}
+  # For GetDetailedPlayerInfo response
+  defp dispatch_response(_server_login, %{"Login" => login, "NickName" => nickname, "IsSpectator" => is_spectator?}) do
+    user = %Mppm.User{login: login, nickname: nickname}
     GenServer.cast(Mppm.ConnectedUsers, {:connected_user_info, user, is_spectator?})
   end
 
@@ -41,6 +47,5 @@ defmodule Mppm.Broker.MethodResponse do
   defp dispatch_response(_server_login, message) do
     IO.inspect %{unhandled_message: message}
   end
-
 
 end

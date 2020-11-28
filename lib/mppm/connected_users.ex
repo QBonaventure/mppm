@@ -80,7 +80,7 @@ defmodule Mppm.ConnectedUsers do
 
 
 
-  def handle_cast({:connected_user_info, %{"SpectatorStatus" => is_spectator?} = user}, state) do
+  def handle_cast({:connected_user_info, user, is_spectator?}, state) do
     case Enum.find(state.unknown_users, & &1.user_login == user.login) do
       %{server_login: server_login} ->
         {:ok, user_record} =
