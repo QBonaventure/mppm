@@ -13,7 +13,6 @@ defmodule MppmWeb.ServerManagerLive do
     :ok = Phoenix.PubSub.subscribe(Mppm.PubSub, "tracklist-status")
 
     server_config = Mppm.ServerConfig.get_server_config(params["server_login"])
-    # TODO: implement the login system and actually select the right user
 
     user_session = Mppm.Session.AgentStore.get(session["current_user"])
     user = Mppm.Repo.get(Mppm.User, user_session.id)

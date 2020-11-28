@@ -35,7 +35,9 @@ defmodule MppmWeb.DashboardLive do
     end
   end
 
-
+  def handle_params(%{}, uri, socket) do
+    {:noreply, socket}
+  end
 
   def handle_info({server_status, server_login}, socket)
   when server_status in @statuses, do:
