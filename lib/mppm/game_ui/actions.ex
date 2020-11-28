@@ -8,8 +8,8 @@ defmodule Mppm.GameUI.Actions do
 
   def handle_action(method, server_login, user_login, [])
   when binary_part(method, 0, 8) == "spectate" do
-    ["spectate", player_login] = "spectate mr2_md43Qg-_ZeOmUQ32pA" |> String.split()
-    GenServer.cast({:global, {:broker_requester, server_login}}, {:force_spectator_to_target, player_login, user_login})
+    ["spectate", player_login] = String.split(method)
+    GenServer.cast({:global, {:broker_requester, server_login}}, {:force_spectator_to_target, user_login, player_login})
   end
 
   def handle_action(method, server_login, user_login, params), do:
