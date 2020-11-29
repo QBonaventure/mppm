@@ -91,7 +91,6 @@ defmodule Mppm.GameUI.TimePartialsDelta do
 
   def start_link(_init_value), do: GenServer.start_link(__MODULE__, nil, name: __MODULE__)
   def init(_) do
-    :ok = Phoenix.PubSub.subscribe(Mppm.PubSub, "records-status")
     :ok = Phoenix.PubSub.subscribe(Mppm.PubSub, "maps-status")
     :ok = Phoenix.PubSub.subscribe(Mppm.PubSub, "time-status")
     :ok = Phoenix.PubSub.subscribe(Mppm.PubSub, "race-status")

@@ -128,8 +128,6 @@ defmodule Mppm.GameUI.TimeRecords do
       |> Enum.map(& {&1, GenServer.call(Mppm.TimeTracker, {:get_server_records, &1})})
       |> Map.new
 
-
-    :ok = Phoenix.PubSub.subscribe(Mppm.PubSub, "records-status")
     :ok = Phoenix.PubSub.subscribe(Mppm.PubSub, "maps-status")
     :ok = Phoenix.PubSub.subscribe(Mppm.PubSub, "time-status")
     :ok = Phoenix.PubSub.subscribe(Mppm.PubSub, "race-status")
