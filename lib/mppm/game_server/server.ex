@@ -150,7 +150,7 @@ defmodule Mppm.GameServer.Server do
   #        Callbacks       #
   ##########################
 
-  def handle_cast({:relink_orphan_process, {login, pid, xmlrpc_port}}, state) do
+  def handle_cast({:relink_orphan_process, {login, pid, xmlrpc_port} = ss}, state) do
     Mppm.Broker.Supervisor.child_spec(state.config, xmlrpc_port)
     |> Mppm.GameServer.Supervisor.start_child
 
@@ -327,7 +327,7 @@ defmodule Mppm.GameServer.Server do
     Phoenix.PubSub.subscribe(Mppm.PubSub, "server_status_"<>server_config.login)
     Phoenix.PubSub.subscribe(Mppm.PubSub, "tracklist-status")
     Phoenix.PubSub.subscribe(Mppm.PubSub, "ruleset-status")
-    Phoenix.PubSub.subscribe(Mppm.PubSub, "server-status")
+    Phoenix.PubSub.subscribe(Mppm.PubSub, "server-status:"<>server_config.login)
     state = %{
       current_track: nil,
       port: nil,

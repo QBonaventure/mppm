@@ -10,7 +10,7 @@ defmodule MppmWeb.DashboardLive do
 
 
   def mount(_params, session, socket) do
-    MppmWeb.Endpoint.subscribe("server-status")
+    MppmWeb.Endpoint.subscribe("server-status:*")
 
     socket =
       socket

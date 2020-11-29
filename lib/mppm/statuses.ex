@@ -57,7 +57,7 @@ defmodule Mppm.ServersStatuses do
 
   def update_server_status(login, status) when status in @allowed_statuses do
     Agent.update(__MODULE__, & Kernel.put_in(&1, [login, :status], status))
-    Phoenix.PubSub.broadcast(Mppm.PubSub, "server-status", {status, login})
+    Phoenix.PubSub.broadcast(Mppm.PubSub, "server-status:*", {status, login})
   end
 
 

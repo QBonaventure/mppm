@@ -13,12 +13,10 @@ defmodule Mppm.Broker.ReceiverServer do
   end
 
 
-  def pubsub_topic(server_login), do: "server_status_"<>server_login
-
   def handle_info({:connect, xmlrpc_port}, state) do
     {:ok, socket} = open_connection(xmlrpc_port)
     Logger.info "["<>state.login<>"] TCP connection established"
-    Phoenix.PubSub.broadcast(Mppm.PubSub, "broker-status", {:connection_established, socket})
+    Phoenix.PubSub.broadcast(Mppm.PubSub, "broker-status:"<>state.login, {:connection_established, socket})
     {:noreply, %{state | socket: socket}}
   end
 

@@ -1,10 +1,6 @@
 defmodule Mppm.Broker.MethodCall do
 
 
-  def pubsub_topic(server_login), do: "server_status_"<>server_login
-
-
-
   def dispatch(server_login, %XMLRPC.MethodCall{method_name: "ManiaPlanet.ModeScriptCallbackArray", params: [callback_name, [raw_data]]}) do
     {:ok, data} = Jason.decode(raw_data)
     dispatch_script_callback(server_login, callback_name, data)
@@ -40,7 +36,7 @@ defmodule Mppm.Broker.MethodCall do
 
   def dispatch_script_callback(server_login, "Maniaplanet.StartServer_Start",
   %{"mode" => %{"name" => _mode_name, "updated" => _updated?}, "restarted" => _restarted?, "time" => _time}) do
-    Phoenix.PubSub.broadcast(Mppm.PubSub, "server-status", {:end_of_game, server_login})
+    Phoenix.PubSub.broadcast(Mppm.PubSub, "server-status:"<>server_login, {:end_of_game, server_login})
   end
 
   def dispatch_script_callback(_server_login, "Maniaplanet.StartServer_End",
@@ -49,12 +45,12 @@ defmodule Mppm.Broker.MethodCall do
 
   def dispatch_script_callback(server_login, "Maniaplanet.StartMatch_Start",
   %{"count" => _count, "time" => _time}) do
-    Phoenix.PubSub.broadcast(Mppm.PubSub, "server-status", {:start_of_match, server_login})
+    Phoenix.PubSub.broadcast(Mppm.PubSub, "server-status:"<>server_login, {:start_of_match, server_login})
   end
 
   def dispatch_script_callback(server_login, "Maniaplanet.StartMatch_End",
   %{"count" => _count, "time" => _time}) do
-    Phoenix.PubSub.broadcast(Mppm.PubSub, "server-status", {:end_of_game, server_login})
+    Phoenix.PubSub.broadcast(Mppm.PubSub, "server-status:"<>server_login, {:end_of_game, server_login})
   end
 
   def dispatch_script_callback(_server_login, "Maniaplanet.LoadingMap_Start",
@@ -127,7 +123,7 @@ defmodule Mppm.Broker.MethodCall do
 
   def dispatch_script_callback(server_login, "Maniaplanet.EndMap_Start",
   %{"map" => _track_map, "count" => _count}) do
-    Phoenix.PubSub.broadcast(Mppm.PubSub, "server-status", {:end_of_game, server_login})
+    Phoenix.PubSub.broadcast(Mppm.PubSub, "server-status:"<>server_login, {:end_of_game, server_login})
   end
 
   def dispatch_script_callback(_server_login, "Maniaplanet.EndMap_End",
@@ -143,18 +139,18 @@ defmodule Mppm.Broker.MethodCall do
 
   def dispatch_script_callback(server_login, "Maniaplanet.Podium_Start",
   %{"time" => _time}) do
-    Phoenix.PubSub.broadcast(Mppm.PubSub, "server-status", {:podium_start, server_login})
+    Phoenix.PubSub.broadcast(Mppm.PubSub, "server-status:"<>server_login, {:podium_start, server_login})
   end
 
   def dispatch_script_callback(server_login, "Maniaplanet.Podium_End",
   %{"time" => _time}) do
-    Phoenix.PubSub.broadcast(Mppm.PubSub, "server-status", {:podium_end, server_login})
+    Phoenix.PubSub.broadcast(Mppm.PubSub, "server-status:"<>server_login, {:podium_end, server_login})
   end
 
   def dispatch_script_callback(server_login, "Trackmania.Scores",
   %{"players" => _players_map_list, "responseid" => _response_id, "section" => _section, "teams" => _teams_list,
   "useteams" => _use_teams?, "winnerplayer" => _winner_player, "winnerteam" => _winning_team}) do
-    Phoenix.PubSub.broadcast(Mppm.PubSub, "server-status", {:score, server_login})
+    Phoenix.PubSub.broadcast(Mppm.PubSub, "server-status:"<>server_login, {:score, server_login})
   end
 
 
@@ -174,23 +170,23 @@ defmodule Mppm.Broker.MethodCall do
   end
 
   def dispatch_message(server_login, "ManiaPlanet.EndMatch", [_list_of_user_ranking, _winning_team_id]) do
-    Phoenix.PubSub.broadcast(Mppm.PubSub, pubsub_topic(server_login), {:endmatch})
+    Phoenix.PubSub.broadcast(Mppm.PubSub, "server-status:"<>server_login, {:endmatch})
   end
 
   def dispatch_message(server_login, "ManiaPlanet.EndMap", [%{"UId" => track_uid} = _track_info_map]) do
     Phoenix.PubSub.broadcast(Mppm.PubSub, "maps-status", {:endmap, server_login, track_uid})
-    Phoenix.PubSub.broadcast(Mppm.PubSub, pubsub_topic(server_login), {:endmap})
+    Phoenix.PubSub.broadcast(Mppm.PubSub, "server-status:"<>server_login, {:endmap})
   end
 
 
   def dispatch_message(server_login, "ManiaPlanet.BeginMap", [%{"UId" => track_uid} = track_info_map]) do
     Phoenix.PubSub.broadcast(Mppm.PubSub, "maps-status", {:beginmap, server_login, track_uid})
-    Phoenix.PubSub.broadcast(Mppm.PubSub, pubsub_topic(server_login), {:beginmap, track_info_map})
+    Phoenix.PubSub.broadcast(Mppm.PubSub, "server-status:"<>server_login, {:beginmap, track_info_map})
   end
 
 
   def dispatch_message(server_login, "ManiaPlanet.BeginMatch", []) do
-    Phoenix.PubSub.broadcast(Mppm.PubSub, pubsub_topic(server_login), {:beginmatch})
+    Phoenix.PubSub.broadcast(Mppm.PubSub, "server-status:"<>server_login, {:beginmatch})
   end
 
 
@@ -212,7 +208,7 @@ defmodule Mppm.Broker.MethodCall do
         %Mppm.ChatMessage{}
         |> Mppm.ChatMessage.changeset(user, server, %{text: text})
         |> Mppm.Repo.insert
-      Phoenix.PubSub.broadcast(Mppm.PubSub, pubsub_topic(server_login), {:new_chat_message, chat_message})
+      Phoenix.PubSub.broadcast(Mppm.PubSub, "server-status:"<>server_login, {:new_chat_message, chat_message})
     end
   end
 

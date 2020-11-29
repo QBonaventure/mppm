@@ -120,7 +120,7 @@ defmodule Mppm.Broker.RequesterServer do
     make_request("GetPlayerList", [1000, 0], state)
 
     Logger.info "["<>state.login<>"] Authenticated to the game server"
-    Phoenix.PubSub.broadcast(Mppm.PubSub, "server-status", {:broker_started, state.login})
+    Phoenix.PubSub.broadcast(Mppm.PubSub, "server-status:"<>state.login, {:broker_started, state.login})
     {:noreply, state}
   end
 
@@ -192,7 +192,7 @@ defmodule Mppm.Broker.RequesterServer do
     GenServer.start_link(__MODULE__, init_args, name: {:global, {:broker_requester, login}})
 
   def init([login, _xmlrpc_port, superadmin_pwd]) do
-    Phoenix.PubSub.subscribe(Mppm.PubSub, "broker-status")
+    Phoenix.PubSub.subscribe(Mppm.PubSub, "broker-status:"<>login)
 
     init_state = %{
       socket: nil,

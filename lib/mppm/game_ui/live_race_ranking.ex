@@ -124,7 +124,7 @@ defmodule Mppm.GameUI.LiveRaceRanking do
   def init(_) do
     :ok = Phoenix.PubSub.subscribe(Mppm.PubSub, "race-status")
     :ok = Phoenix.PubSub.subscribe(Mppm.PubSub, "players-status")
-    :ok = Phoenix.PubSub.subscribe(Mppm.PubSub, "server-status")
+    :ok = Phoenix.PubSub.subscribe(Mppm.PubSub, "server-status:*")
     {:ok, %{}}
   end
 

@@ -8,7 +8,7 @@ defmodule MppmWeb.ServerManagerLive do
 
   def mount(params, session, socket) do
     :ok = Phoenix.PubSub.subscribe(Mppm.PubSub, socket.id)
-    :ok = Phoenix.PubSub.subscribe(Mppm.PubSub, Mppm.Broker.ReceiverServer.pubsub_topic(params["server_login"]))
+    :ok = Phoenix.PubSub.subscribe(Mppm.PubSub, "server-status:"<>params["server_login"])
     :ok = Phoenix.PubSub.subscribe(Mppm.PubSub, "players-status")
     :ok = Phoenix.PubSub.subscribe(Mppm.PubSub, "tracklist-status")
 

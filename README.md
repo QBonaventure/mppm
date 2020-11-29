@@ -36,4 +36,27 @@ of the broker to be able to independently fail without impeding its counterpart.
 
 ## PubSub Topics
 
+\* > server login
+
 ### "maps-update"
+
+
+### "server-status:*"
+
+- {:new_chat_message, chat_message}
+- {:beginmatch}
+- {:endmatch}
+- {:beginmap, track_info_map}
+- {:endmap}
+- {:start_of_match, server_login}
+- {:score, server_login}
+- {:end_of_game, server_login}
+- {:loaded_map, server_login, map_uid}
+- {:podium_start, server_login}
+- {:podium_end, server_login}
+- {:broker_started, state.login}
+
+
+### "broker-status:*"
+
+- {:connection_established, socket}

@@ -2,11 +2,8 @@ defmodule MppmWeb.Live.Component.ServerLine do
   use Phoenix.LiveComponent
   alias MppmWeb.DashboardView
 
-  @topic "server-status"
-
-
   def mount(socket) do
-    :ok = Phoenix.PubSub.subscribe(Mppm.PubSub, @topic)
+    :ok = Phoenix.PubSub.subscribe(Mppm.PubSub, "server-status:*")
     {:ok, socket}
   end
 

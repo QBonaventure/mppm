@@ -34,9 +34,9 @@ defmodule Mppm.Broker.MethodResponse do
     Enum.each(remainder, & GenServer.cast(Mppm.ConnectedUsers, {:user_connection, server_login, Map.get(&1, "Login"), Map.get(&1, "SpectatorStatus") != 0}))
   end
 
-  defp dispatch_response(_server_login, %{"ScriptName" => script_name}) do
+  defp dispatch_response(server_login, %{"ScriptName" => script_name}) do
     game_mode = Mppm.Repo.get_by(Mppm.Type.GameMode, script_name: script_name)
-    Phoenix.PubSub.broadcast(Mppm.PubSub, "server-status", {:current_game_mode, game_mode})
+    Phoenix.PubSub.broadcast(Mppm.PubSub, "server-status:"<>server_login, {:current_game_mode, game_mode})
   end
 
 
