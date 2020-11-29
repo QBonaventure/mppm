@@ -7,12 +7,13 @@ defmodule MppmWeb.ServerManagerLive do
   end
 
   def mount(params, session, socket) do
+    server_config = Mppm.ServerConfig.get_server_config(params["server_login"])
+
+    Phoenix.PubSub.subscribe(Mppm.PubSub, "test")
     :ok = Phoenix.PubSub.subscribe(Mppm.PubSub, socket.id)
-    :ok = Phoenix.PubSub.subscribe(Mppm.PubSub, "server-status:"<>params["server_login"])
+    :ok = Phoenix.PubSub.subscribe(Mppm.PubSub, "server-status:"<>server_config.login)
     :ok = Phoenix.PubSub.subscribe(Mppm.PubSub, "players-status")
     :ok = Phoenix.PubSub.subscribe(Mppm.PubSub, "tracklist-status")
-
-    server_config = Mppm.ServerConfig.get_server_config(params["server_login"])
 
     user_session = Mppm.Session.AgentStore.get(session["current_user"])
     user = Mppm.Repo.get(Mppm.User, user_session.id)
@@ -22,6 +23,8 @@ defmodule MppmWeb.ServerManagerLive do
       %Mppm.ChatMessage{}
       |> Mppm.ChatMessage.changeset(user, server_config)
 
+    tracklist = GenServer.call(Mppm.Tracklist, {:get_server_tracklist, server_config.login})
+
     socket =
       socket
       |> assign(mx_searchbox_tracklist: [])
@@ -30,8 +33,8 @@ defmodule MppmWeb.ServerManagerLive do
       |> assign(new_chat_message: new_chat_message)
       |> assign(changeset: changeset)
       |> assign(server_info: server_config)
-      |> assign(tracklist: GenServer.call(Mppm.Tracklist, {:get_server_tracklist, server_config.login}))
-      |> assign(current_track_status: :loading)
+      |> assign(tracklist: tracklist)
+      |> assign(current_track_status: :playing)
       |> assign(game_modes: Mppm.Repo.all(Mppm.Type.GameMode))
       |> assign(respawn_behaviours: Mppm.Repo.all(Mppm.Ruleset.RespawnBehaviour))
       |> assign(chat: Mppm.ChatMessage.get_last_chat_messages(server_config.id))
@@ -49,6 +52,7 @@ defmodule MppmWeb.ServerManagerLive do
 
     Mppm.Repo.all(Mppm.User)
     |> Mppm.Repo.preload(:roles)
+    |> Enum.sort_by(& String.downcase(&1.nickname))
     |> Enum.map(fn user ->
       case user.id in connected_users_id do
         true -> Map.put(user, :is_connected?, true)
@@ -169,13 +173,8 @@ defmodule MppmWeb.ServerManagerLive do
       |> List.pop_at(Enum.find_index(tracklist.tracks, & &1.id == track_id))
     tracklist = %{tracklist | tracks: List.insert_at(tracks_collection, params["index"], track)}
 
-    GenServer.cast(Mppm.Tracklist, {:upsert_tracklist, socket.assigns.server_info.login, tracklist})
+    :ok = GenServer.cast(Mppm.Tracklist, {:upsert_tracklist, tracklist})
     {:noreply, assign(socket, tracklist: tracklist)}
-  end
-
-  def handle_event("update-tracklist", _params, socket) do
-    Mppm.Tracklist.upsert_tracklist(socket.assigns.tracklist)
-    {:noreply, socket}
   end
 
 
@@ -183,7 +182,7 @@ defmodule MppmWeb.ServerManagerLive do
     {track_id, ""} = Integer.parse(track_id)
     tracklist = Mppm.Tracklist.reindex_for_next_track(socket.assigns.tracklist, track_id)
 
-    GenServer.cast(Mppm.Tracklist, {:upsert_tracklist, socket.assigns.server_info.login, tracklist})
+    GenServer.cast(Mppm.Tracklist, {:upsert_tracklist, tracklist})
     GenServer.cast(broker_pname(socket.assigns.server_info.login), :skip_map)
 
     {:noreply, assign(socket, tracklist: tracklist)}
@@ -192,7 +191,7 @@ defmodule MppmWeb.ServerManagerLive do
   def handle_event("remove-track-from-list", params, socket) do
     {track_id, ""} = Integer.parse(Map.get(params, "track-id"))
     tracklist = Mppm.Tracklist.remove_track(socket.assigns.tracklist, track_id)
-    GenServer.cast(Mppm.Tracklist, {:upsert_tracklist, socket.assigns.server_info.login, tracklist})
+    GenServer.cast(Mppm.Tracklist, {:upsert_tracklist, tracklist})
     {:noreply, assign(socket, tracklist: tracklist)}
   end
 
@@ -218,6 +217,7 @@ defmodule MppmWeb.ServerManagerLive do
 
   def handle_event("validate", params, socket) do
     {:ok, changeset} = get_changeset(socket.assigns.server_info.id, params["server_config"])
+    Phoenix.PubSub.broadcast_from(Mppm.PubSub, self(), "test", {:test, changeset})
     {:noreply, assign(socket, changeset: changeset)}
   end
 
@@ -225,6 +225,10 @@ defmodule MppmWeb.ServerManagerLive do
   ################################################
   ################### INFOS ######################
   ################################################
+
+  def handle_info({:test, changeset}, socket) do
+    {:noreply, assign(socket, changeset: changeset)}
+  end
 
 
   def handle_info({:mx_searchbox_tracklist, tracklist}, socket), do:
@@ -243,7 +247,7 @@ defmodule MppmWeb.ServerManagerLive do
     {:noreply, assign(socket, current_track_status: :unloading)}
   end
 
-  def handle_info({:beginmap, %{"UId" => _track_uid}}, socket) do
+  def handle_info({:beginmap, %{"UId" => _uuid}}, socket) do
     {:noreply, assign(socket, current_track_status: :loading)}
   end
 

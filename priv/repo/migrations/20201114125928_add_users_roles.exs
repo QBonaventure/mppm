@@ -12,9 +12,9 @@ defmodule Mppm.Repo.Migrations.AddUsersRoles do
       add :user_role_id, references(:ref_users_roles), primary_key: true
     end
 
-    flush
+    flush()
 
-    insert_user_roles
+    insert_user_roles()
   end
 
   def down do

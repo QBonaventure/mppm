@@ -9,7 +9,7 @@ defmodule Mppm.Service.ManiaExchange do
 
   def get_maps_info(maps_ids) when is_list(maps_ids) do
     maps_ids
-    |> Enum.chunk_every(2)
+    |> Enum.chunk_every(10)
     |> Enum.map(&make_maps_info_request(&1))
     |> List.flatten
   end

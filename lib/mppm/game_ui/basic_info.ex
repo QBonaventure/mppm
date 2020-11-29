@@ -48,7 +48,10 @@ defmodule Mppm.GameUI.BasicInfo do
   defp skip_button(), do: {:label, [text: "skip", action: "skip-map", class: "text", pos: "42 -1"], []}
 
 
-  defp track_text(%Mppm.Track{author_nickname: author_name, name: map_name}), do: map_name<>" by "<>author_name
+  defp track_text(%Mppm.Track{author: %Ecto.Association.NotLoaded{}} = track), do:
+    track |> Mppm.Repo.preload(:author) |> track_text()
+  defp track_text(%Mppm.Track{author: %Mppm.User{nickname: author_name}, name: map_name}), do:
+    map_name<>" by "<>author_name
 
   defp get_server_tracks(server_login), do:
     {
@@ -56,7 +59,7 @@ defmodule Mppm.GameUI.BasicInfo do
       GenServer.call(Mppm.Tracklist, {:get_server_next_track, server_login})
     }
 
-  def handle_info({:tracklist_update, tracklist}, state) do
+  def handle_info({:tracklist_update, _, tracklist}, state) do
     tracklist = tracklist |> Mppm.Repo.preload(:server)
     Mppm.ConnectedUsers.get_connected_users(tracklist.server.login)
     |> Enum.each(& get_info(tracklist.server.login, &1) |> Mppm.GameUI.Helper.send_to_user(tracklist.server.login, &1.login))
@@ -88,9 +91,12 @@ defmodule Mppm.GameUI.BasicInfo do
     {:noreply, state}
   end
 
-  def handle_info(_unhandled_message, state) do
+  def handle_info(unhandled_message, state) do
+    IO.puts "------------------------------------------------------------------------"
+    IO.inspect unhandled_message
     {:noreply, state}
   end
+
 
 
   def start_link(_init_value), do: GenServer.start_link(__MODULE__, nil, name: __MODULE__)

@@ -43,17 +43,17 @@
     </div>
     <div id="current-track-status">
       <%= case @current_track_status do
-        :loading -> "L"
-        :playing -> "P"
-        :unloading -> "U"
-        :ending -> "E"
+        :loading -> tag(:img, src: "/images/web_ui/yellow-light.svg")
+        :playing -> tag(:img, src: "/images/web_ui/green-light.svg")
+        :unloading -> tag(:img, src: "/images/web_ui/sand-clock.svg")
+        :ending -> tag(:img, src: "/images/web_ui/finish-flag.svg")
       end %>
     </div>
     <div id="tracks-list" phx-hook="track_dropzone">
-      <%= for track <- @tracklist.tracks do %>
+      <%= for track <- @tracklist.tracks |> Mppm.Repo.preload(:author) do %>
         <div id="track-<%= track.id %>" class="row played-tracks <%= if is_nil(track.id), do: "new" %>" draggable="true" phx-hook="draggable_server_track_hook">
           <div class="track-id"><%= track.mx_track_id %></div>
-          <div class="track-author"><%= track.author_nickname %></div>
+          <div class="track-author"><%= track.author.nickname %></div>
           <div class="track-name"><%= track.name %></div>
           <%= unless Enum.find_index(@tracklist.tracks, & &1.id == track.id) == 0 do %>
             <div class="track-play" phx-click="play-track" phx-value-track-id="<%= track.id %>">
@@ -105,52 +105,24 @@
 
           <h2>Time attack</h2>
 
-          <label>Respawn bhvr: <%= select rs, :ta_respawn_behaviour_id, respawn_behaviours %></label>
-          <%= error_tag f, :ta_respawn_behaviour %>
-
-          <label>Time limit: <%= text_input rs, :ta_time_limit %></label>
-          <%= error_tag f, :ta_time_limit %>
-
-          <label>Warmups nb: <%= text_input rs, :ta_warmup_nb %></label>
-          <%= error_tag f, :ta_warmup_nb %>
-
-          <label>Warmup duration: <%= text_input rs, :ta_warmup_duration %></label>
-          <%= error_tag f, :ta_warmup_duration %>
-
-          <label>Forced laps nb: <%= text_input rs, :ta_forced_laps_nb %></label>
-          <%= error_tag f, :ta_forced_laps_nb %>
-
+          <%= MppmWeb.ServerManagerView.select(rs, :ta_respawn_behaviour_id, "Respawn bhvr", respawn_behaviours) %>
+          <%= MppmWeb.ServerManagerView.text_input(rs, :ta_time_limit, "Time limit") %>
+          <%= MppmWeb.ServerManagerView.text_input(rs, :ta_warmup_nb, "Warmups nb") %>
+          <%= MppmWeb.ServerManagerView.text_input(rs, :ta_warmup_duration, "WUs duration") %>
+          <%= MppmWeb.ServerManagerView.text_input(rs, :ta_forced_laps_nb, "Forced laps nb") %>
 
 
           <h2>Rounds</h2>
 
-          <label>Respawn bhvr: <%= select rs, :rounds_respawn_behaviour_id, respawn_behaviours %></label>
-          <%= error_tag f, :rounds_respawn_behaviour %>
-
-          <label>Finish Timeout: <%= text_input rs, :rounds_finish_timeout %></label>
-          <%= error_tag f, :rounds_finish_timeout %>
-
-          <label>Warmups nb: <%= text_input rs, :rounds_warmup_nb %></label>
-          <%= error_tag f, :rounds_warmup_nb %>
-
-          <label>Warmup duration: <%= text_input rs, :rounds_warmup_duration %></label>
-          <%= error_tag f, :rounds_warmup_duration %>
-
-          <label>Maps/match: <%= text_input rs, :rounds_maps_per_match %></label>
-          <%= error_tag f, :rounds_maps_per_match %>
-
-          <label>Rounds/map: <%= text_input rs, :rounds_rounds_per_map %></label>
-          <%= error_tag f, :rounds_rounds_per_map %>
-
-          <label>Points limit: <%= text_input rs, :rounds_pts_limit %></label>
-          <%= error_tag f, :rounds_pts_limit %>
-
-          <label>Points repart.: <%= text_input rs, :rounds_pts_repartition %></label>
-          <%= error_tag f, :rounds_pts_repartition %>
-
-          <label>Forced laps: <%= text_input rs, :rounds_forced_laps_nb %></label>
-          <%= error_tag f, :rounds_forced_laps_nb %>
-
+          <%= MppmWeb.ServerManagerView.select(rs, :rounds_respawn_behaviour_id, "Respawn bhvr", respawn_behaviours) %>
+          <%= MppmWeb.ServerManagerView.text_input(rs, :rounds_finish_timeout, "Finish Timeout") %>
+          <%= MppmWeb.ServerManagerView.text_input(rs, :rounds_warmup_nb, "Warmups nb") %>
+          <%= MppmWeb.ServerManagerView.text_input(rs, :rounds_warmup_duration, "Warmup duratio") %>
+          <%= MppmWeb.ServerManagerView.text_input(rs, :rounds_maps_per_match, "Maps/match") %>
+          <%= MppmWeb.ServerManagerView.text_input(rs, :rounds_rounds_per_map, "Rounds/map") %>
+          <%= MppmWeb.ServerManagerView.text_input(rs, :rounds_pts_limit, "Points limit") %>
+          <%= MppmWeb.ServerManagerView.text_input(rs, :rounds_pts_repartition, "Points repart") %>
+          <%= MppmWeb.ServerManagerView.text_input(rs, :rounds_forced_laps_nb, "Forced laps") %>
 
 
           <h2>Team</h2>

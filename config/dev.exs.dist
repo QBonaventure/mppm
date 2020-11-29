@@ -49,6 +49,10 @@ config :logger, :console,
   level: :debug,
   format: "[$level] $message\n"
 
+config :logger, :error_log,
+  path: "./error.log",
+  level: :error
+
 
 # Set a higher stacktrace during development. Avoid configuring such
 # in production as building large stacktraces may be expensive.

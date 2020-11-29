@@ -21,6 +21,7 @@ defmodule Mppm.Repo.Migrations.CreateGamesModesTable do
       [
         %{id: 1, name: "Time Attack", script_name: "Trackmania/TM_TimeAttack_Online.Script.txt"},
         %{id: 2, name: "Rounds", script_name: "Trackmania/TM_Rounds_Online.Script.txt"},
+        %{id: 3, name: "Team", script_name: "Trackmania/TM_Teams_Online.Script.txt"}
       ]
     )
   end

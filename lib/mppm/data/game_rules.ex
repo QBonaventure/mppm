@@ -119,6 +119,8 @@ defmodule Mppm.GameRules do
     |> cast_assoc(:ta_respawn_behaviour)
     |> cast_assoc(:rounds_respawn_behaviour)
     |> cast_assoc(:team_respawn_behaviour)
+    |> validate_number(:ta_warmup_nb, greater_than_or_equal_to: 0)
+    |> validate_number(:ta_time_limit, greater_than_or_equal_to: 0)
   end
 
   def get_options_list(), do:

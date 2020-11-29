@@ -32,7 +32,11 @@ defmodule Mppm.ConnectedUsers do
 
 
   def update_user_status(state, server_login, user_login, is_spectator?) do
-    server_users = Kernel.get_in(state, [:servers_users, server_login])
+    server_users =
+      case Kernel.get_in(state, [:servers_users, server_login]) do
+        nil -> []
+        users -> users
+      end
 
     case Enum.find(server_users, & &1.login == user_login) do
       nil -> state

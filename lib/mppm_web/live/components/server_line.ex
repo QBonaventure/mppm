@@ -3,11 +3,12 @@ defmodule MppmWeb.Live.Component.ServerLine do
   alias MppmWeb.DashboardView
 
   def mount(socket) do
-    :ok = Phoenix.PubSub.subscribe(Mppm.PubSub, "server-status:*")
     {:ok, socket}
   end
 
   def render(assigns) do
+    :ok = Phoenix.PubSub.subscribe(Mppm.PubSub, "server-status:"<>assigns.server.config.login)
+
     DashboardView.render("server-line.html", assigns)
   end
 

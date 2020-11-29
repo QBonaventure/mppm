@@ -75,30 +75,9 @@ defmodule Mppm.Session.UserSession do
 
   @spec create_user_session(%Mppm.User{}) :: {%UserSession{}, String.t}
   defp create_user_session(%Mppm.User{} = user) do
-    case Mppm.User.find(user) do
-      {:unfound, nil} ->
-        {:ok, created_user} =
-          %Mppm.User{}
-          |> Mppm.User.changeset(%{nickname: user.nickname, uuid: user.uuid})
-          |> Repo.insert
-        {UserSession.from_user(created_user), greet(created_user)}
-      {:found, loaded_user} ->
-        loaded_user =
-          case is_nil(loaded_user.uuid) do
-            true ->
-              loaded_user
-              |> Mppm.User.changeset(%{uuid: user.uuid})
-              |> Mppm.Repo.update
-            false ->
-              loaded_user
-          end
-        {UserSession.from_user(loaded_user), greet(loaded_user)}
-    end
+    user = Mppm.User.get(user)
+    {UserSession.from_user(user), "Hello #{user.nickname}!"}
   end
-
-
-  defp greet(%Mppm.User{nickname: nickname}), do: "Hello #{nickname}! Looks like it's your first connection."
-  defp greet(%UserSession{nickname: nickname}), do: "Welcome back #{nickname}!"
 
 
 

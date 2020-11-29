@@ -1,85 +1,67 @@
 # Mppm
 
-To start your Phoenix server:
+## Dependencies
 
-  * Install dependencies with `mix deps.get`
+We may recommend using [asdf](https://github.com/asdf-vm/asdf) to install
+dependencies. It allows you to install and manage various versions of most common
+runtimes, as well as to pinpoint specific version of it for any paths.
+
+### System
+  As of now, the application is strictly developed on CentOS 7. However it should
+  work on any Linux distribution.
+
+  - inotify-tools
+  - PostgreSQL 10
+  - NodeJS 6.4
+
+### Erlang/Elixir
+
+  - Erlang/OTP 22
+  - Elixir 1.9.4
+
+
+## Prerequisites
+
+  - [Trackmania OAuth API registration](https://api.trackmania.com/manager)
+
+
+## Config
+
+  After copying the \*.exs.dist files into \*.dist, make the following changes:
+
+### config.exs
+  - secret_key_base: ""
+  (generate generate your own key with `mix phx.gen.secret`)
+  - signing_salt: ""
+  ( generate your own salt with `mix phx.gen.secret 32`)
+
+### (dev|prod).exs
+
+  - url: [host: "example.com", port: 80]
+  - redirect_uri: "your_registered_callback_uri_for_Trackmania_OAuth"
+
+### (dev|prod).secret.exs
+
+  - Set your PostgreSQL hostname,  username, password and edit the  database name
+  if you wish
+  - Set your client_id and client_secret for the Trackmania OAuth
+
+
+## First start
+
+  * Go to the application root folder
+  * Install elixir dependencies with `mix deps.get` (you may also manually run `mix deps.compile` but that will be done anyway if necessary at start)
   * Create and migrate your database with `mix ecto.setup`
-  * Install Node.js dependencies with `cd assets && npm install`
-  * Start Phoenix endpoint with `mix phx.server`
+  * Install Node.js dependencies with `npm install --prefix assets/`
+  * Finally, start the Phoenix endpoint with `mix phx.server`
 
 Now you can visit [`localhost:4000`](http://localhost:4000) from your browser.
 
-Ready to run in production? Please [check our deployment guides](https://hexdocs.pm/phoenix/deployment.html).
 
-## Learn more
+## Elixir / Phoenix resources
 
-  * Official website: http://www.phoenixframework.org/
-  * Guides: https://hexdocs.pm/phoenix/overview.html
-  * Docs: https://hexdocs.pm/phoenix
-  * Mailing list: http://groups.google.com/group/phoenix-talk
+  * Elixir doc: https://hexdocs.pm/elixir/Kernel.html
+  * Phoenix: https://hexdocs.pm/phoenix
+  * Phoenix PubSub: https://hexdocs.pm/phoenix_pubsub
+  * Phoenix LiveView: https://hexdocs.pm/phoenix_live_view
   * Source: https://github.com/phoenixframework/phoenix
-
-## Game server message broker
-
-A broker is made up of one supervisor (Mppm.Broker.Supervisor) and two GenServers:
-- Mppm.Broker.ReceiverServer
-- Mppm.Broker.RequesterServer
-
-The Supervisor is started after game server launch, once it opened its ports. The
-ReceiverServer then opens the connection and provides a call method so that the
-RequesterServer can retrieve the open port. Everything's stopped on server shutdown.
-
-This design choice hase been made to allow either the receiving or requesting part
-of the broker to be able to independently fail without impeding its counterpart.
-
-
-
-## PubSub Topics
-
-\* > server login
-
-### "players-status"
-
-- {:user_connection_to_server, server_login, user_login, is_spectator?}
-- {:servers_users_updated, server_login, servers_users}
-- {:role_rmoved, , role}
-- {:role_granted, , role}
-
-### "maps-status"
-
-- {:loaded_map, server_login, map_uid}
-- {:update_server_map, server_login, track_uid}
-- {:endmap, server_login, track_uid}
-- {:current_track_info, server_login, track_uid}
-
-
-### "race-status"
-
-- {:player_waypoint, server_login, user_login, waypoint_nb, time}
-- {:turn_start, server_login}
-
-
-### "server-status:*"
-
-- {:new_chat_message, chat_message}
-- {:beginmatch}
-- {:endmatch}
-- {:beginmap, track_info_map}
-- {:endmap}
-- {:start_of_match, server_login}
-- {:score, server_login}
-- {:end_of_game, server_login}
-- {:loaded_map, server_login, map_uid}
-- {:podium_start, server_login}
-- {:podium_end, server_login}
-- {:broker_started, state.login}
-
-
-### "broker-status:*"
-
-- {:connection_established, socket}
-
-
-### "ruleset-status"
-
-- {:ruleset_change, server_login, ruleset}

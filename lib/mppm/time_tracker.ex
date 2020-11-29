@@ -4,39 +4,39 @@ defmodule Mppm.TimeTracker do
   @topic "waypoint-time"
   @time_topic "time-status"
 
-  def add_track(state, track_uid, server_login) when is_binary(track_uid) do
+  def add_track(state, uuid, server_login) when is_binary(uuid) do
     tracks = Map.get(state, :tracks)
     tracks =
-      case Enum.find(tracks, & &1.track_uid == track_uid) do
-        nil -> tracks ++ [Mppm.Track.get_by_uid(track_uid) |> Mppm.Repo.preload(:time_records)]
+      case Enum.find(tracks, & &1.uuid == uuid) do
+        nil -> tracks ++ [Mppm.Track.get_by_uid(uuid) |> Mppm.Repo.preload(:time_records)]
         _ -> tracks
       end
-    servers_current_tracks = Map.put(state.servers_current_tracks, server_login, track_uid)
+    servers_current_tracks = Map.put(state.servers_current_tracks, server_login, uuid)
     %{tracks: tracks, servers_current_tracks: servers_current_tracks}
   end
 
-  def remove_track(state, track_uid, server_login) do
+  def remove_track(state, uuid, server_login) do
     servers_current_tracks =
       Map.get(state, :servers_current_tracks)
       |> Map.put(server_login, nil)
 
     tracks =
-      case Enum.any?(servers_current_tracks, & elem(&1, 1) == track_uid) do
+      case Enum.any?(servers_current_tracks, & elem(&1, 1) == uuid) do
         true -> state.tracks
-        false -> Enum.reject(state.tracks, & &1.track_uid == track_uid)
+        false -> Enum.reject(state.tracks, & &1.uuid == uuid)
       end
     %{tracks: tracks, servers_current_tracks: servers_current_tracks}
   end
 
-  def is_new_record?(_, nil), do: true
-  def is_new_record?(time, %Mppm.TimeRecord{lap_time: laptime}), do: time < laptime
+  defp is_new_record?(_, nil), do: true
+  defp is_new_record?(time, %Mppm.TimeRecord{lap_time: laptime}), do: time < laptime
 
 
   defp get_server_records(state, server_login) do
-    track_uid = Map.get(state.servers_current_tracks, server_login)
-    case Enum.find(state.tracks, & &1.track_uid == track_uid) do
+    uuid = Map.get(state.servers_current_tracks, server_login)
+    case Enum.find(state.tracks, & &1.uuid == uuid) do
       nil ->
-        Mppm.Track.get_by_uid(track_uid) |> Mppm.Repo.preload(:time_records)
+        Mppm.Track.get_by_uid(uuid) |> Mppm.Repo.preload(:time_records)
       track ->
         track
     end
@@ -83,24 +83,24 @@ defmodule Mppm.TimeTracker do
   end
 
 
-  def handle_cast({:track_server_time, server_login, track_uid}, state) do
-    {:noreply, add_track(state, track_uid, server_login)}
+  def handle_cast({:track_server_time, server_login, uuid}, state) do
+    {:noreply, add_track(state, uuid, server_login)}
   end
 
 
 
-  def handle_info({id, server_login, track_uid}, state) when id in [:beginmap, :update_server_map] do
-    state = add_track(state, track_uid, server_login)
+  def handle_info({id, server_login, uuid}, state) when id in [:beginmap, :update_server_map] do
+    state = add_track(state, uuid, server_login)
     {:noreply, state}
   end
 
-  def handle_info({:endmap, server_login, track_uid}, state) do
-    {:noreply, remove_track(state, track_uid, server_login)}
+  def handle_info({:endmap, server_login, uuid}, state) do
+    {:noreply, remove_track(state, uuid, server_login)}
   end
 
   def handle_info(_, state), do: {:noreply, state}
 
-  
+
 
   def get_pubsub_topic(), do: @topic
 

@@ -1,13 +1,18 @@
 defmodule Mppm.MixProject do
   use Mix.Project
 
+  @version "0.1.1"
+
   def project do
     [
       app: :mppm,
-      version: "0.1.0",
-      elixir: "~> 1.5",
+      version: @version,
+      description: description(),
+      docs: docs(),
+      elixir: "~> 1.9.4",
       elixirc_paths: elixirc_paths(Mix.env()),
       compilers: [:phoenix, :gettext] ++ Mix.compilers(),
+      package: package(),
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
       deps: deps()
@@ -24,9 +29,17 @@ defmodule Mppm.MixProject do
     ]
   end
 
-  # Specifies which paths to compile per environment.
-  defp elixirc_paths(:test), do: ["lib", "test/support"]
-  defp elixirc_paths(_), do: ["lib"]
+  defp description(), do:
+    """
+    Game server manager and controller for Trackmania
+    """
+
+  defp package(), do: [
+    files: ["lib", "docs", "mix.exs", "README.md", "LICENSE.md"],
+    maintainers: ["Quentin Bonaventure"],
+    licenses: ["MIT"],
+    links: %{"GitHub" => "https://github.com/QBonaventure/mppm"}
+  ]
 
   # Specifies your project dependencies.
   #
@@ -34,6 +47,7 @@ defmodule Mppm.MixProject do
   defp deps do
     [
       {:ecto_network, "~> 1.3.0"},
+      {:ex_doc, ">= 0.0.0", only: :dev, runtime: false},
       {:phoenix, "~> 1.5"},
       {:phoenix_pubsub, "~> 2.0"},
       {:phoenix_ecto, "~> 4.0"},
@@ -55,6 +69,10 @@ defmodule Mppm.MixProject do
     ]
   end
 
+  # Specifies which paths to compile per environment.
+  defp elixirc_paths(:test), do: ["lib", "test/support"]
+  defp elixirc_paths(_), do: ["lib"]
+
   # Aliases are shortcuts or tasks specific to the current project.
   # For example, to create, migrate and run the seeds file at once:
   #
@@ -68,4 +86,51 @@ defmodule Mppm.MixProject do
       test: ["ecto.create --quiet", "ecto.migrate", "test"]
     ]
   end
+
+
+  defp docs do
+    [
+      source_ref: "v#{@version}",
+      main: "overview",
+      logo: "ftc.svg",
+      extra_section: "GUIDES",
+      assets: "guides/assets",
+      formatters: ["html"],
+      groups_for_modules: groups_for_modules(),
+      extras: extras(),
+      groups_for_extras: groups_for_extras()
+    ]
+  end
+
+  defp extras() do
+    [
+      "guides/broker/broker_receiver.md",
+      "guides/pubsub_topics.md"
+    ]
+  end
+
+  defp groups_for_extras do
+    [
+      "Broker": ~r/guides\/broker\/.?/,
+      "PubSub Topics": ~r/guides\/pubsub_topics.md/,
+    ]
+  end
+
+  defp groups_for_modules() do
+    [
+      "In-game UI modules": [
+        Mppm.GameUI.BasicInfo,
+        Mppm.GameUI.LiveRaceRanking,
+        Mppm.GameUI.TimePartialsDelta,
+        Mppm.GameUI.TimeRecords,
+      ],
+      "XML-RPC Broker": [
+        Mppm.Broker.Receiver,
+        Mppm.Broker.Requester,
+        Mppm.Broker.MethodResponse,
+        Mppm.Broker.MethodCall
+      ],
+    ]
+  end
+
 end

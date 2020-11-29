@@ -24,7 +24,7 @@ defmodule Mppm.TracksFiles do
       {:ok, http_resp} ->
           @maps_path <> mx_track_path(track)
           |> File.write(http_resp.body)
-          Mppm.Repo.insert(track, on_conflict: {:replace_all_except, [:id]}, conflict_target: :track_uid)
+          Mppm.Repo.insert(track, on_conflict: {:replace_all_except, [:id]}, conflict_target: :uuid)
       _ -> {:error, :download_failed}
     end
   end
@@ -67,7 +67,11 @@ defmodule Mppm.TracksFiles do
     Enum.map(maps_list, fn map ->
       case map do
         {id, _} ->
-          Enum.find(missing_maps_info, & &1.mx_track_id == id)
+          data =
+            Enum.find(missing_maps_info, & &1.mx_track_id == id)
+            |> Map.from_struct()
+          %Mppm.Track{}
+          |> Mppm.Track.changeset(data)
           |> Mppm.Repo.insert!
         _ -> map
       end

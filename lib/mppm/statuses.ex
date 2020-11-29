@@ -52,12 +52,12 @@ defmodule Mppm.ServersStatuses do
   def add_new_server(%ServerConfig{ruleset: %Mppm.GameRules{mode: %Ecto.Association.NotLoaded{}}} = server_config), do:
     server_config |> Mppm.Repo.preload(ruleset: [:mode]) |> add_new_server()
   def add_new_server(%ServerConfig{} = server_config), do:
-    Agent.update(__MODULE__, & Map.put_new(&1, server_config.login, %{config: &1, next_config: nil, status: :stopped}))
+    Agent.update(__MODULE__, & Map.put_new(&1, server_config.login, %{config: server_config, next_config: nil, status: :stopped}))
 
 
   def update_server_status(login, status) when status in @allowed_statuses do
     Agent.update(__MODULE__, & Kernel.put_in(&1, [login, :status], status))
-    Phoenix.PubSub.broadcast(Mppm.PubSub, "server-status:*", {status, login})
+    Phoenix.PubSub.broadcast(Mppm.PubSub, "server-status:"<>login, {status, login})
   end
 
 

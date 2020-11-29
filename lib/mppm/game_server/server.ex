@@ -150,6 +150,24 @@ defmodule Mppm.GameServer.Server do
   #        Callbacks       #
   ##########################
 
+  def handle_cast(:start, state) do
+    case :ok == Mppm.ServersStatuses.get_start_flag(state.config.login) do
+      true ->
+        {:ok, state} = start_server(state)
+        {:noreply, %{state | game_mode_id: get_next_game_mode_id(state.config.id)}}
+      false ->
+        {:noreply, state}
+    end
+  end
+
+  def handle_cast(:stop, state) do
+    {:ok, state} =
+      if :ok == Mppm.ServersStatuses.get_stop_flag(state.config.login) do
+        stop_server(state)
+      end
+    {:noreply, state}
+  end
+
   def handle_cast({:relink_orphan_process, {login, pid, xmlrpc_port} = ss}, state) do
     Mppm.Broker.Supervisor.child_spec(state.config, xmlrpc_port)
     |> Mppm.GameServer.Supervisor.start_child
@@ -174,24 +192,6 @@ defmodule Mppm.GameServer.Server do
   def handle_cast(:closing_port, state) do
     Mppm.ServersStatuses.update_server_status(state.config.login, :stopped)
     {:noreply, %{state | exit_status: :port_closed, status: :stopped}}
-  end
-
-  def handle_cast(:start, state) do
-    case :ok == Mppm.ServersStatuses.get_start_flag(state.config.login) do
-      true ->
-        {:ok, state} = start_server(state)
-        {:noreply, %{state | game_mode_id: get_next_game_mode_id(state.config.id)}}
-      false ->
-        {:noreply, state}
-    end
-  end
-
-  def handle_cast(:stop, state) do
-    {:ok, state} =
-      if :ok == Mppm.ServersStatuses.get_stop_flag(state.config.login) do
-        stop_server(state)
-      end
-    {:noreply, state}
   end
 
   def handle_call(:pid, _, state) do
@@ -250,8 +250,13 @@ defmodule Mppm.GameServer.Server do
 
 
   def handle_info({:podium_end, server_login}, state) do
-    GenServer.cast({:global, {:broker_requester, server_login}}, :reload_match_settings)
-    {:noreply, %{state | reload_match_settings?: false}}
+    case state.config.login == server_login do
+      true ->
+        GenServer.cast({:global, {:broker_requester, server_login}}, :reload_match_settings)
+        {:noreply, %{state | reload_match_settings?: false}}
+      false ->
+        {:noreply, state}
+    end
   end
 
 
@@ -261,7 +266,9 @@ defmodule Mppm.GameServer.Server do
 
 
   def handle_info({:start_of_match, server_login}, state) do
-    GenServer.cast({:global, {:broker_requester, server_login}}, :reload_match_settings)
+    if state.config.login == server_login do
+      GenServer.cast({:global, {:broker_requester, server_login}}, :reload_match_settings)
+    end
     {:noreply, state}
   end
 
@@ -324,10 +331,10 @@ defmodule Mppm.GameServer.Server do
 
 
   def init(%ServerConfig{} = server_config) do
-    Phoenix.PubSub.subscribe(Mppm.PubSub, "server_status_"<>server_config.login)
     Phoenix.PubSub.subscribe(Mppm.PubSub, "tracklist-status")
     Phoenix.PubSub.subscribe(Mppm.PubSub, "ruleset-status")
     Phoenix.PubSub.subscribe(Mppm.PubSub, "server-status:"<>server_config.login)
+
     state = %{
       current_track: nil,
       port: nil,

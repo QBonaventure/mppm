@@ -10,7 +10,10 @@ defmodule MppmWeb.DashboardLive do
 
 
   def mount(_params, session, socket) do
-    MppmWeb.Endpoint.subscribe("server-status:*")
+    servers = Mppm.ServersStatuses.all
+    for {server_login, _} <- servers do
+      Phoenix.PubSub.subscribe(Mppm.PubSub, "server-status:"<>server_login)
+    end
 
     socket =
       socket
@@ -53,6 +56,7 @@ defmodule MppmWeb.DashboardLive do
     {:ok, server_config} = Mppm.ServerConfig.create_new_server(params["server_config"])
     Mppm.GameServer.Supervisor.start_server_supervisor(server_config)
 
+    Phoenix.PubSub.subscribe(Mppm.PubSub, "server-status:"<>server_config.login)
     socket =
       socket
       |> assign(servers: Mppm.ServersStatuses.all)

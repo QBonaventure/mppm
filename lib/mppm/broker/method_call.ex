@@ -173,14 +173,14 @@ defmodule Mppm.Broker.MethodCall do
     Phoenix.PubSub.broadcast(Mppm.PubSub, "server-status:"<>server_login, {:endmatch})
   end
 
-  def dispatch_message(server_login, "ManiaPlanet.EndMap", [%{"UId" => track_uid} = _track_info_map]) do
-    Phoenix.PubSub.broadcast(Mppm.PubSub, "maps-status", {:endmap, server_login, track_uid})
+  def dispatch_message(server_login, "ManiaPlanet.EndMap", [%{"UId" => uuid} = _track_info_map]) do
+    Phoenix.PubSub.broadcast(Mppm.PubSub, "maps-status", {:endmap, server_login, uuid})
     Phoenix.PubSub.broadcast(Mppm.PubSub, "server-status:"<>server_login, {:endmap})
   end
 
 
-  def dispatch_message(server_login, "ManiaPlanet.BeginMap", [%{"UId" => track_uid} = track_info_map]) do
-    Phoenix.PubSub.broadcast(Mppm.PubSub, "maps-status", {:beginmap, server_login, track_uid})
+  def dispatch_message(server_login, "ManiaPlanet.BeginMap", [%{"UId" => uuid} = track_info_map]) do
+    Phoenix.PubSub.broadcast(Mppm.PubSub, "maps-status", {:beginmap, server_login, uuid})
     Phoenix.PubSub.broadcast(Mppm.PubSub, "server-status:"<>server_login, {:beginmap, track_info_map})
   end
 

@@ -80,8 +80,8 @@ nav#main-menu li > ul a {
 
 
 :root {
-  --ftc-red-color: #991b15;
-  --ftc-white-color: #e9dfc0;
+  --ftc-red-color: 153, 27, 21;
+  --ftc-white-color: 233, 223, 192;
 }
 
 form > span {
@@ -184,11 +184,52 @@ form label {
   margin: 1px;
 }
 
+#ruleset-subform div {
+  position: relative;
+}
+
+#ruleset-subform div .help-block {
+  background-color: lightpink;
+  border: 1px solid red;
+  padding: 3px;
+  font-size: 10px;
+  line-height: 1em;
+  z-index: 50;
+  top: 10px;
+}
+
+#ruleset-subform div:nth-child(odd) {
+  float: left;
+}
+#ruleset-subform div:nth-child(odd) .help-block  {
+  position: absolute;
+  width: 150px;
+  left: -150px;
+}
+
+#server-update-form #ruleset-subform div:nth-child(even) {
+  float: right;
+}
+#ruleset-subform div:nth-child(even) .help-block  {
+  position: absolute;
+  width: 150px;
+  right: -150px;
+}
+
 #server-update-form label  {
   width: 50%;
   clear: none;
   padding-right: 10px;
   position: relative;
+}
+
+
+#server-update-form div {
+  width: 50%;
+}
+
+#server-update-form div.changed {
+  background-color: yellow;
 }
 
 #server-update-form textarea  {
@@ -421,6 +462,10 @@ div#all-users-list {
   width: 75%;
   max-height: 300px;
   overflow-y: scroll;
+}
+
+div#all-users-list .user-row:not(.disconnected) {
+  background-color: rgba(var(--ftc-white-color), 0.4);
 }
 
 div#all-users-list .user-row.disconnected {

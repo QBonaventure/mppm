@@ -1,7 +1,7 @@
 defmodule Mppm.Broker.MethodResponse do
 
 
-  def pubsub_topic(server_login), do: "server_status_"<>server_login
+  def pubsub_topic(server_login), do: "server_status:"<>server_login
 
   def dispatch(server_login, %XMLRPC.MethodResponse{param: params}) do
     dispatch_response(server_login, params)
@@ -20,9 +20,9 @@ defmodule Mppm.Broker.MethodResponse do
     GenServer.cast(Mppm.ConnectedUsers, {:connected_user_info, user, is_spectator?})
   end
 
-  defp dispatch_response(server_login, %{"UId" => track_uid}) do
-    Phoenix.PubSub.broadcast(Mppm.PubSub, "maps-status", {:update_server_map, server_login, track_uid})
-    Phoenix.PubSub.broadcast(Mppm.PubSub, "maps-status", {:current_track_info, server_login, track_uid})
+  defp dispatch_response(server_login, %{"UId" => uuid}) do
+    Phoenix.PubSub.broadcast(Mppm.PubSub, "maps-status", {:update_server_map, server_login, uuid})
+    Phoenix.PubSub.broadcast(Mppm.PubSub, "maps-status", {:current_track_info, server_login, uuid})
   end
 
 

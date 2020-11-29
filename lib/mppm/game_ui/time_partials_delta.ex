@@ -35,11 +35,11 @@ defmodule Mppm.GameUI.TimePartialsDelta do
   end
 
 
-  def handle_info({:loaded_map, server_login, track_uid}, state) do
+  def handle_info({:loaded_map, server_login, uuid}, state) do
     top_record = Mppm.Repo.one(
       from t in Mppm.TimeRecord,
       join: m in assoc(t, :track),
-      where: m.track_uid == ^track_uid,
+      where: m.uuid == ^uuid,
       order_by: {:asc, t.lap_time},
       limit: 1)
 

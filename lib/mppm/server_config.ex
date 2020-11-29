@@ -17,7 +17,7 @@ defmodule Mppm.ServerConfig do
   @maps_path @root_path <> "UserData/Maps/"
 
 
-  schema "mp_servers_configs" do
+  schema "servers_configs" do
     has_one :ruleset, Mppm.GameRules, foreign_key: :server_id, on_replace: :update
     many_to_many :tracks, Mppm.Track, join_through: "tracklists", join_keys: [server_id: :id, track_id: :id]
     field :login, :string
@@ -103,16 +103,13 @@ defmodule Mppm.ServerConfig do
 
     case result do
       {:ok, server_config} ->
-
-        tracks_ids = Enum.map(Mppm.Track.get_random_tracks(1), & &1.id)
-
-        %Mppm.Tracklist{}
-          |> Mppm.Tracklist.changeset(%{server_id: server_config.id, tracks_ids: tracks_ids})
-          |> Mppm.Repo.insert
+        tracks = Enum.map(Mppm.Track.get_random_tracks(1), & &1)
+        GenServer.cast(Mppm.Tracklist, {:upsert_tracklist, %Mppm.Tracklist{server_id: server_config.id, tracks: tracks}})
         result
       _ -> result
     end
   end
+
 
   def update(changeset) do
     case changeset |> Repo.update do
