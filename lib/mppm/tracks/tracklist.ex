@@ -77,11 +77,16 @@ defmodule Mppm.Tracklist do
   end
 
   def reindex_from_current_track(%Mppm.Tracklist{} = tracklist, track_uid) do
-    tracks = Map.get(tracklist, :tracks)
-    cur_track_index = tracks |> Enum.find_index(& &1.track_uid == track_uid)
-    {to_last, to_first} = Enum.split(tracks, cur_track_index)
+    case Enum.count(tracklist.tracks) do
+      size when size <= 1 ->
+        tracklist
+      _ ->
+        tracks = Map.get(tracklist, :tracks)
+        cur_track_index = tracks |> Enum.find_index(& &1.track_uid == track_uid)
+        {to_last, to_first} = Enum.split(tracks, cur_track_index)
 
-    Map.put(tracklist, :tracks, to_first ++ to_last)
+        Map.put(tracklist, :tracks, to_first ++ to_last)
+    end
   end
 
 
