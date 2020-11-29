@@ -59,11 +59,13 @@ defmodule Mppm.GameUI.TimePartialsDelta do
       case Map.get(state, server_login, :no_key) do
         %Mppm.TimeRecord{} = best_time -> best_time
         :no_key ->
-           best_time = GenServer.call(Mppm.TimeTracker, {:get_server_top_record, server_login})
-           GenServer.cast(self(), {:set_new_top_record, server_login, best_time})
-           best_time
-        _ ->
-          nil
+           case GenServer.call(Mppm.TimeTracker, {:get_server_top_record, server_login}) do
+             nil -> nil
+             best_time ->
+               GenServer.cast(self(), {:set_new_top_record, server_login, best_time})
+               best_time
+            end
+        _ -> nil
       end
 
     if !is_nil(best_time) do
