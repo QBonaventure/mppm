@@ -38,7 +38,25 @@ of the broker to be able to independently fail without impeding its counterpart.
 
 \* > server login
 
-### "maps-update"
+### "players-status"
+
+- {:user_connection_to_server, server_login, user_login, is_spectator?}
+- {:servers_users_updated, server_login, servers_users}
+- {:role_rmoved, , role}
+- {:role_granted, , role}
+
+### "maps-status"
+
+- {:loaded_map, server_login, map_uid}
+- {:update_server_map, server_login, track_uid}
+- {:endmap, server_login, track_uid}
+- {:current_track_info, server_login, track_uid}
+
+
+### "race-status"
+
+- {:player_waypoint, server_login, user_login, waypoint_nb, time}
+- {:turn_start, server_login}
 
 
 ### "server-status:*"
@@ -60,3 +78,8 @@ of the broker to be able to independently fail without impeding its counterpart.
 ### "broker-status:*"
 
 - {:connection_established, socket}
+
+
+### "ruleset-status"
+
+- {:ruleset_change, server_login, ruleset}
