@@ -27,7 +27,15 @@ runtimes, as well as to pinpoint specific version of it for any paths.
 
 ## Config
 
-  After copying the \*.exs.dist files into \*.dist, make the following changes:
+After copying the \*.exs.dist files into \*.exs, you can:
+- edit the files manually;
+- use the `.env` file (copied from `.env.dist`);
+- set shell variables
+
+### Using the .env file
+You can safely export all the files variables before starting the application using a subshell command, i.e.:
+`(export $(grep -v '^#' .env | xargs) && mix phx.server)`
+ 
 
 ### config.exs
   - secret_key_base: ""
@@ -37,14 +45,16 @@ runtimes, as well as to pinpoint specific version of it for any paths.
 
 ### (dev|prod).exs
 
-  - url: [host: "example.com", port: 80]
-  - redirect_uri: "your_registered_callback_uri_for_Trackmania_OAuth"
+  - url: [host: "example.com", port: 443]
+  - redirect_uri: edit the protocol and host pas, i.e. https://example.com/auth/trackmania/callback
 
-### (dev|prod).secret.exs
+### secret.exs
 
   - Set your PostgreSQL hostname,  username, password and edit the  database name
   if you wish
   - Set your client_id and client_secret for the Trackmania OAuth
+
+### 
 
 
 ## First start
@@ -56,6 +66,10 @@ runtimes, as well as to pinpoint specific version of it for any paths.
   * Finally, start the Phoenix endpoint with `mix phx.server`
 
 Now you can visit [`localhost:4000`](http://localhost:4000) from your browser.
+
+## Using docker
+
+A docker-compose.yml file is provided and can be used as such. It makes use of a `.env` file that you can copy from `.env.dist` before editing. `docker-compose up` and you're good to go!
 
 
 ## Elixir / Phoenix resources
