@@ -23,6 +23,15 @@ defmodule MppmWeb.ServerManagerView do
     end
   end
 
+  def checkbox(form, field, label_text) do
+    content_tag :div, class: status(form, field) do
+      [
+        get_label(form, field, label_text),
+        checkbox(form, field),
+        error(form, field)
+      ]
+    end
+  end
 
 
 

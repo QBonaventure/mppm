@@ -97,10 +97,8 @@
         <h1>Ruleset</h1>
         <%= inputs_for f, :ruleset, fn rs -> %>
 
-          <label>
-            Game Mode: <%= select rs, :mode_id, game_modes  %>
-          </label>
-          <%= error_tag f, :mode_id %>
+
+          <%= MppmWeb.ServerManagerView.select(rs, :mode_id, "Game Mode", game_modes) %>
 
 
           <h2>Time attack</h2>
@@ -117,7 +115,7 @@
           <%= MppmWeb.ServerManagerView.select(rs, :rounds_respawn_behaviour_id, "Respawn bhvr", respawn_behaviours) %>
           <%= MppmWeb.ServerManagerView.text_input(rs, :rounds_finish_timeout, "Finish Timeout") %>
           <%= MppmWeb.ServerManagerView.text_input(rs, :rounds_warmup_nb, "Warmups nb") %>
-          <%= MppmWeb.ServerManagerView.text_input(rs, :rounds_warmup_duration, "Warmup duratio") %>
+          <%= MppmWeb.ServerManagerView.text_input(rs, :rounds_warmup_duration, "Warmup duration") %>
           <%= MppmWeb.ServerManagerView.text_input(rs, :rounds_maps_per_match, "Maps/match") %>
           <%= MppmWeb.ServerManagerView.text_input(rs, :rounds_rounds_per_map, "Rounds/map") %>
           <%= MppmWeb.ServerManagerView.text_input(rs, :rounds_pts_limit, "Points limit") %>
@@ -127,55 +125,22 @@
 
           <h2>Team</h2>
 
-          <label>Respawn bhvr: <%= select rs, :team_respawn_behaviour_id, respawn_behaviours %></label>
-          <%= error_tag f, :team_respawn_behaviour %>
-
-          <label>Finish Timeout: <%= text_input rs, :team_finish_timeout %></label>
-          <%= error_tag f, :team_finish_timeout %>
-
-          <label>Warmups nb: <%= text_input rs, :team_warmup_nb %></label>
-          <%= error_tag f, :team_warmup_nb %>
-
-          <label>Warmup duration: <%= text_input rs, :team_warmup_duration %></label>
-          <%= error_tag f, :team_warmup_duration %>
-
-          <label>Min pl./team: <%= text_input rs, :team_min_players_per_team %></label>
-          <%= error_tag f, :team_min_players_per_team %>
-
-          <label>Max pl./team: <%= text_input rs, :team_max_players_per_team %></label>
-          <%= error_tag f, :team_max_players_per_team %>
-
-          <label>Maps/match: <%= text_input rs, :team_maps_per_match %></label>
-          <%= error_tag f, :team_maps_per_match %>
-
-          <label>Rounds/map: <%= text_input rs, :team_rounds_per_map %></label>
-          <%= error_tag f, :team_rounds_per_map %>
-
-          <label>Points limit: <%= text_input rs, :team_pts_limit %></label>
-          <%= error_tag f, :team_pts_limit %>
-
-          <label>Points repart.: <%= text_input rs, :team_pts_repartition %></label>
-          <%= error_tag f, :team_pts_repartition %>
-
-          <label>Cumulate Points: <%= checkbox rs, :team_cumulate_pts %></label>
-          <%= error_tag f, :team_cumulate_pts %>
-
-          <label>Custom Points: <%= checkbox rs, :team_custom_pts_repartition %></label>
-          <%= error_tag f, :team_custom_pts_repartition %>
-
-          <label>Max pts/round: <%= text_input rs, :team_max_pts_per_round %></label>
-          <%= error_tag f, :team_max_pts_per_round %>
-
-          <label>Points gap: <%= text_input rs, :team_points_gap %></label>
-          <%= error_tag f, :team_points_gap %>
-
-          <label>Tie breaker: <%= checkbox rs, :team_use_tie_breaker %></label>
-          <%= error_tag f, :team_use_tie_breaker %>
-
-          <label>Forced laps: <%= text_input rs, :team_forced_laps_nb %></label>
-          <%= error_tag f, :team_forced_laps_nb %>
-
-
+          <%= MppmWeb.ServerManagerView.select(rs, :team_respawn_behaviour_id, "Respawn bhvr", respawn_behaviours) %>
+          <%= MppmWeb.ServerManagerView.text_input(rs, :team_finish_timeout, "Finish Timeout") %>
+          <%= MppmWeb.ServerManagerView.text_input(rs, :team_warmup_nb, "Warmups nb") %>
+          <%= MppmWeb.ServerManagerView.text_input(rs, :team_warmup_duration, "WUs duration") %>
+          <%= MppmWeb.ServerManagerView.text_input(rs, :team_min_players_per_team, "Min pl./teamn") %>
+          <%= MppmWeb.ServerManagerView.text_input(rs, :team_max_players_per_team, "Max pl./team") %>
+          <%= MppmWeb.ServerManagerView.text_input(rs, :team_maps_per_match, "Maps/match") %>
+          <%= MppmWeb.ServerManagerView.text_input(rs, :team_rounds_per_map, "Rounds/map") %>
+          <%= MppmWeb.ServerManagerView.text_input(rs, :team_pts_limit, "Points limit") %>
+          <%= MppmWeb.ServerManagerView.text_input(rs, :team_pts_repartition, "Points repart.") %>
+          <%= MppmWeb.ServerManagerView.checkbox(rs, :team_cumulate_pts, "Cumulate Pts") %>
+          <%= MppmWeb.ServerManagerView.checkbox(rs, :team_custom_pts_repartition, "Custom Points") %>
+          <%= MppmWeb.ServerManagerView.text_input(rs, :team_max_pts_per_round, "Max pts/round") %>
+          <%= MppmWeb.ServerManagerView.text_input(rs, :team_points_gap, "Points gap") %>
+          <%= MppmWeb.ServerManagerView.checkbox(rs, :team_use_tie_breaker, "Tie breaker") %>
+          <%= MppmWeb.ServerManagerView.text_input(rs, :team_forced_laps_nb, "Forced laps") %>
 
         <% end %>
       </section>

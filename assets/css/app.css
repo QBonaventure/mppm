@@ -26,7 +26,7 @@ nav[role=session-management] > * {
   padding: 5px 10px;
   margin: 0;
   line-height: 1.25;
-  background-color: var(--ftc-white-color);
+  background-color: rgb(var(--ftc-white-color));
 }
 
 
@@ -421,12 +421,12 @@ div.track-rewards {
 div#users-list-component {
   right: 0;
   position: fixed;
-  background-color: var(--ftc-red-color);
+  background-color: rgb(var(--ftc-red-color));
   padding: 2px 5px;
 }
 
 div#users-list-component section {
-  background-color: var(--ftc-white-color);
+  background-color: rgb(var(--ftc-white-color));
   margin: 3px 0;
   width: 150px;
   padding: 0px 5px;
@@ -489,7 +489,7 @@ section#server-users div.user-nickname {
 }
 
 section#server-users .user-role {
-  border: 1px solid var(--ftc-red-color);
+  border: 1px solid rgb(var(--ftc-red-color));
   padding: 0px 8px;
   border-radius: 7px;
   margin-left: 10px;
@@ -501,7 +501,7 @@ section#server-users .user-roles {
 }
 
 section#server-users .remove-button {
-  background-color: var(--ftc-red-color);
+  background-color: rgb(var(--ftc-red-color));
   color: white;
   border-radius: 9px;
   width: 18px;
@@ -513,8 +513,8 @@ section#server-users .remove-button {
 
 section#server-users .remove-button:hover {
   background-color: white;
-  color: var(--ftc-red-color);
-  border: 1px solid var(--ftc-red-color);
+  color: rgb(var(--ftc-red-color));
+  border: 1px solid rgb(var(--ftc-red-color));
 }
 
 

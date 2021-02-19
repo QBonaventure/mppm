@@ -13,7 +13,7 @@ defmodule Mppm.Tracklist do
   schema "tracklists"  do
     belongs_to :server, Mppm.ServerConfig, foreign_key: :server_id, primary_key: true, define_field: false
     field :tracks_ids, {:array, :integer}, default: []
-    field :tracks, {:array, %Mppm.Track{}}, default: [], virtual: true
+    field :tracks, {:array, :map}, default: [], virtual: true
   end
 
 

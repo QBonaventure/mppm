@@ -53,6 +53,7 @@ defmodule Mppm.GameServer.Server do
 
   defp start_server(state) do
     config = Mppm.Repo.get(Mppm.ServerConfig, state.config.id) |> Mppm.Repo.preload(:ruleset)
+    IO.inspect config
     ServerConfig.create_config_file(config)
     ServerConfig.create_ruleset_file(config)
     GenServer.call(Mppm.Tracklist, {:get_server_tracklist, config.login})
@@ -133,6 +134,14 @@ defmodule Mppm.GameServer.Server do
   end
 
 
+
+  def update_game_server(), do:
+    update_game_server(@root_path)
+  # Downloads and install the latest game server files without any further
+  # checks - neither version number nor if it's already up to date.
+  #
+  # root_path is the path where the TrackmaniaServer folder lies in.
+  # I.e. /opt/mppm/TrackmaniaServer.
   def update_game_server(root_path) do
     Logger.info "Installing lastest Trackmania game server"
     Logger.info "Downloading files..."
