@@ -1,0 +1,30 @@
+version: "3.6"
+services:
+  db:
+    image: postgres:13.2-alpine
+    env_file:
+      - .env
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    ports:
+      - "5432"
+  mppm:
+    image: qbonaventure/mppm:0.1.1
+    tty: true
+    env_file:
+      - .env
+    volumes:
+      - game_server:/opt/mppm/TrackmaniaServer
+    ports:
+      - "${MPPM_PORT}:${MPPM_PORT}"
+      - "2350-2400:2350-2400"
+      - "2350-2400:2350-2400/udp"
+      - "3450-3500:3450-3500"
+      - "3450-3500:3450-3500/udp"
+    depends_on:
+      - db
+volumes:
+  game_server:
+    external: true
+  db-data:
+    external: true
