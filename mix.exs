@@ -9,7 +9,7 @@ defmodule Mppm.MixProject do
       version: @version,
       description: description(),
       docs: docs(),
-      elixir: "~> 1.9.4",
+      elixir: "~> 1.10",
       elixirc_paths: elixirc_paths(Mix.env()),
       compilers: [:phoenix, :gettext] ++ Mix.compilers(),
       package: package(),
