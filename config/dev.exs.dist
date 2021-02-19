@@ -7,7 +7,7 @@ use Mix.Config
 # watchers to your application. For example, we use it
 # with webpack to recompile .js and .css sources.
 config :mppm, MppmWeb.Endpoint,
-  http: [port: 4000],
+  http: [port: System.get_env("MPPM_PORT")],
   debug_errors: true,
   code_reloader: true,
   check_origin: false,
@@ -25,7 +25,7 @@ config :mppm, MppmWeb.Endpoint,
 config :oauth2, debug: true
 
 config :mppm, Mppm.Service.Trackmania,
-  redirect_uri: "",
+  redirect_uri: "#{System.get_env("NADEO_REDIRECT_URI")}/auth/trackmania/callback",
   authorize_url: "https://api.trackmania.com/oauth/authorize",
   token_url: "https://api.trackmania.com/api/access_token",
   site: "https://trackmania.com",
@@ -62,4 +62,4 @@ config :phoenix, :stacktrace_depth, 20
 config :phoenix, :plug_init_mode, :runtime
 
 
-import_config "dev.secret.exs"
+import_config "secret.exs"
