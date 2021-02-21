@@ -458,18 +458,27 @@ section#server-users > div {
   position: relative;
 }
 
+section#server-users #users-summary {
+  text-align: center;
+  margin-bottom: 15px;
+}
+
 div#all-users-list {
   width: 75%;
   max-height: 300px;
   overflow-y: scroll;
+  display: flex;
+  flex-flow: column;
 }
 
 div#all-users-list .user-row:not(.disconnected) {
   background-color: rgba(var(--ftc-white-color), 0.4);
+  order: 1;
 }
 
 div#all-users-list .user-row.disconnected {
   opacity: 0.4;
+  order: 10;
 }
 
 
@@ -524,6 +533,7 @@ div#available-roles {
   top: -30px;
   position: absolute;
   right: 10px;
+  margin-top: 70px;
 }
 
 
