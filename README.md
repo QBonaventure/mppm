@@ -17,7 +17,7 @@ runtimes, as well as to pinpoint specific version of it for any paths.
 ### Erlang/Elixir
 
   - Erlang/OTP 22
-  - Elixir 1.9.4
+  - Elixir 1.10
 
 
 ## Prerequisites
