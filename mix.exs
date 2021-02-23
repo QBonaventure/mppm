@@ -53,6 +53,7 @@ defmodule Mppm.MixProject do
       {:phoenix_ecto, "~> 4.0"},
       {:ecto_sql, "~> 3.1"},
       {:httpoison, "~> 1.7"},
+      {:joken, "~> 2.0"},
       {:logger_file_backend, "~> 0.0.11"},
       {:oauth2, "~> 2.0"},
       {:postgrex, ">= 0.0.0"},
