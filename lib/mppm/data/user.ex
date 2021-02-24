@@ -13,11 +13,16 @@ defmodule Mppm.User do
   end
 
 
+  def new(uuid, login, nickname), do:
+    %Mppm.User{uuid: uuid, login: login, nickname: nickname}
+
+
   def new_changeset(%User{} = user, %{uuid: uuid, nickname: nickname} = data)
   when not is_nil(uuid) do
     data = Map.put(data, :login, uuid_to_login(uuid))
     user
     |> cast(data, [:login, :nickname, :uuid])
+    |> validate_required([:login, :nickname, :uuid])
   end
 
   def new_changeset(%User{} = user, %{login: login, nickname: nickname} = data)
@@ -25,6 +30,7 @@ defmodule Mppm.User do
     data = Map.put(data, :uuid, login_to_uuid(login))
     user
     |> cast(data, [:login, :nickname, :uuid])
+    |> validate_required([:login, :nickname, :uuid])
   end
 
 
@@ -72,9 +78,9 @@ defmodule Mppm.User do
     Returns `%Mppm.User{}`
   """
   def get(%Mppm.User{uuid: uuid} = user) when not is_nil(uuid), do:
-    query_with_uuid(user) |> create_if_necessary(user)
+    build_query_with_uuid(user) |> fetch_or_create(user)
   def get(%Mppm.User{login: login} = user) when not is_nil(login), do:
-    query_with_login(user) |> create_if_necessary(user)
+    build_query_with_login(user) |> fetch_or_create(user)
 
   @doc """
     Encodes user UUID to base 64 URL safe user login as used in-game.
@@ -113,24 +119,43 @@ defmodule Mppm.User do
 
 
 
-  defp create_if_necessary(query, user) do
+  defp fetch_or_create(query, user) do
     case Mppm.Repo.one(query) |> exists?() do
       {:found, user} -> user
-      {:not_found, _} ->
-        %Mppm.User{}
-        |> Mppm.User.new_changeset(Map.from_struct(user))
-        |> Mppm.Repo.insert!
+      {:not_found, _} -> create_new_user(user)
     end
   end
 
-  defp query_with_uuid(%Mppm.User{uuid: uuid}), do:
-    from u in Mppm.User, where: u.uuid == ^uuid
+  defp create_new_user(%User{login: nil, uuid: uuid} = user)
+  when is_binary(uuid), do:
+    user |> Map.put(:login, uuid_to_login(uuid)) |> create_new_user()
+  defp create_new_user(%User{login: login, uuid: nil} = user)
+  when is_binary(login), do:
+    user |> Map.put(:uuid, login_to_uuid(login)) |> create_new_user()
+  defp create_new_user(%User{nickname: nil} = user) do
+    case UbiNadeoApi.get_user_info(user.uuid) do
+      {:ok, user} ->
+        create_new_user(user)
+      {:error, %{message: message}} ->
+        {:error, message}
+    end
+  end
 
-  defp query_with_login(%Mppm.User{login: login}), do:
-    from u in Mppm.User, where: u.login == ^login
+  defp create_new_user(%User{} = user) do
+    %User{}
+    |> User.new_changeset(Map.from_struct(user))
+    |> Mppm.Repo.insert!
+  end
+
+
+  defp build_query_with_uuid(%User{uuid: uuid}), do:
+    from u in User, where: u.uuid == ^uuid
+
+  defp build_query_with_login(%User{login: login}), do:
+    from u in User, where: u.login == ^login
 
   defp exists?(nil), do: {:not_found, nil}
-  defp exists?(%Mppm.User{} = user), do: {:found, user}
+  defp exists?(%User{} = user), do: {:found, user}
 
 
 end
