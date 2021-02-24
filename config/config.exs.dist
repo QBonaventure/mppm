@@ -39,6 +39,9 @@ config :mppm,
 config :mppm, Mppm.Trackmania,
   download_link: "http://files.v04.maniaplanet.com/server/TrackmaniaServer_Latest.zip"
 
+config :mppm, :ubi_nadeo_api,
+  host: "https://tm-api.fearthec.io"
+
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
 import_config "#{Mix.env()}.exs"

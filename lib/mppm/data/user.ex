@@ -3,6 +3,7 @@ defmodule Mppm.User do
   import Ecto.Changeset
   import Ecto.Query
   alias __MODULE__
+  alias Mppm.Service.UbiNadeoApi
 
   schema "users" do
     field :login, :string
