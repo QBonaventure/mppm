@@ -5,6 +5,9 @@ defmodule Mppm.TracksFiles do
   @mx_directory "MX/"
   @mx_path "#{@maps_path}#{@mx_directory}"
 
+  @header_start <<60, 104, 101, 97, 100, 101, 114>>
+  @header_end <<60, 47, 104, 101, 97, 100, 101, 114, 62>>
+
   def mx_path(), do: @mx_path
 
 
@@ -18,13 +21,35 @@ defmodule Mppm.TracksFiles do
   end
 
 
+  def extract_track_file_data(path) do
+    File.stream!(path)
+    |> Stream.with_index
+    |> Stream.filter(fn {value, index} ->
+      String.chunk(value, :printable)
+      |> Enum.find(& String.starts_with?(&1, @header_start))
+     end)
+    |> Enum.at(0)
+    |> elem(0)
+    |> String.chunk(:printable)
+    |> Enum.find(& String.starts_with?(&1, "<header"))
+    |> Mppm.XML.track_xml_to_map()
+  end
+
 
   def download_mx_track(%Mppm.Track{mx_track_id: _track_id} = track) do
+    track_file_path = @maps_path <> mx_track_path(track)
     case Mppm.Service.ManiaExchange.download_track(track) do
       {:ok, http_resp} ->
-          @maps_path <> mx_track_path(track)
-          |> File.write(http_resp.body)
-          Mppm.Repo.insert(track, on_conflict: {:replace_all_except, [:id]}, conflict_target: :uuid)
+          track_file_path |> File.write(http_resp.body)
+          file_data = extract_track_file_data(track_file_path)
+          user = Mppm.User.get(%Mppm.User{login: file_data.author})
+
+          track =
+            track
+            |> Map.put(:author, user)
+            |> Mppm.Repo.insert(on_conflict: {:replace_all_except, [:id]}, conflict_target: :uuid)
+          # track_data =
+
       _ -> {:error, :download_failed}
     end
   end
@@ -66,10 +91,13 @@ defmodule Mppm.TracksFiles do
 
     Enum.map(maps_list, fn map ->
       case map do
-        {id, _} ->
+        {id, map_filename} ->
+          file_data = extract_track_file_data(@mx_path<>map_filename)
+          user = Mppm.User.get(%Mppm.User{login: file_data.author})
           data =
             Enum.find(missing_maps_info, & &1.mx_track_id == id)
             |> Map.from_struct()
+            |> Map.put(:author, user)
           %Mppm.Track{}
           |> Mppm.Track.changeset(data)
           |> Mppm.Repo.insert!

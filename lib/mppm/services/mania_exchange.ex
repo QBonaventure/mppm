@@ -50,19 +50,14 @@ defmodule Mppm.Service.ManiaExchange do
   def parse({:ok, %HTTPoison.Response{} = response}), do: parse(response)
 
 
-  # So far, maps without AuthorLogin are rejected to avoid breaking the app.
-  # Those maps are those uploaded via a mappack. As there's also no way to
-  # retrieve that login, and can't rely on possibly recorded users on MPPM side
-  # through the username (which may change), there's no satisfying solution atm.
   def parse(%HTTPoison.Response{} = response) do
     body = response.body |> Jason.decode!
 
     tracks =
       body
       |> Map.get("results")
-      # This rejects maps without AuthorLogin, intended to be removed asap.
-      |> Enum.reject(& &1["AuthorLogin"] == "")
       |> Enum.map(& Mppm.Track.track_from_mx(&1))
+
 
     pagination = %{
       page: response.request.params.page,

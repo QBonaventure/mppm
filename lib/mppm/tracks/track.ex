@@ -32,16 +32,26 @@ defmodule Mppm.Track do
 
   @spec track_from_mx(map) :: %Mppm.Track{}
   def track_from_mx(%{} = mx_track) do
-    user = Mppm.User.get(%Mppm.User{login: mx_track["AuthorLogin"], nickname: mx_track["Username"]})
-    style = Mppm.Repo.get_by(Mppm.TrackStyle, name: mx_track["StyleName"])
-    tags_ids = String.split(mx_track["Tags"], ",") |> Enum.map(& String.to_integer(&1))
-    tags = Mppm.Repo.all(from t in Mppm.TrackStyle, where: t.id in ^tags_ids)
+    user = %Mppm.User{nickname: mx_track["Username"]}
+    style =
+      case mx_track["StyleName"] do
+        nil -> Mppm.Repo.get(Mppm.TrackStyle, 1)
+        style_name -> Mppm.Repo.get_by(Mppm.TrackStyle, name: style_name)
+      end
+    tags =
+      case mx_track["Tags"] do
+        nil -> nil
+        tags_list_str ->
+          tags_ids = String.split(tags_list_str, ",") |> Enum.map(& String.to_integer(&1))
+          Mppm.Repo.all(from t in Mppm.TrackStyle, where: t.id in ^tags_ids)
+      end
+
     %Mppm.Track{
       mx_track_id: mx_track["TrackID"],
       uuid: mx_track["TrackUID"],
       name: mx_track["Name"],
       gbx_map_name: mx_track["GbxMapName"],
-      author: user,
+      author: mx_track["Username"],
       style: style,
       tags: tags,
       laps_nb: mx_track["Laps"],
