@@ -13,6 +13,6 @@ defmodule Mppm.GameUI.Actions do
   end
 
   def handle_action(method, server_login, user_login, params), do:
-    IO.inspect %{method: method, params: params, user_login: user_login, server_login: server_login}
+    %{method: method, params: params, user_login: user_login, server_login: server_login}
 
 end

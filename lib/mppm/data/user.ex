@@ -88,7 +88,6 @@ defmodule Mppm.User do
     Returns :string
 
     ### Examples
-
       iex> Mppm.User.uuid_to_login("e454aa5d-ce99-4b89-8115-329313cad636")
       "5FSqXc6ZS4mBFTKTE8rWNg"
   """
@@ -106,7 +105,6 @@ defmodule Mppm.User do
     Returns Ecto.UUID.t() :: <<_::288>>
 
     ### Examples
-
       iex> Mppm.User.login_to_uuid("5FSqXc6ZS4mBFTKTE8rWNg")
       "e454aa5d-ce99-4b89-8115-329313cad636"
   """

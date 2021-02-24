@@ -53,7 +53,6 @@ defmodule Mppm.GameServer.Server do
 
   defp start_server(state) do
     config = Mppm.Repo.get(Mppm.ServerConfig, state.config.id) |> Mppm.Repo.preload(:ruleset)
-    IO.inspect config
     ServerConfig.create_config_file(config)
     ServerConfig.create_ruleset_file(config)
     GenServer.call(Mppm.Tracklist, {:get_server_tracklist, config.login})
