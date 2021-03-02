@@ -58,13 +58,11 @@ defmodule Mppm.Service.ManiaExchange do
       |> Map.get("results")
       |> Enum.map(& Mppm.Track.track_from_mx(&1))
 
-
     pagination = %{
       page: response.request.params.page,
       item_count: body |> Map.get("totalItemCount"),
       items_per_page:  response.request.params.limit
     }
-
     %{tracks: tracks, pagination: pagination}
   end
 

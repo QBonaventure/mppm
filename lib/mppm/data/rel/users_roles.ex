@@ -8,5 +8,4 @@ defmodule Mppm.Relationship.UsersRoles do
     belongs_to(:user_role, Mppm.UserRole, primary_key: true)
   end
 
-
 end

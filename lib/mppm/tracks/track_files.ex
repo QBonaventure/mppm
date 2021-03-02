@@ -48,9 +48,8 @@ defmodule Mppm.TracksFiles do
             track
             |> Map.put(:author, user)
             |> Mppm.Repo.insert(on_conflict: {:replace_all_except, [:id]}, conflict_target: :uuid)
-          # track_data =
-
-      _ -> {:error, :download_failed}
+      _ ->
+        {:error, :download_failed}
     end
   end
 
