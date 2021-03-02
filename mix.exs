@@ -92,7 +92,7 @@ defmodule Mppm.MixProject do
   defp docs do
     [
       source_ref: "v#{@version}",
-      main: "overview",
+      main: "readme",
       logo: "ftc.svg",
       extra_section: "GUIDES",
       assets: "guides/assets",
@@ -106,7 +106,8 @@ defmodule Mppm.MixProject do
   defp extras() do
     [
       "guides/broker/broker_receiver.md",
-      "guides/pubsub_topics.md"
+      "guides/pubsub_topics.md",
+      "README.md",
     ]
   end
 
