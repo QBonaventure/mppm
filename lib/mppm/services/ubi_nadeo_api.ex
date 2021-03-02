@@ -15,6 +15,12 @@ defmodule Mppm.Service.UbiNadeoApi do
     end
   end
 
+  def server_versions() do
+    "#{@host}/servers/list"
+    |> HTTPoison.get()
+    |> process_response()
+  end
+
   defp process_response({:ok, %Response{status_code: 200, body: body}}) do
     body
     |> Jason.decode!

@@ -3,6 +3,11 @@ defmodule MppmWeb.Live.Component.ServerLine do
   alias MppmWeb.DashboardView
 
   def mount(socket) do
+    {:ok, servers_versions} = Mppm.Service.UbiNadeoApi.server_versions()
+    socket =
+      socket
+      |> assign(servers_versions: servers_versions)
+      |> assign(changeset: Mppm.ServerConfig.create_server_changeset())
     {:ok, socket}
   end
 
@@ -10,6 +15,11 @@ defmodule MppmWeb.Live.Component.ServerLine do
     :ok = Phoenix.PubSub.subscribe(Mppm.PubSub, "server-status:"<>assigns.server.config.login)
 
     DashboardView.render("server-line.html", assigns)
+  end
+
+  def handle_event("change-version", params, socket) do
+    IO.inspect params
+    {:noreply, socket}
   end
 
 

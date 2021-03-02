@@ -10,7 +10,8 @@ defmodule MppmWeb.DashboardLive do
 
 
   def mount(_params, session, socket) do
-    servers = Mppm.ServersStatuses.all
+    servers = Mppm.ServersStatuses.all()
+    servers_versions = Mppm.Service.UbiNadeoApi.server_versions() |> elem(1)
     for {server_login, _} <- servers do
       Phoenix.PubSub.subscribe(Mppm.PubSub, "server-status:"<>server_login)
     end

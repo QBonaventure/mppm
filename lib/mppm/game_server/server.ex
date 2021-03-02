@@ -133,16 +133,37 @@ defmodule Mppm.GameServer.Server do
   end
 
 
+  def finish_install(file_path, [version: version]) do
+    destination_path = "/opt/mppm/game_servers/TrackmaniaServer_#{version}"
+    File.mkdir(destination_path)
+    {:ok, binary} = File.read(file_path)
 
-  def update_game_server(), do:
+    :zip.unzip(String.to_charlist(file_path), [cwd: String.to_charlist(destination_path)])
+    File.rm(file_path)
+    File.rm_rf("#{destination_path}/UserData") |> IO.inspect
+    File.ln_s("/opt/mppm/game_servers/UserData", "#{destination_path}/UserData")
+  end
+
+  def install_game_server(version) when is_integer(version) do
+    {:ok, server_versions} = Mppm.Service.UbiNadeoApi.server_versions()
+    file_url = Enum.find(server_versions, & &1["version"] == version) |> Map.get("download_link")
+    {:ok, _pid} = Mppm.FileManager.TasksSupervisor.download_file(
+      file_url,
+      "/tmp/TrackmaniaServer_#{version}.zip",
+      {&Mppm.GameServer.Server.finish_install/2, [version: version]}
+    )
+  end
+
+
+  def update_game_server(version), do:
     update_game_server(@root_path)
   # Downloads and install the latest game server files without any further
   # checks - neither version number nor if it's already up to date.
   #
   # root_path is the path where the TrackmaniaServer folder lies in.
   # I.e. /opt/mppm/TrackmaniaServer.
-  def update_game_server(root_path) do
-    Logger.info "Installing lastest Trackmania game server"
+  def update_game_server(root_path, version) do
+    Logger.info "Installing Trackmania game server []"
     Logger.info "Downloading files..."
     {:ok, %HTTPoison.Response{body: body}} = HTTPoison.get(Keyword.get(@config, :download_link))
     Logger.info "Installing game server files..."

@@ -16,6 +16,9 @@ defmodule Mppm.Application do
       {
         DynamicSupervisor, strategy: :one_for_one, name: Mppm.GameServer.Supervisor
       },
+      {
+        DynamicSupervisor, strategy: :one_for_one, name: Mppm.FileManager.TasksSupervisor
+      },
       Mppm.TracksFiles,
       %{
         id: Mppm.GameServer.Starter,

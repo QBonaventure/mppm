@@ -47,6 +47,7 @@ defmodule Mppm.ServerConfig do
     field :visuals_server_to_client_sending_rate, :integer, default: 64
     field :disable_replay_recording, :boolean, default: true
     field :workers_nb, :integer, default: 2
+    field :version, :integer
   end
 
   def get_all() do
@@ -78,6 +79,7 @@ defmodule Mppm.ServerConfig do
       :connection_download_rate, :packet_assembly_multithread, :packets_per_frame,
       :full_packets_per_frame, :visuals_delay, :trust_client_to_server_sending_rate,
       :visuals_server_to_client_sending_rate, :disable_replay_recording, :workers_nb,
+      :version,
       ])
     |> put_assoc(:ruleset, %Mppm.GameRules{mode_id: 1})
     |> validate_required(@required)
@@ -90,6 +92,7 @@ defmodule Mppm.ServerConfig do
     :connection_download_rate, :packet_assembly_multithread, :packets_per_frame,
     :full_packets_per_frame, :visuals_delay, :trust_client_to_server_sending_rate,
     :visuals_server_to_client_sending_rate, :disable_replay_recording, :workers_nb,
+    :version,
     ])
     |> cast_assoc(:ruleset)
   end

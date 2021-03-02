@@ -11,5 +11,9 @@
   <span class="server-status">
     <%= DashboardView.get_status_icon(@server.status, @server.config.login) %>
   </span>
-
+  <span class="server-version">
+    <%= f = form_for Ecto.Changeset.change(@server.config, %{}), "#", [phx_change: "change-version", phx_target: "server-#{@server.config.login}"] %>
+      <%= select f, :version, Enum.map(@servers_versions, & &1["version"]) %>
+    </form>
+  </span>
 </section>
