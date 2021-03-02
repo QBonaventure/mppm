@@ -48,16 +48,21 @@ defmodule Mppm.GameUI.TimePartialsDelta do
 
 
   def handle_info({:new_time_record, server_login, time}, state) do
-    case Mppm.TimeRecord.compare(time, Map.get(state, server_login)) do
-      :ahead -> {:noreply, Map.put(state, server_login, time)}
-      _ -> {:noreply, state}
-    end
+    case Map.get(state, server_login) do
+      nil -> {:noreply, Map.put(state, server_login, time)}
+      top_record ->
+        case Mppm.TimeRecord.compare(time, top_record) do
+          :ahead -> {:noreply, Map.put(state, server_login, time)}
+          _ -> {:noreply, state}
+        end
+      end
   end
 
   def handle_info({:player_waypoint, server_login, user_login, waypoint_nb, time}, state) do
     best_time =
       case Map.get(state, server_login, :no_key) do
-        %Mppm.TimeRecord{} = best_time -> best_time
+        %Mppm.TimeRecord{} = best_time ->
+          best_time
         :no_key ->
            case GenServer.call(Mppm.TimeTracker, {:get_server_top_record, server_login}) do
              nil -> nil
@@ -65,7 +70,6 @@ defmodule Mppm.GameUI.TimePartialsDelta do
                GenServer.cast(self(), {:set_new_top_record, server_login, best_time})
                best_time
             end
-        _ -> nil
       end
 
     if !is_nil(best_time) do
@@ -76,7 +80,7 @@ defmodule Mppm.GameUI.TimePartialsDelta do
         nil -> nil
         ref_time ->
           get_display(ref_time, time)
-          |> Mppm.GameUI.Helper.send_to_user(server_login, user_login, 2000)
+          |> Mppm.GameUI.Helper.send_to_user(server_login, user_login, 3000)
         end
     end
 
