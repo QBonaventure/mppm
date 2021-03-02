@@ -82,6 +82,13 @@ nav#main-menu li > ul a {
 :root {
   --ftc-red-color: 153, 27, 21;
   --ftc-white-color: 233, 223, 192;
+  --mx-lightgreen: 110, 250, 160;
+  --mx-darkgreen: 0, 50, 40;
+  /* --mx-dark-green: 0, 50, 40; */
+  --mx: 0,122,76;
+  --mx-plain-green: 0,113,90;
+  --mx-pastel: 204,227,227;
+
 }
 
 form > span {
@@ -360,24 +367,66 @@ section#game-server-chat #chat-box {
 
 
 section#search-tracks {
-  background-color: #00715a;
+  background: linear-gradient(rgb(var(--mx)), 140px, rgb(var(--mx-darkgreen)));
   width: 470px;
   float: right;
 }
 
 section#search-tracks form {
-  height: 52px;
+  height: 95px;
+  margin-bottom: 4px;
 }
 
-section#search-tracks form label,
-section#search-tracks form button {
+section#search-tracks form div {
+  width: 334px;
+  margin: 10px 5px;
+}
+
+section#search-tracks label,
+section#search-tracks button {
   display: inline-block;
   width: 100px;
   clear: none;
   text-align: center;
   margin: 0 5px;
-  color: white;
+  color: #bbb;
 }
+
+section#search-tracks label {
+  line-height: 14px;
+  height: 45px;
+}
+section#search-tracks input,
+section#search-tracks select {
+  height: 20px;
+  color: #eee;
+  font-weight: bold;
+}
+
+section#search-tracks input:focus,
+section#search-tracks select:focus {
+  border-color: rgb(var(--mx-lightgreen))
+}
+
+#search-tracks option {
+  background-color: #00715a;
+}
+
+section#search-tracks button {
+  float: right;
+  width: 70px;
+  height: 90px;
+  padding: 0;
+  background-color: rgb(var(--mx-plain-green));
+  color: white;
+  border: 0;
+  box-shadow: 0px 0px 10px 0px rgba(20,20,20,0.8);
+}
+section#search-tracks button:hover {
+  background-color: rgb(var(--mx-darkgreen));
+}
+
+
 
 section#search-tracks div.track-search-item {
   border-radius: 4px;
@@ -391,6 +440,11 @@ section#search-tracks-results  div.row {
   font-size: 12px;
   width: auto;
   height: 20px;
+  cursor: grab;
+}
+
+section#search-tracks-results  div.row:active {
+  cursor: grabbing;
 }
 
 div.track-id {
@@ -398,17 +452,31 @@ div.track-id {
   text-align: center;
 }
 
-div.track-name {
-  width: 250px;
-}
-
-div.track-author {
+#search-tracks div.track-author {
   width: 100px;
   text-align: center;
 }
 
+#tracklist div.track-author {
+  width: 130px;
+  text-align: center;
+}
+
+#search-tracks div.track-name {
+  width: 190px;
+}
+
+#tracklist div.track-name {
+  width: 210px;
+}
+
+div.track-style {
+  width: 90px;
+  text-align: center;
+}
+
 div.track-rewards {
-  width: 24px;
+  width: 28px;
   text-align: center;
 }
 
