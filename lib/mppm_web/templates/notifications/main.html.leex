@@ -1,0 +1,5 @@
+<div id="notifications">
+  <%= for note <- @notifications do %>
+    <%= live_component @socket, MppmWeb.Live.Component.Note, note: note %>
+  <% end %>
+</div>

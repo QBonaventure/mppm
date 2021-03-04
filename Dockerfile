@@ -32,13 +32,14 @@ COPY config/prod.exs.dist ./config/prod.exs
 COPY config/dev.exs.dist ./config/dev.exs
 COPY config/secret.exs.dist ./config/secret.exs
 
-COPY priv ./priv
-COPY lib ./lib
-
 COPY README.md ./
 COPY LICENSE.md ./
 COPY .gitignore ./
 
+COPY priv ./priv
+COPY lib ./lib
+
 COPY docker-entrypoint.sh /
+RUN chmod +x /docker-entrypoint.sh
 
 ENTRYPOINT ["/docker-entrypoint.sh"]

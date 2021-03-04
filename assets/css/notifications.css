@@ -1,0 +1,17 @@
+div#notifications {
+  position: fixed;
+  bottom: -7px;
+  right: 20px;
+  padding: 10px;
+  background-color: #ececea;
+  border-radius: 8px;
+  width: 250px
+}
+
+#notifications .note {
+  font-size: 12px;
+  background-color: white;
+  border: 1px solid lightgrey;
+  padding: 2px 4px;
+  margin: 5px auto;
+}
