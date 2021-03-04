@@ -29,6 +29,7 @@ defmodule Mppm.Application do
       },
       Mppm.TimeTracker,
       Mppm.GameUI.GameUISupervisor,
+      Mppm.Scheduler,
     ]
 
     opts = [strategy: :one_for_one, name: Mppm.Supervisor]

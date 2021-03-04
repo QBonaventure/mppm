@@ -61,6 +61,7 @@ defmodule Mppm.MixProject do
       {:phoenix_live_dashboard, "~> 0.1"},
       {:phoenix_live_reload, "~> 1.2", only: :dev},
       {:phoenix_live_view, "~> 0.14"},
+      {:quantum, "~> 3.0"},
       {:gettext, "~> 0.11"},
       {:jason, "~> 1.0"},
       {:plug_cowboy, "~> 2.0"},
