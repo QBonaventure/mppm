@@ -42,7 +42,7 @@
         <div class="track-id"><%= track.mx_track_id %></div>
         <div class="track-author"><%= track.author %></div>
         <div class="track-name"><%= track.name %></div>
-        <div class="track-style"><%= track.style.name %></div>
+        <div class="track-style"><%= case track.style do nil -> ""; %Mppm.TrackStyle{name: name} -> name end %></div>
         <div class="track-rewards"><%= track.awards_nb %></div>
       </div>
     <% end %>
