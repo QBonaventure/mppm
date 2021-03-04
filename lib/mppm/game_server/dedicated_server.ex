@@ -4,7 +4,7 @@ defmodule Mppm.GameServer.DedicatedServer do
   require Logger
 
   @moduledoc """
-  Takes care of everything dedicated server files and executables related
+  Takes care of everything related to dedicated server files and executables related
   """
 
   @allowed_statuses [:installed, :uninstalled, :in_use, :installing, :downloading, :unknown]
@@ -23,6 +23,8 @@ defmodule Mppm.GameServer.DedicatedServer do
   @type download_link :: string()
   @type release_datetime :: DateTime.t()
 
+
+
   @doc """
   Returns the system path for the given dedicated server version.
 
@@ -35,6 +37,19 @@ defmodule Mppm.GameServer.DedicatedServer do
   @spec executable_path(version()) :: release_datetime()
   def executable_path(version) when is_integer(version) do
     "#{@root_path}TrackmaniaServer_#{version}/TrackmaniaServer"
+  end
+
+
+  @doc """
+  Lists all available versions to be installed.
+
+  Returns list of t()
+
+
+  """
+  @spec list_versions() :: [t()]
+  def list_versions() do
+    GenServer.call(__MODULE__, {:list_versions})
   end
 
 
@@ -90,7 +105,7 @@ defmodule Mppm.GameServer.DedicatedServer do
     version = Keyword.get(opts, :version)
     destination_path = "#{@root_path}TrackmaniaServer_#{version}"
     File.mkdir(destination_path)
-IO.inspect "------------- FINISH INSTALL --------------------"
+
     {:ok, binary} = File.read(zip_file_path)
     File.rm(zip_file_path)
 
@@ -106,14 +121,43 @@ IO.inspect "------------- FINISH INSTALL --------------------"
   end
 
 
+  @doc """
+  Calls the `Mppm.Service.UbiNadeoApi` for a fresh list of server versions to check
+  against. If a new dedicated server has been published, adds it to the state.
+
+  Returns `{:ok, :new_version}` if at least one new version has been added,
+  `{:ok, :no_change}` otherwise
+  """
+  @spec check_new_versions() :: {:ok, :no_change} | {:ok, :new_version}
+  def check_new_versions() do
+    available = fresh_versions_list()
+    in_state_version_nbs = list_versions() |> Enum.map(& &1.version)
+    case Enum.reject(available, & &1.version in in_state_version_nbs) do
+      [] ->
+        {:ok, :no_change}
+      new_versions ->
+        Enum.each(new_versions, & GenServer.cast(__MODULE__, {:new_version, &1}))
+        {:ok, :new_version}
+    end
+  end
 
   ############################################
   ########### GenServer callbacks ############
   ############################################
 
+
   def handle_call({:ready_to_use_servers}, _from, state) do
     ready_versions = Enum.filter(state.versions, & &1.status in [:installed, :in_use])
     {:reply, ready_versions, state}
+  end
+
+  def handle_call({:list_versions}, _from, state) do
+    {:reply, state.versions, state}
+  end
+
+  def handle_cast({:new_version, %__MODULE__{} = new_version}, state) do
+    new_version = Map.put(new_version, :status, :uninstalled)
+    {:noreply, Map.put(state, :versions, [new_version] ++ state.versions)}
   end
 
 
@@ -121,6 +165,10 @@ IO.inspect "------------- FINISH INSTALL --------------------"
   ############################################
   ############ Private functions #############
   ############################################
+
+  def add_new_version(%__MODULE__{} = new_version) do
+
+  end
 
   defp server_version_installed?(version), do:
     File.exists?("#{@root_path}TrackmaniaServer_#{version}/TrackmaniaServer")
@@ -197,13 +245,19 @@ IO.inspect "------------- FINISH INSTALL --------------------"
     end
   end
 
+
+  defp fresh_versions_list() do
+    {:ok, list} = Mppm.Service.UbiNadeoApi.server_versions()
+    cast(list)
+  end
+
   ############################################
   ######## GenServer implementation ##########
   ############################################
 
   def start_link(_init_value), do: GenServer.start_link(__MODULE__, nil, name: __MODULE__)
   def init(_) do
-    available_versions = Mppm.Service.UbiNadeoApi.server_versions() |> elem(1) |> cast()
+    available_versions = fresh_versions_list()
     installed_versions =
       available_versions
       |> Enum.map(& &1.version)

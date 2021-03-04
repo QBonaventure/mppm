@@ -40,6 +40,11 @@ config :mppm,
 config :mppm, :ubi_nadeo_api,
   host: "https://tm-api.fearthec.io"
 
+config :mppm, Mppm.Scheduler,
+  jobs: [
+    {"0 */1 * * *", {Mppm.GameServer.DedicatedServers, :check_new_versions, []}}
+  ]
+
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
 import_config "#{Mix.env()}.exs"
