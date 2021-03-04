@@ -18,7 +18,6 @@ defmodule Mppm.FileManager.DownloadTask do
   end
 
   def handle_info(%HTTPoison.AsyncEnd{}, state) do
-    IO.inspect state
     File.close(state.file_pid)
 
     if state.callback do

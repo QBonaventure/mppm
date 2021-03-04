@@ -144,6 +144,27 @@ form label {
   font-size: 14px;
 }
 
+span.server-version select {
+  position: relative;
+  z-index: 50;
+}
+
+span.server-version button {
+  background-color: orange;
+  border: 0;
+  z-index: 20;
+  float: right;
+  top: -27px;
+  position: relative;
+  left: 112px;
+  height: 23px;
+  padding: 0 10px 0 105px;
+  line-height: 8px;
+}
+
+span.server-version button[disabled] {
+  display: none;
+}
 
 
 #server-update-form {

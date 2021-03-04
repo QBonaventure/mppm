@@ -23,7 +23,7 @@
 
 <section id="server-form">
   <a href="https://players.trackmania.com/en/player/server"target="_blank">Create a new server login (trackmania.com)</a>
-  <%= f = form_for @changeset, "#", [phx_change: :validate, phx_submit: "create-server"] %>
+  <%= f = form_for @new_server_changeset, "#", [phx_change: :validate, phx_submit: "create-server"] %>
 
     <label>
       Login: <%= text_input f, :login %>
@@ -41,6 +41,11 @@
       Name: <%= text_input f, :name %>
     </label>
     <%= error_tag f, :name %>
+
+    <label>
+      Exe version: <%= select f, :version, Enum.map(Mppm.GameServer.DedicatedServer.ready_to_use_servers(), & &1.version)  %>
+    </label>
+    <%= error_tag f, :version %>
 
 
     <label>
@@ -153,7 +158,7 @@
       <%= error_tag f, :disable_replay_recording %>
 
 
-    <%= submit "Submit" , disabled: Kernel.not @changeset.valid? %>
+    <%= submit "Submit" , disabled: Kernel.not @new_server_changeset.valid? %>
     <%= tag(:input, type: "button", value: "Cancel", phx_click: "cancel-form") %>
   </form>
 </section>

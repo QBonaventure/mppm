@@ -85,7 +85,7 @@ defmodule Mppm.ServerConfig do
     |> validate_required(@required)
   end
 
-  def changeset(%ServerConfig{} = config, params) do
+  def changeset(%ServerConfig{} = config, params \\ %{}) do
     config
     |> cast(params, [:name, :comment, :player_pwd, :spec_pwd, :max_players, :ip_address,
     :client_inputs_max_latency, :connection_upload_rate,

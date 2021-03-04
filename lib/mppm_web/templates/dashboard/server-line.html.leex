@@ -11,9 +11,11 @@
   <span class="server-status">
     <%= DashboardView.get_status_icon(@server.status, @server.config.login) %>
   </span>
+
   <span class="server-version">
-    <%= f = form_for Ecto.Changeset.change(@server.config, %{}), "#", [phx_change: "change-version", phx_target: "server-#{@server.config.login}"] %>
-      <%= select f, :version, Enum.map(@servers_versions, & &1["version"]) %>
+    <%= f = form_for @version_changeset, "#", [phx_change: "change-version", phx_target: @myself, phx_submit: "switch-version-and-restart"] %>
+      <%= select f, :version, Enum.map(@servers_versions, & &1.version) %>
+      <%= submit "OK & Restart?", disabled: !Map.has_key?(@version_changeset.changes, :version) %>
     </form>
   </span>
 </section>

@@ -4,7 +4,6 @@ defmodule Mppm.GameServer.Server do
   use GenServer
   alias Mppm.ServerConfig
 
-  @root_path Application.get_env(:mppm, :game_servers_root_path)
   @config Application.get_env(:mppm, Mppm.Trackmania)
   @msg_waiting_ports "Waiting for game server ports to open..."
   @max_start_attempts 20
@@ -13,8 +12,8 @@ defmodule Mppm.GameServer.Server do
   ##### START FUNCTIONS #############
   ###################################
 
-  defp get_command(%ServerConfig{login: filename}) do
-    "#{@root_path}TrackmaniaServer /nologs /dedicated_cfg=#{filename}.txt /game_settings=MatchSettings/#{filename}.txt /nodaemon"
+  defp get_command(%ServerConfig{login: filename, version: version}) do
+    "#{Mppm.GameServer.DedicatedServer.executable_path(version)} /nologs /dedicated_cfg=#{filename}.txt /game_settings=MatchSettings/#{filename}.txt /nodaemon"
   end
 
 
@@ -52,61 +51,71 @@ defmodule Mppm.GameServer.Server do
   end
 
   defp start_server(state) do
-    config = Mppm.Repo.get(Mppm.ServerConfig, state.config.id) |> Mppm.Repo.preload(:ruleset)
-    ServerConfig.create_config_file(config)
-    ServerConfig.create_ruleset_file(config)
-    GenServer.call(Mppm.Tracklist, {:get_server_tracklist, config.login})
-    |> Mppm.ServerConfig.create_tracklist()
+    case :ok == Mppm.ServersStatuses.get_start_flag(state.config.login) do
+      true ->
+        config = Mppm.Repo.get(Mppm.ServerConfig, state.config.id) |> Mppm.Repo.preload(:ruleset)
+        ServerConfig.create_config_file(config)
+        ServerConfig.create_ruleset_file(config)
+        GenServer.call(Mppm.Tracklist, {:get_server_tracklist, config.login})
+        |> Mppm.ServerConfig.create_tracklist()
 
-    command = get_command(config)
-    port = Port.open({:spawn, command}, [:binary, :exit_status])
-    {:os_pid, os_pid} = Port.info(port, :os_pid)
-    Port.monitor(port)
+        command = get_command(config)
+        port = Port.open({:spawn, command}, [:binary, :exit_status])
+        {:os_pid, os_pid} = Port.info(port, :os_pid)
+        Port.monitor(port)
 
-    state =
-      case get_listening_ports(os_pid) do
-        {:ok, listening_ports} ->
-          {:ok, _child_pid} =
-            Mppm.Broker.Supervisor.child_spec(state.config, listening_ports["xmlrpc"])
-            |> Mppm.GameServer.Supervisor.start_child()
-          Mppm.ServersStatuses.update_server_status(state.config.login, :started)
-          %{state | status: :started, listening_ports: listening_ports, port: port, os_pid: os_pid}
-        {:error, _} ->
-          Mppm.ServersStatuses.update_server_status(state.config.login, :failed)
-          Logger.info "["<>state.config.login<>"] Server couldn't start"
-          %{state | status: :stopped}
-      end
-    {:ok, Map.put(state, :config, config)}
+        state =
+          case get_listening_ports(os_pid) do
+            {:ok, listening_ports} ->
+              {:ok, _child_pid} =
+                Mppm.Broker.Supervisor.child_spec(state.config, listening_ports["xmlrpc"])
+                |> Mppm.GameServer.Supervisor.start_child()
+              Mppm.ServersStatuses.update_server_status(state.config.login, :started)
+              %{state | status: :started, listening_ports: listening_ports, port: port, os_pid: os_pid}
+            {:error, _} ->
+              Mppm.ServersStatuses.update_server_status(state.config.login, :failed)
+              Logger.info "["<>state.config.login<>"] Server couldn't start"
+              %{state | status: :stopped}
+          end
+        {:ok, Map.put(state, :config, config)}
+      false ->
+        {:none, state}
+    end
   end
 
-
+  def restart(server_login) do
+  GenServer.cast({:global, {:game_server, server_login}}, :restart)
+  end
 
   ###################################
   ##### STOP FUNCTIONS ##############
   ###################################
 
   def stop_server(state) do
-    Supervisor.stop({:global, {:broker_supervisor, state.config.login}})
-    pid =
-      case state.port do
-        nil ->
-          state.os_pid
-        port ->
-          {:os_pid, pid} = Port.info(port, :os_pid)
-          Port.close(port)
-          pid
-      end
-    kill_server_process(pid)
+    case :ok == Mppm.ServersStatuses.get_stop_flag(state.config.login) do
+      true ->
+        Supervisor.stop({:global, {:broker_supervisor, state.config.login}})
+        pid =
+          case state.port do
+            nil ->
+              state.os_pid
+            port ->
+              {:os_pid, pid} = Port.info(port, :os_pid)
+              Port.close(port)
+              pid
+          end
+        kill_server_process(pid)
 
-    Mppm.ServersStatuses.update_server_status(state.config.login, :stopped)
-    Logger.info "["<>state.config.login<>"] Server has been stopped"
+        Mppm.ServersStatuses.update_server_status(state.config.login, :stopped)
+        Logger.info "["<>state.config.login<>"] Server has been stopped"
 
-    {:ok, %{state | os_pid: nil, listening_ports: nil, port: nil, status: :stopped}}
+        {:ok, %{state | os_pid: nil, listening_ports: nil, port: nil, status: :stopped}}
+      false ->
+        {:none, state}
+    end
   end
 
   def kill_server_process(pid) when is_integer(pid), do: System.cmd("kill", ["#{pid}"])
-
-
 
 
   ###################################
@@ -133,67 +142,28 @@ defmodule Mppm.GameServer.Server do
   end
 
 
-  def finish_install(file_path, [version: version]) do
-    destination_path = "/opt/mppm/game_servers/TrackmaniaServer_#{version}"
-    File.mkdir(destination_path)
-    {:ok, binary} = File.read(file_path)
-
-    :zip.unzip(String.to_charlist(file_path), [cwd: String.to_charlist(destination_path)])
-    File.rm(file_path)
-    File.rm_rf("#{destination_path}/UserData") |> IO.inspect
-    File.ln_s("/opt/mppm/game_servers/UserData", "#{destination_path}/UserData")
-  end
-
-  def install_game_server(version) when is_integer(version) do
-    {:ok, server_versions} = Mppm.Service.UbiNadeoApi.server_versions()
-    file_url = Enum.find(server_versions, & &1["version"] == version) |> Map.get("download_link")
-    {:ok, _pid} = Mppm.FileManager.TasksSupervisor.download_file(
-      file_url,
-      "/tmp/TrackmaniaServer_#{version}.zip",
-      {&Mppm.GameServer.Server.finish_install/2, [version: version]}
-    )
-  end
-
-
-  def update_game_server(version), do:
-    update_game_server(@root_path)
-  # Downloads and install the latest game server files without any further
-  # checks - neither version number nor if it's already up to date.
-  #
-  # root_path is the path where the TrackmaniaServer folder lies in.
-  # I.e. /opt/mppm/TrackmaniaServer.
-  def update_game_server(root_path, version) do
-    Logger.info "Installing Trackmania game server []"
-    Logger.info "Downloading files..."
-    {:ok, %HTTPoison.Response{body: body}} = HTTPoison.get(Keyword.get(@config, :download_link))
-    Logger.info "Installing game server files..."
-    :zip.unzip(body, [{:cwd, ~c'#{root_path}'}])
-    Logger.info "Game server installed/updated"
-    :ok
-  end
-
-
-
 
   ##########################
   #        Callbacks       #
   ##########################
 
   def handle_cast(:start, state) do
-    case :ok == Mppm.ServersStatuses.get_start_flag(state.config.login) do
-      true ->
-        {:ok, state} = start_server(state)
+    case start_server(state) do
+      {:ok, state} ->
         {:noreply, %{state | game_mode_id: get_next_game_mode_id(state.config.id)}}
-      false ->
+      {:none, state} ->
         {:noreply, state}
     end
   end
 
   def handle_cast(:stop, state) do
-    {:ok, state} =
-      if :ok == Mppm.ServersStatuses.get_stop_flag(state.config.login) do
-        stop_server(state)
-      end
+    {_, state} = stop_server(state)
+    {:noreply, state}
+  end
+
+  def handle_cast(:restart, state) do
+    {_, state} = stop_server(state)
+    {_, state} = start_server(state)
     {:noreply, state}
   end
 

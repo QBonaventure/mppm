@@ -44,6 +44,10 @@ defmodule Mppm.ServersStatuses do
 
   def get_server_status(server_login), do: Agent.get(__MODULE__, & &1[server_login].status)
 
+  def update_server_config(server_login, %Mppm.ServerConfig{} = new_config) do
+    Agent.update(__MODULE__, & Kernel.put_in(&1, [server_login, :config], new_config))
+  end
+
 
   def is_stopped?(server_login), do: :stopped == get_server_status(server_login)
 

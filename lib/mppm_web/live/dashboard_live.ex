@@ -18,7 +18,7 @@ defmodule MppmWeb.DashboardLive do
 
     socket =
       socket
-      |> assign(changeset: Mppm.ServerConfig.create_server_changeset())
+      |> assign(new_server_changeset: Mppm.ServerConfig.create_server_changeset())
       |> assign(disabled_submit: true)
       |> assign(servers: Mppm.ServersStatuses.all)
       |> assign(user_session: session)
@@ -61,7 +61,7 @@ defmodule MppmWeb.DashboardLive do
     socket =
       socket
       |> assign(servers: Mppm.ServersStatuses.all)
-      |> assign(changeset: Mppm.ServerConfig.create_server_changeset())
+      |> assign(new_server_changeset: Mppm.ServerConfig.create_server_changeset())
 
     {:noreply, socket}
   end
@@ -69,12 +69,12 @@ defmodule MppmWeb.DashboardLive do
 
   def handle_event("validate", params, socket) do
     {:ok, changeset} =  get_changeset(params["server_config"])
-    {:noreply, assign(socket, changeset: changeset)}
+    {:noreply, assign(socket, new_server_changeset: changeset)}
   end
 
 
   def handle_event("cancel-form", _params, socket) do
-    {:noreply, assign(socket, changeset: Mppm.ServerConfig.create_server_changeset())}
+    {:noreply, assign(socket, new_server_changeset: Mppm.ServerConfig.create_server_changeset())}
   end
 
 end

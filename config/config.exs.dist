@@ -34,10 +34,8 @@ config :phoenix, :json_library, Jason
 
 config :mppm,
   app_path: File.cwd!,
-  game_servers_root_path: "/opt/mppm/TrackmaniaServer/"
+  game_servers_root_path: "/opt/mppm/game_servers/"
 
-config :mppm, Mppm.Trackmania,
-  download_link: "http://files.v04.maniaplanet.com/server/TrackmaniaServer_Latest.zip"
 
 config :mppm, :ubi_nadeo_api,
   host: "https://tm-api.fearthec.io"

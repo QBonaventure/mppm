@@ -3,6 +3,15 @@ defmodule Mppm.Service.UbiNadeoApi do
 
   @host Application.get_env(:mppm, :ubi_nadeo_api, :host) |> Keyword.get(:host)
 
+  @enforce_keys [:version, :release_datetime, :download_link, :status]
+  defstruct [:version, :release_datetime, :download_link, status: :unknown]
+  @type t :: %__MODULE__{
+      version: integer(),
+      release_datetime: DateTime.t(),
+      download_link: binary(),
+      status: atom(),
+  }
+
   def get_user_info(uuid) do
     "#{@host}/users/#{uuid}/username"
     |> HTTPoison.get()
@@ -13,6 +22,12 @@ defmodule Mppm.Service.UbiNadeoApi do
       error ->
         error
     end
+  end
+
+  def latest_server_version() do
+    "#{@host}/servers/latest_version_info"
+    |> HTTPoison.get()
+    |> process_response()
   end
 
   def server_versions() do
