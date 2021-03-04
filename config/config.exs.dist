@@ -42,7 +42,7 @@ config :mppm, :ubi_nadeo_api,
 
 config :mppm, Mppm.Scheduler,
   jobs: [
-    {"0 */1 * * *", {Mppm.GameServer.DedicatedServers, :check_new_versions, []}}
+    {"0 */1 * * *", {Mppm.GameServer.DedicatedServer, :check_new_versions, []}}
   ]
 
 # Import environment specific config. This must remain at the bottom
