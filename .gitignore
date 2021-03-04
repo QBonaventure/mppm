@@ -40,3 +40,5 @@ erl_crash.dump
 /config/*.exs
 .env
 .tool-versions
+dev*
+*.dev
