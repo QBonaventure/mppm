@@ -8,12 +8,18 @@ defmodule Mppm.GameServer.Server do
   @msg_waiting_ports "Waiting for game server ports to open..."
   @max_start_attempts 20
 
-  ###################################
-  ##### START FUNCTIONS #############
-  ###################################
 
-  defp get_command(%ServerConfig{login: filename, version: version}) do
-    "#{Mppm.GameServer.DedicatedServer.executable_path(version)} /nologs /dedicated_cfg=#{filename}.txt /game_settings=MatchSettings/#{filename}.txt /nodaemon"
+
+  def start(server_login) when is_binary(server_login) do
+    GenServer.cast(proc_name(server_login), :start)
+  end
+
+  def stop(server_login) when is_binary(server_login) do
+    GenServer.cast(proc_name(server_login), :stop)
+  end
+
+  def restart(server_login) when is_binary(server_login) do
+    GenServer.cast(proc_name(server_login), :restart)
   end
 
 
@@ -22,143 +28,69 @@ defmodule Mppm.GameServer.Server do
   end
 
 
-  def get_listening_ports(pid, tries \\ 0)
-  def get_listening_ports(pid, tries) when is_integer(pid) and tries >= @max_start_attempts do
-    kill_server_process(pid)
-    {:error, :unknown_reason}
-  end
-  def get_listening_ports(pid, tries) when is_integer(pid) do
-    res = :os.cmd('ss -lpn | grep "pid=#{pid}" | awk {\'print$5\'} | cut -d: -f2')
-    |> to_string
-    |> String.split("\n", trim: true)
-    |> Enum.map(fn p ->
-        case String.at(p, 0) do
-          "2" -> {"server", String.to_integer(p)}
-          "3" -> {"p2p", String.to_integer(p)}
-          "5" -> {"xmlrpc", String.to_integer(p)}
-        end
-      end)
-    |> Map.new
 
-    case res do
-      %{"xmlrpc" => _xmlrpc, "server" => _server} ->
-        {:ok, res}
-      _ ->
-        Logger.info @msg_waiting_ports
-        Process.sleep(1000)
-        get_listening_ports(pid, tries+1)
-    end
+  ############################################
+  ########### GenServer callbacks ############
+  ############################################
+
+  def child_spec(%ServerConfig{} = server_config) do
+    %{
+      id: __MODULE__,
+      start: {__MODULE__, :start_link, [[server_config], []]},
+      restart: :transient,
+      name: {:global, {:game_server, server_config.login}}
+    }
   end
 
-  defp start_server(state) do
-    case :ok == Mppm.ServersStatuses.get_start_flag(state.config.login) do
-      true ->
-        config = Mppm.Repo.get(Mppm.ServerConfig, state.config.id) |> Mppm.Repo.preload(:ruleset)
-        ServerConfig.create_config_file(config)
-        ServerConfig.create_ruleset_file(config)
-        GenServer.call(Mppm.Tracklist, {:get_server_tracklist, config.login})
-        |> Mppm.ServerConfig.create_tracklist()
-
-        command = get_command(config)
-        port = Port.open({:spawn, command}, [:binary, :exit_status])
-        {:os_pid, os_pid} = Port.info(port, :os_pid)
-        Port.monitor(port)
-
-        state =
-          case get_listening_ports(os_pid) do
-            {:ok, listening_ports} ->
-              {:ok, _child_pid} =
-                Mppm.Broker.Supervisor.child_spec(state.config, listening_ports["xmlrpc"])
-                |> Mppm.GameServer.Supervisor.start_child()
-              Mppm.ServersStatuses.update_server_status(state.config.login, :started)
-              %{state | status: :started, listening_ports: listening_ports, port: port, os_pid: os_pid}
-            {:error, _} ->
-              Mppm.ServersStatuses.update_server_status(state.config.login, :failed)
-              Logger.info "["<>state.config.login<>"] Server couldn't start"
-              %{state | status: :stopped}
-          end
-        {:ok, Map.put(state, :config, config)}
-      false ->
-        {:none, state}
-    end
-  end
-
-  def restart(server_login) do
-  GenServer.cast({:global, {:game_server, server_login}}, :restart)
-  end
-
-  ###################################
-  ##### STOP FUNCTIONS ##############
-  ###################################
-
-  def stop_server(state) do
-    case :ok == Mppm.ServersStatuses.get_stop_flag(state.config.login) do
-      true ->
-        Supervisor.stop({:global, {:broker_supervisor, state.config.login}})
-        pid =
-          case state.port do
-            nil ->
-              state.os_pid
-            port ->
-              {:os_pid, pid} = Port.info(port, :os_pid)
-              Port.close(port)
-              pid
-          end
-        kill_server_process(pid)
-
-        Mppm.ServersStatuses.update_server_status(state.config.login, :stopped)
-        Logger.info "["<>state.config.login<>"] Server has been stopped"
-
-        {:ok, %{state | os_pid: nil, listening_ports: nil, port: nil, status: :stopped}}
-      false ->
-        {:none, state}
-    end
-  end
-
-  def kill_server_process(pid) when is_integer(pid), do: System.cmd("kill", ["#{pid}"])
-
-
-  ###################################
-  ##### OTHER FUNCTIONS #############
-  ###################################
-
-
-
-  def list_servers() do
-    servers = :global.registered_names()
-    Enum.map(servers, fn server ->
-      {:reply, GenServer.call({:global, server}, :status)}
-    end)
+  def start_link([%ServerConfig{} = server_config], _opts \\ []) do
+    GenServer.start_link(__MODULE__, server_config, name: {:global, {:game_server, server_config.login}})
   end
 
 
-  def servers_status() do
-    servers = :global.registered_names()
-    Enum.reduce(servers, %{}, fn server, acc ->
-      {server_type, server_name} = server
-      server_status = GenServer.call({:global, server}, :status)
-      Map.put(acc, server_name, Map.get(acc, server_name,[]) ++ ["#{server_type}": server_status])
-   end)
+  def init(%ServerConfig{} = server_config) do
+    Phoenix.PubSub.subscribe(Mppm.PubSub, "tracklist-status")
+    Phoenix.PubSub.subscribe(Mppm.PubSub, "ruleset-status")
+    Phoenix.PubSub.subscribe(Mppm.PubSub, "server-status:"<>server_config.login)
+
+    state = %{
+      current_track: nil,
+      port: nil,
+      os_pid: nil,
+      exit_status: nil,
+      latest_output: nil,
+      listening_ports: nil,
+      xmlrpc_port: nil,
+      status: :stopped,
+      config: server_config,
+      rewrite_ruleset?: false,
+      rewrite_config?: false,
+      rewrite_tracklist?: false,
+      reload_match_settings?: false,
+      game_mode_id: nil
+    }
+
+    {:ok, state}
   end
 
-
-
-  ##########################
-  #        Callbacks       #
-  ##########################
 
   def handle_cast(:start, state) do
-    case start_server(state) do
-      {:ok, state} ->
-        {:noreply, %{state | game_mode_id: get_next_game_mode_id(state.config.id)}}
-      {:none, state} ->
+    case Mppm.ServersStatuses.get_start_flag(state.config.login) do
+      :ok ->
+        {_, state} = start_server(state)
+        {:noreply, state}
+      _ ->
         {:noreply, state}
     end
   end
 
   def handle_cast(:stop, state) do
-    {_, state} = stop_server(state)
-    {:noreply, state}
+    case Mppm.ServersStatuses.get_stop_flag(state.config.login) do
+      :ok ->
+        {_, state} = stop_server(state)
+        {:noreply, state}
+      _ ->
+      {:noreply, state}
+    end
   end
 
   def handle_cast(:restart, state) do
@@ -175,7 +107,7 @@ defmodule Mppm.GameServer.Server do
     state = %{state |
       status: :started,
       xmlrpc_port: xmlrpc_port,
-      listening_ports: %{"xmlrpc" => xmlrpc_port},
+      listening_ports: %{xmlrpc: xmlrpc_port},
       port: nil,
       os_pid: pid,
       rewrite_ruleset?: false,
@@ -188,10 +120,12 @@ defmodule Mppm.GameServer.Server do
     {:noreply, state}
   end
 
+
   def handle_cast(:closing_port, state) do
     Mppm.ServersStatuses.update_server_status(state.config.login, :stopped)
     {:noreply, %{state | exit_status: :port_closed, status: :stopped}}
   end
+
 
   def handle_call(:pid, _, state) do
     {:reply, self(), state}
@@ -201,9 +135,10 @@ defmodule Mppm.GameServer.Server do
   def handle_call(:xmlrpc_port, _, state) do
     case state.listening_ports do
       nil -> {:reply, nil, state}
-      %{"xmlrpc" => port} -> {:reply, port, state}
+      %{xmlrpc: port} -> {:reply, port, state}
     end
   end
+
 
   def handle_call(:status, _, state) do
     {:reply, %{state: state.status, port: state.port, os_pid: state.os_pid}, state}
@@ -228,6 +163,7 @@ defmodule Mppm.GameServer.Server do
     end
   end
 
+
   def handle_info({:tracklist_update, server_login, ruleset_or_tracklist}, state) do
     case server_login == state.config.login do
       true ->
@@ -236,7 +172,6 @@ defmodule Mppm.GameServer.Server do
       false -> {:noreply, state}
     end
   end
-
 
 
   def handle_info({:podium_start, _server_login}, state) do
@@ -294,6 +229,7 @@ defmodule Mppm.GameServer.Server do
     {:noreply, %{state | status: :stopped}}
   end
 
+
   def handle_info({_port, {:data, text_line}}, state) do
     latest_output = text_line |> String.trim
 
@@ -305,54 +241,115 @@ defmodule Mppm.GameServer.Server do
 
   def handle_info({_port, {:exit_status, status}}, state) do
     Logger.info "External exit: :exit_status: #{Atom.to_string(status)}"
-
     {:noreply, %{state | exit_status: status}}
   end
 
 
-  def handle_info(_unhandled_message, state), do: {:noreply, state}
+  def handle_info(_unhandled_message, state), do:
+    {:noreply, state}
 
 
 
+  ############################################
+  ############ Private functions #############
+  ############################################
 
-  def child_spec(%ServerConfig{} = server_config) do
-    %{
-      id: __MODULE__,
-      start: {__MODULE__, :start_link, [[server_config], []]},
-      restart: :transient,
-      name: {:global, {:game_server, server_config.login}}
-    }
+  defp proc_name(server_login), do:
+    {:global, {:game_server, server_login}}
+
+  defp get_command(%ServerConfig{login: filename, version: version}) do
+    "#{Mppm.GameServer.DedicatedServer.executable_path(version)} /nologs /dedicated_cfg=#{filename}.txt /game_settings=MatchSettings/#{filename}.txt /nodaemon"
   end
 
-  def start_link([%ServerConfig{} = server_config], _opts \\ []) do
-    GenServer.start_link(__MODULE__, server_config, name: {:global, {:game_server, server_config.login}})
+
+  defp kill_server_process(pid) when is_integer(pid), do:
+    System.cmd("kill", ["#{pid}"])
+
+
+  defp get_listening_ports(pid, tries \\ 0)
+  defp get_listening_ports(pid, tries) when is_integer(pid) and tries >= @max_start_attempts do
+    kill_server_process(pid)
+    {:error, :unknown_reason}
+  end
+  defp get_listening_ports(pid, tries) when is_integer(pid) do
+    res =
+      :os.cmd('ss -lpn | grep "pid=#{pid}" | awk {\'print$5\'} | cut -d: -f2')
+      |> to_string
+      |> String.split("\n", trim: true)
+      |> Enum.map(fn p ->
+          case String.at(p, 0) do
+            "2" -> {:server, String.to_integer(p)}
+            "3" -> {:p2p, String.to_integer(p)}
+            "5" -> {:xmlrpc, String.to_integer(p)}
+          end
+        end)
+      |> Map.new
+
+    case res do
+      %{xmlrpc: _xmlrpc, server: _server} = ports ->
+        {:ok, ports}
+      _ ->
+        Logger.info @msg_waiting_ports
+        Process.sleep(1000)
+        get_listening_ports(pid, tries+1)
+    end
   end
 
 
-  def init(%ServerConfig{} = server_config) do
-    Phoenix.PubSub.subscribe(Mppm.PubSub, "tracklist-status")
-    Phoenix.PubSub.subscribe(Mppm.PubSub, "ruleset-status")
-    Phoenix.PubSub.subscribe(Mppm.PubSub, "server-status:"<>server_config.login)
+  defp start_server(state) do
+    config = Mppm.Repo.get(Mppm.ServerConfig, state.config.id) |> Mppm.Repo.preload(:ruleset)
+    ServerConfig.create_config_file(config)
+    ServerConfig.create_ruleset_file(config)
+    GenServer.call(Mppm.Tracklist, {:get_server_tracklist, config.login})
+    |> Mppm.ServerConfig.create_tracklist()
 
-    state = %{
-      current_track: nil,
-      port: nil,
-      os_pid: nil,
-      exit_status: nil,
-      latest_output: nil,
-      listening_ports: nil,
-      xmlrpc_port: nil,
-      status: :stopped,
-      config: server_config,
-      rewrite_ruleset?: false,
-      rewrite_config?: false,
-      rewrite_tracklist?: false,
-      reload_match_settings?: false,
-      game_mode_id: nil
-    }
+    command = get_command(config)
+    port = Port.open({:spawn, command}, [:binary, :exit_status])
+    {:os_pid, os_pid} = Port.info(port, :os_pid)
+    Port.monitor(port)
 
+    state =
+      case get_listening_ports(os_pid) do
+        {:ok, listening_ports} ->
+          {:ok, _child_pid} =
+            Mppm.Broker.Supervisor.child_spec(state.config, listening_ports.xmlrpc)
+            |> Mppm.GameServer.Supervisor.start_child()
+          Mppm.ServersStatuses.update_server_status(state.config.login, :started)
+          %{
+            state |
+            config: config,
+            status: :started,
+            listening_ports: listening_ports,
+            port: port,
+            os_pid: os_pid,
+            game_mode_id: get_next_game_mode_id(state.config.id)
+          }
+        {:error, _} ->
+          Mppm.ServersStatuses.update_server_status(state.config.login, :failed)
+          Logger.info "["<>state.config.login<>"] Server couldn't start"
+          %{state | status: :stopped}
+      end
     {:ok, state}
   end
 
+
+  defp stop_server(state) do
+    Supervisor.stop({:global, {:broker_supervisor, state.config.login}})
+    pid =
+      case state.port do
+        nil ->
+          state.os_pid
+        port ->
+          {:os_pid, pid} = Port.info(port, :os_pid)
+          Port.close(port)
+          pid
+      end
+    kill_server_process(pid)
+
+    Mppm.ServersStatuses.update_server_status(state.config.login, :stopped)
+    Logger.info "["<>state.config.login<>"] Server has been stopped"
+
+    {:ok, %{state | os_pid: nil, listening_ports: nil, port: nil, status: :stopped}}
+  end
 
 end
