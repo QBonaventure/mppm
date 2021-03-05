@@ -77,7 +77,10 @@ nav#main-menu li > ul a {
   text-align: center;
 }
 
-
+nav#main-menu .restart {
+  background-color: red;
+  color: white;
+}
 
 
 

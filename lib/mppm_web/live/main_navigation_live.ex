@@ -20,4 +20,9 @@ defmodule MppmWeb.MainNavigationLive do
     {:ok, socket}
   end
 
+  def handle_event("restart", _params, socket) do
+    :init.restart
+    {:noreply, socket}
+  end
+
 end
