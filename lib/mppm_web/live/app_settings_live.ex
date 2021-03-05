@@ -10,6 +10,7 @@ defmodule MppmWeb.AppSettingsLive do
     socket =
       socket
       |> assign(user_session: session)
+      |> assign(server_versions: Mppm.GameServer.DedicatedServer.list_versions())
 
     {:ok, socket}
   end
