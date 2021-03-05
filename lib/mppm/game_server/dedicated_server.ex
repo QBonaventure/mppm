@@ -7,7 +7,7 @@ defmodule Mppm.GameServer.DedicatedServer do
   Takes care of everything related to dedicated server files and executables related
   """
 
-  @allowed_statuses [:installed, :uninstalled, :in_use, :installing, :downloading, :unknown]
+  @allowed_statuses [:installed, :uninstalled, :in_use, :installing, :unknown]
   @root_path Application.get_env(:mppm, :game_servers_root_path)
   @user_data_path "#{@root_path}UserData"
 
