@@ -25,6 +25,17 @@ defmodule Mppm.GameServer.DedicatedServer do
 
 
 
+  @spec get(version()) :: {:ok, t()} | {:error, :not_found}
+  def get(version) do
+    res =
+      GenServer.call(__MODULE__, {:list_versions})
+      |> Enum.find(& &1.version == version)
+    case res do
+      nil -> {:error, :not_found}
+      dedi -> {:ok, dedi}
+    end
+  end
+
   @doc """
   Returns the system path for the given dedicated server version.
 
@@ -34,7 +45,7 @@ defmodule Mppm.GameServer.DedicatedServer do
       iex> Mppm.GameServer.DedicatedServer.executable_path(20210208)
       "/opt/mppm/game_servers/TrackmaniaServer_20210208/TrackmaniaServer"
   """
-  @spec executable_path(version()) :: release_datetime()
+  @spec executable_path(version()) :: binary()
   def executable_path(version) when is_integer(version) do
     "#{@root_path}TrackmaniaServer_#{version}/TrackmaniaServer"
   end
@@ -75,24 +86,51 @@ defmodule Mppm.GameServer.DedicatedServer do
         }
       ]
   """
-  @spec ready_to_use_servers() :: [t]
+  @spec ready_to_use_servers() :: [t()]
   def ready_to_use_servers() do
     GenServer.call(__MODULE__, {:ready_to_use_servers})
   end
+
+
+  @doc """
+
+  """
+  @spec uninstall_game_server(version() | t()) :: {:ok, :uninstalling} | {:error, :in_use}
+  def uninstall_game_server(version) when is_integer(version), do:
+    uninstall_game_server(get(version) |> elem(1))
+  def uninstall_game_server(%__MODULE__{} = dedi_server) do
+    case GenServer.call(__MODULE__, {:uninstall_flag, dedi_server}) do
+      {:ok, :uninstalling} ->
+        File.rm_rf("#{@root_path}TrackmaniaServer_#{dedi_server.version}")
+        GenServer.cast(__MODULE__, {:update_status, :uninstalled, dedi_server})
+        "sdqd"
+      false ->
+        {:ok, :no_change}
+    end
+  end
+
 
   @doc """
   Installs a game server's binaries given a specific version.
 
   As it requires downloading files with the FileManager, it returns directly.
   """
-  def install_game_server(version, opts \\ []) when is_integer(version) do
-    {:ok, server_versions} = Mppm.Service.UbiNadeoApi.server_versions()
-    file_url = Enum.find(server_versions, & &1["version"] == version) |> Map.get("download_link")
-    {:ok, _pid} = Mppm.FileManager.TasksSupervisor.download_file(
-      file_url,
-      "/tmp/TrackmaniaServer_#{version}.zip",
-      {&Mppm.GameServer.DedicatedServer.finish_install/2, [version: version] ++ opts}
-    )
+  @spec install_game_server(version() | t(), list()) :: {:ok, :installing | :already_installed}
+  def install_game_server(version, opts \\ [])
+  def install_game_server(version, opts) when is_integer(version), do:
+    install_game_server(get(version) |> elem(1), opts)
+  def install_game_server(%__MODULE__{} = dedi_server, opts) do
+    case GenServer.call(__MODULE__, {:install_flag, dedi_server}) do
+      {:ok, :installing} ->
+        {:ok, _pid} = Mppm.FileManager.TasksSupervisor.download_file(
+          dedi_server.download_link,
+          "/tmp/TrackmaniaServer_#{dedi_server.version}.zip",
+          {&Mppm.GameServer.DedicatedServer.finish_install/2, [version: dedi_server.version] ++ opts}
+        )
+        {:ok, :installing}
+      {:ok, :already_installed} = resp ->
+        resp
+    end
   end
 
 
@@ -118,6 +156,7 @@ defmodule Mppm.GameServer.DedicatedServer do
     :ok = cleanup_install(destination_path)
     :ok = link_to_user_data(destination_path)
     :ok = set_executable_mode(destination_path)
+    GenServer.cast(__MODULE__, {:update_status, :installed, get(version) |> elem(1)})
   end
 
 
@@ -155,16 +194,72 @@ defmodule Mppm.GameServer.DedicatedServer do
     {:reply, state.versions, state}
   end
 
-  def handle_cast({:new_version, %__MODULE__{} = new_version}, state) do
-    new_version = Map.put(new_version, :status, :uninstalled)
-    {:noreply, Map.put(state, :versions, [new_version] ++ state.versions)}
+  def handle_call({:install_flag, %__MODULE__{} = dedi_server}, _from, state) do
+      case dedi_server.status do
+        :uninstalled ->
+          {:ok, state} = update_dedicated_status(:installing, dedi_server, state)
+          {:reply, {:ok, :installing}, state}
+        _ ->
+          {:reply, {:ok, :already_installed}, state}
+      end
   end
 
+  def handle_call({:uninstall_flag, %__MODULE__{} = dedi_server}, _from, state) do
+      case dedi_server.status do
+        :installed ->
+          {:ok, state} = update_dedicated_status(:uninstalled, dedi_server, state)
+          {:reply, {:ok, :uninstalling}, state}
+        :in_use ->
+          {:reply, {:error, :is_in_use}, state}
+        _ ->
+          {:reply, {:ok, :uninstalled}, state}
+      end
+  end
+
+
+  def handle_cast({:update_status, status, %__MODULE__{} = dedicated}, state)
+  when status in @allowed_statuses do
+    {:ok, state} = update_dedicated_status(status, dedicated, state)
+    {:noreply, state}
+  end
+
+
+  def handle_cast({:new_version, %__MODULE__{} = new_version}, state) do
+    new_version = Map.put(new_version, :status, :uninstalled)
+    {:noreply, %{state | versions: [new_version] ++ state.versions}}
+  end
+
+
+  def handle_info({:version_change, server_login, %__MODULE__{} = _version}, state) do
+    in_use_dedicated = in_use_servers()
+    versions =
+      state.versions
+      |> Enum.map(fn dedicated_version ->
+        case {dedicated_version.version in in_use_dedicated, dedicated_version.status} do
+          {true, :installed} -> Map.put(dedicated_version, :status, :in_use)
+          {false, :in_use} -> Map.put(dedicated_version, :status, :installed)
+          _ -> dedicated_version
+        end
+      end)
+    notify_if_changed(state.versions, versions)
+    {:noreply, %{state | versions: versions}}
+  end
+
+  def handle_info(_msg, state), do:
+    {:noreply, state}
 
 
   ############################################
   ############ Private functions #############
   ############################################
+
+
+  def notify_if_changed(old_versions_list, new_versions_list)
+  when old_versions_list === new_versions_list, do: :ok
+  def notify_if_changed(_old_versions_list, new_versions_list) do
+    Phoenix.PubSub.broadcast(Mppm.PubSub, "server-versions", {:server_versions_update, new_versions_list})
+    :ok
+  end
 
   def add_new_version(%__MODULE__{} = new_version) do
 
@@ -245,6 +340,20 @@ defmodule Mppm.GameServer.DedicatedServer do
     end
   end
 
+  defp update_dedicated_status(status, %__MODULE__{version: version}, state) do
+    versions =
+      Enum.map(state.versions, fn dedicated_server ->
+        case dedicated_server.version == version do
+          true ->
+            new_dedi = Map.put(dedicated_server, :status, status)
+            Phoenix.PubSub.broadcast(Mppm.PubSub, "server-versions", {:status_updated, new_dedi})
+            new_dedi
+          false ->
+            dedicated_server
+        end
+      end)
+    {:ok, %{state | versions: versions}} |> IO.inspect(label: "UPDATE RETURNED")
+  end
 
   defp fresh_versions_list() do
     {:ok, list} = Mppm.Service.UbiNadeoApi.server_versions()
@@ -257,6 +366,7 @@ defmodule Mppm.GameServer.DedicatedServer do
 
   def start_link(_init_value), do: GenServer.start_link(__MODULE__, nil, name: __MODULE__)
   def init(_) do
+    Phoenix.PubSub.subscribe(Mppm.PubSub, "server-status")
     available_versions = fresh_versions_list()
     installed_versions =
       available_versions

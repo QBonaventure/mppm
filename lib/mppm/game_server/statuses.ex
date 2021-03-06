@@ -13,6 +13,11 @@ defmodule Mppm.ServersStatuses do
     Agent.get(__MODULE__, & &1)
   end
 
+  def server_id(server_login) do
+    server = Agent.get(__MODULE__, & Map.get(&1, server_login))
+    server.config.id
+  end
+
   def get_list_of_running() do
     Agent.get(__MODULE__, & &1)
     |> Enum.filter(& elem(&1, 1).status == :started)
@@ -61,7 +66,7 @@ defmodule Mppm.ServersStatuses do
 
   def update_server_status(login, status) when status in @allowed_statuses do
     Agent.update(__MODULE__, & Kernel.put_in(&1, [login, :status], status))
-    Phoenix.PubSub.broadcast(Mppm.PubSub, "server-status:"<>login, {status, login})
+    Phoenix.PubSub.broadcast(Mppm.PubSub, "server-status", {status, login})
   end
 
 

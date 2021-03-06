@@ -3,13 +3,21 @@
     <div class="dedicated-server-version <%= serv_ver.status  %>" id="dedicated-<%= serv_ver.version %>">
       <span class="version-name"><%= serv_ver.version %></span>
       <span class="version-status"><%= Phoenix.Naming.humanize(serv_ver.status) %></span>
-      <%= if serv_ver.status == :uninstalled do %>
-        <button name="Install" phx-click="remove-track-from-list" phx-value-version="<%= serv_ver.version %>">
-          <i class="fa fa-download"></i>
-        </button>
-      <% end %>
-      <%= if serv_ver.status == :downloading do %>
-        <div class="lds-ring"><div></div><div></div><div></div><div></div></div>
+      <%= case serv_ver.status do %>
+        <%= :uninstalled -> %>
+          <button name="Install" phx-click="install-server" phx-value-version="<%= serv_ver.version %>">
+            <i class="fa fa-download"></i>
+          </button>
+        <%= :installing -> %>
+          <button name="Install" disabled="disabled">
+            <i class="fa fa-angle-double-down animate__animated animate__heartBeat animate__infinite"></i>
+          </button>
+        <%= :installed -> %>
+          <button name="Uninstall" phx-click="uninstall-server" phx-value-version="<%= serv_ver.version %>">
+            <i class="fa fa-trash-alt"></i>
+          </button>
+        <%= :in_use -> %>
+          
       <% end %>
     </div>
   <% end %>

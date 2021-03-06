@@ -12,10 +12,9 @@
     <span class="spec-pwd">Spec. pwd</span>
     <span class="server-status">Status</span>
   </section>
-
   <div id="servers-list" phx-update="append">
-    <%= for {_server_login, server} <- @servers do %>
-      <%= live_component @socket, MppmWeb.Live.Component.ServerLine, id: server.config.id, server: server %>
+    <%= for server_id <- @servers_ids do %>
+      <%= live_component @socket, MppmWeb.Live.Component.ServerLine, id: server_id, server_versions: @server_versions %>
     <% end %>
   </div>
 </div>

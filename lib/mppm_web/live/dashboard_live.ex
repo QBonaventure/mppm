@@ -12,16 +12,15 @@ defmodule MppmWeb.DashboardLive do
   def mount(_params, session, socket) do
     servers = Mppm.ServersStatuses.all()
     servers_versions = Mppm.Service.UbiNadeoApi.server_versions() |> elem(1)
-    for {server_login, _} <- servers do
-      Phoenix.PubSub.subscribe(Mppm.PubSub, "server-status:"<>server_login)
-    end
+    servers_ids = Mppm.ServersStatuses.all() |> Enum.map(fn {_name, server} -> server.config.id end)
 
     socket =
       socket
       |> assign(new_server_changeset: Mppm.ServerConfig.create_server_changeset())
       |> assign(disabled_submit: true)
-      |> assign(servers: Mppm.ServersStatuses.all)
+      |> assign(servers_ids: servers_ids)
       |> assign(user_session: session)
+      |> assign(server_versions: Mppm.GameServer.DedicatedServer.ready_to_use_servers())
 
     {:ok, socket}
   end
@@ -43,21 +42,21 @@ defmodule MppmWeb.DashboardLive do
     {:noreply, socket}
   end
 
-  def handle_info({server_status, server_login}, socket)
-  when server_status in @statuses, do:
-    {:noreply, assign(socket, servers: Kernel.put_in(socket.assigns.servers, [server_login, :status], server_status))}
-
-
-  def handle_info(_unhandled_info, socket), do:
+  def handle_info({status, server_login}, socket)
+  when status in [:started, :starting, :stopped, :stopping] do
+    send_update(MppmWeb.Live.Component.ServerLine, id: Mppm.ServersStatuses.server_id(server_login), status: status)
     {:noreply, socket}
+  end
+
+  def handle_info(_unhandled_info, socket) do
+    {:noreply, socket}
+  end
 
 
 
   def handle_event("create-server", params, socket) do
     {:ok, server_config} = Mppm.ServerConfig.create_new_server(params["server_config"])
     Mppm.GameServer.Supervisor.start_server_supervisor(server_config)
-
-    Phoenix.PubSub.subscribe(Mppm.PubSub, "server-status:"<>server_config.login)
     socket =
       socket
       |> assign(servers: Mppm.ServersStatuses.all)
