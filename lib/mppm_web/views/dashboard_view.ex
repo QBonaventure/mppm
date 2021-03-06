@@ -16,6 +16,4 @@ defmodule MppmWeb.DashboardView do
   def get_status_icon(_, _login), do:
     "?"
 
-  def shorten_title_pack(value), do: value |> String.split("@") |> List.first()
-
 end

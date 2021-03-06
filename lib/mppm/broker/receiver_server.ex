@@ -9,7 +9,6 @@ defmodule Mppm.Broker.ReceiverServer do
 
 
   def open_connection(port) do
-    IO.inspect port
     :gen_tcp.connect({127, 0, 0, 1}, port, @xmlrpc_conn_opts)
   end
 

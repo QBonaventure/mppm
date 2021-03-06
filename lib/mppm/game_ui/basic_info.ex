@@ -92,8 +92,7 @@ defmodule Mppm.GameUI.BasicInfo do
   end
 
   def handle_info(unhandled_message, state) do
-    IO.puts "------------------------------------------------------------------------"
-    IO.inspect unhandled_message
+    IO.inspect unhandled_message, label: "GameUI.BasicInfo unhandled message"
     {:noreply, state}
   end
 

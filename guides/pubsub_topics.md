@@ -23,9 +23,17 @@
 - {:player_waypoint, server_login, user_login, waypoint_nb, time}
 - {:turn_start, server_login}
 
+## "server-version-status"
+- {:new_server_version, server_version_nb}
+
+## "server-status"
+- {:starting, server_login}
+- {:started, server_login}
+- {:start_failed, server_login}
+- {:stopping, server_login}
+- {:stopped, server_login}
 
 ## "server-status:*"
-
 - {:new_chat_message, chat_message}
 - {:beginmatch}
 - {:endmatch}
@@ -38,6 +46,7 @@
 - {:podium_start, server_login}
 - {:podium_end, server_login}
 - {:broker_started, state.login}
+- {:version_change, server_version}
 
 
 ## "broker-status:*"
