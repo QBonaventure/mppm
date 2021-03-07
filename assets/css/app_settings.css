@@ -7,6 +7,7 @@
   border: 1px solid lightgrey;
   margin: 10px 4px;
   height: 40px;
+  position: relative;
 }
 
 .dedicated-server-version {
@@ -21,67 +22,36 @@
   border: 1px solid green;
 }
 .dedicated-server-version .version-name {
-  position: relative;
+  position: absolute;
   font-weight: bold;
-  top: -12px;
+  top: -7px;
   left: 7px;
   background-color: white;
   padding: 0 4px;
+  float: left;
+  line-height: 14px
 }
 
 .dedicated-server-version .version-status {
-  position: relative;
+  position: absolute;
   top: 10px;
-  left: -50px;
+  left: 8px;
+  float: left;
 }
 
 .dedicated-server-version button {
+  position: absolute;
   font-size: 18px;
   float: right;
   padding: 0;
   height: 30px;
   width: 25px;
-  position: relative;
-  top: -18px;
+  top: 4px;
   right: 3px;
+  margin: 0;
 }
 .dedicated-server-version button i {
   position: relative;
-  top: -4px;
-}
-
-.lds-ring {
-  display: inline-block;
-  position: relative;
-  width: 80px;
-  height: 80px;
-}
-.lds-ring div {
-  box-sizing: border-box;
-  display: block;
-  position: absolute;
-  width: 64px;
-  height: 64px;
-  margin: 8px;
-  border: 8px solid #fff;
-  border-radius: 50%;
-  animation: lds-ring 1.2s cubic-bezier(0.5, 0, 0.5, 1) infinite;
-  border-color: #fff transparent transparent transparent;
-}
-.lds-ring div:nth-child(1) {
-  animation-delay: -0.45s;
-}
-.lds-ring div:nth-child(2) {
-  animation-delay: -0.3s;
-}
-.lds-ring div:nth-child(3) {
-  animation-delay: -0.15s;
-}
-@keyframes lds-ring {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
+  top: -5px;
+  margin: 0;
 }
