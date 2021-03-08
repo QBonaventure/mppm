@@ -66,7 +66,31 @@ defmodule Mppm.ServerConfig do
 
   @required [:login, :password, :max_players]
   @users_pwd [:superadmin_pass, :admin_pass, :user_pass]
-  def create_server_changeset(%ServerConfig{} = server_config \\ %ServerConfig{}, data \\ %{}) do
+  def new_config(data \\ %{}) do
+    data =
+      defaults_missing_passwords(data)
+      |> Map.put_new("mode_id", 1)
+
+    %Mppm.ServerConfig{}
+    |> cast(data, [
+      :login, :password, :name, :comment, :player_pwd, :spec_pwd,
+      :max_players, :superadmin_pass, :admin_pass, :user_pass,
+      :ip_address, :client_inputs_max_latency, :connection_upload_rate,
+      :connection_download_rate, :packet_assembly_multithread, :packets_per_frame,
+      :full_packets_per_frame, :visuals_delay, :trust_client_to_server_sending_rate,
+      :visuals_server_to_client_sending_rate, :disable_replay_recording, :workers_nb,
+      :version,
+      ])
+    |> put_assoc(:ruleset, %Mppm.GameRules{mode_id: 1})
+    |> validate_required(@required)
+  end
+
+
+  @required [:login, :password, :max_players]
+  @users_pwd [:superadmin_pass, :admin_pass, :user_pass]
+  def create_server_changeset(data \\ %{}), do:
+    create_server_changeset(%ServerConfig{}, data)
+  def create_server_changeset(%ServerConfig{} = server_config, data) do
     data =
       defaults_missing_passwords(data)
       |> Map.put_new("mode_id", 1)
@@ -83,6 +107,7 @@ defmodule Mppm.ServerConfig do
       ])
     |> put_assoc(:ruleset, %Mppm.GameRules{mode_id: 1})
     |> validate_required(@required)
+    |> unique_constraint(:login, name: :uk_server_configs_login)
   end
 
   def changeset(%ServerConfig{} = config, params \\ %{}) do
@@ -98,20 +123,20 @@ defmodule Mppm.ServerConfig do
   end
 
 
-  def create_new_server(game_server_config) do
-    result =
-      %ServerConfig{}
-      |> ServerConfig.create_server_changeset(game_server_config)
-      |> Repo.insert
-
-    case result do
-      {:ok, server_config} ->
-        tracks = Enum.map(Mppm.Track.get_random_tracks(1), & &1)
-        GenServer.cast(Mppm.Tracklist, {:upsert_tracklist, %Mppm.Tracklist{server_id: server_config.id, tracks: tracks}})
-        result
-      _ -> result
-    end
-  end
+  # def insert(changeset)
+  # when changeset.data =  do
+  #   case Repo.insert(changeset)
+  #   |> ServerConfig.create_server_changeset(game_server_config)
+  #   |>
+  #
+  #   # case result do
+  #   #   {:ok, server_config} ->
+  #   #     tracks =
+  #   #     GenServer.call(Mppm.Tracklist, {:upsert_tracklist, %Mppm.Tracklist{server_id: server_config.id, tracks: tracks}})
+  #   #     result
+  #   #   _ -> result
+  #   # end
+  # end
 
 
   def update(changeset) do

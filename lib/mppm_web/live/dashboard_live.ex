@@ -32,9 +32,9 @@ defmodule MppmWeb.DashboardLive do
 
     case Ecto.Changeset.apply_action(changeset, :insert) do
       {:error, changeset} ->
-        {:ok, changeset}
+        {:ok, {:invalid, changeset}}
       {:ok, _ } ->
-        {:ok, changeset}
+        {:ok, {:valid, changeset}}
     end
   end
 
@@ -54,20 +54,25 @@ defmodule MppmWeb.DashboardLive do
 
 
 
-  def handle_event("create-server", params, socket) do
-    {:ok, server_config} = Mppm.ServerConfig.create_new_server(params["server_config"])
-    Mppm.GameServer.Supervisor.start_server_supervisor(server_config)
+  def handle_event("create-server", %{"server_config" => params}, socket) do
     socket =
-      socket
-      |> assign(servers: Mppm.ServersStatuses.all)
-      |> assign(new_server_changeset: Mppm.ServerConfig.create_server_changeset())
-
+      with {:ok, {:valid, changeset}} <- get_changeset(params),
+        {:ok, server_config} <- Mppm.GameServer.Server.create_new_server(changeset) do
+          socket
+          |> assign(servers_ids: socket.assigns.servers_ids ++ [server_config.id])
+          |> assign(new_server_changeset: Mppm.ServerConfig.create_server_changeset())
+      else
+        {:ok, {:invalid, changeset}} ->
+          assign(socket, new_server_changeset: changeset)
+        {:error, {:insert_fail, changeset}} ->
+          assign(socket, new_server_changeset: changeset)
+      end
     {:noreply, socket}
   end
 
 
   def handle_event("validate", params, socket) do
-    {:ok, changeset} =  get_changeset(params["server_config"])
+    {:ok, {_status, changeset}} =  get_changeset(params["server_config"])
     {:noreply, assign(socket, new_server_changeset: changeset)}
   end
 

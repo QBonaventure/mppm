@@ -173,7 +173,7 @@ defmodule MppmWeb.ServerManagerLive do
       |> List.pop_at(Enum.find_index(tracklist.tracks, & &1.id == track_id))
     tracklist = %{tracklist | tracks: List.insert_at(tracks_collection, params["index"], track)}
 
-    :ok = GenServer.cast(Mppm.Tracklist, {:upsert_tracklist, tracklist})
+    {:ok, tracklist} = GenServer.call(Mppm.Tracklist, {:upsert_tracklist, tracklist})
     {:noreply, assign(socket, tracklist: tracklist)}
   end
 
@@ -182,7 +182,7 @@ defmodule MppmWeb.ServerManagerLive do
     {track_id, ""} = Integer.parse(track_id)
     tracklist = Mppm.Tracklist.reindex_for_next_track(socket.assigns.tracklist, track_id)
 
-    GenServer.cast(Mppm.Tracklist, {:upsert_tracklist, tracklist})
+    GenServer.call(Mppm.Tracklist, {:upsert_tracklist, tracklist})
     GenServer.cast(broker_pname(socket.assigns.server_info.login), :skip_map)
 
     {:noreply, assign(socket, tracklist: tracklist)}
@@ -191,7 +191,7 @@ defmodule MppmWeb.ServerManagerLive do
   def handle_event("remove-track-from-list", params, socket) do
     {track_id, ""} = Integer.parse(Map.get(params, "track-id"))
     tracklist = Mppm.Tracklist.remove_track(socket.assigns.tracklist, track_id)
-    GenServer.cast(Mppm.Tracklist, {:upsert_tracklist, tracklist})
+    GenServer.call(Mppm.Tracklist, {:upsert_tracklist, tracklist})
     {:noreply, assign(socket, tracklist: tracklist)}
   end
 

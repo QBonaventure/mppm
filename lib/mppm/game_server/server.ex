@@ -28,6 +28,20 @@ defmodule Mppm.GameServer.Server do
   end
 
 
+
+  def create_new_server(%Ecto.Changeset{data: %Mppm.ServerConfig{}} = server_config_changeset) do
+    with {:ok, server_config} <- Mppm.Repo.insert(server_config_changeset),
+      %Mppm.Tracklist{} <- Mppm.Tracklist.new_server_tracklist(server_config)
+    do
+      {:ok, _pid} = Mppm.GameServer.Supervisor.start_server_supervisor(server_config)
+      {:ok, server_config}
+    else
+      {:error, %Ecto.Changeset{} = changeset} ->
+        {:error, {:insert_fail, changeset}}
+    end
+  end
+
+
   ############################################
   ########### GenServer callbacks ############
   ############################################

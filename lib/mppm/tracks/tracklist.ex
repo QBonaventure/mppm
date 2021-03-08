@@ -56,6 +56,12 @@ defmodule Mppm.Tracklist do
     tracklist
   end
 
+  def new_server_tracklist(%Mppm.ServerConfig{id: server_id}) do
+    tracks = Mppm.Track.get_random_tracks(1)
+    tracklist = %Mppm.Tracklist{server_id: server_id, tracks: tracks}
+    GenServer.call(__MODULE__, {:upsert_tracklist, tracklist})
+  end
+
 
   @doc """
     Adds a track to the tracklist. Downloads it if it doesn't exist yet.
@@ -117,19 +123,18 @@ defmodule Mppm.Tracklist do
     {:reply, Map.get(state, server_login), state}
   end
 
+  def handle_call({:upsert_tracklist, tracklist}, _from, state) do
+    tracklist = Mppm.Tracklist.upsert_tracklist(tracklist) |> Mppm.Repo.preload(:server)
+    Phoenix.PubSub.broadcast(Mppm.PubSub, "tracklist-status", {:tracklist_update, tracklist.server.login, tracklist})
+    {:reply, tracklist, Map.put(state, tracklist.server.login, tracklist)}
+  end
+
   def handle_cast({:insert_track, server_login, %Mppm.Track{} = track, index}, state) do
     tracklist = Map.get(state, server_login) |> add_track(track, index)
     Mppm.Tracklist.upsert_tracklist(tracklist)
     Phoenix.PubSub.broadcast(Mppm.PubSub, "tracklist-status", {:tracklist_update, server_login, tracklist})
     {:noreply, %{state | server_login => tracklist}}
   end
-
-  def handle_cast({:upsert_tracklist, tracklist}, state) do
-    tracklist = Mppm.Tracklist.upsert_tracklist(tracklist) |> Mppm.Repo.preload(:server)
-    Phoenix.PubSub.broadcast(Mppm.PubSub, "tracklist-status", {:tracklist_update, tracklist.server.login, tracklist})
-    {:noreply, Map.put(state, tracklist.server.login, tracklist)}
-  end
-
 
   def handle_info({message, server_login, uuid}, state)
   when message in [:current_track_info, :loaded_map] do
