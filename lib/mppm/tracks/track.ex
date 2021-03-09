@@ -32,7 +32,6 @@ defmodule Mppm.Track do
 
   @spec track_from_mx(map) :: %Mppm.Track{}
   def track_from_mx(%{} = mx_track) do
-    user = %Mppm.User{nickname: mx_track["Username"]}
     style =
       case mx_track["StyleName"] do
         nil -> Mppm.Repo.get(Mppm.TrackStyle, 1)

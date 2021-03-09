@@ -6,11 +6,7 @@ defmodule MppmWeb.SystemOverviewLive do
   end
 
 
-  def mount(_params, session, socket) do
-
-    socket =
-      socket
-
+  def mount(_params, _session, socket) do
     {:ok, socket}
   end
 

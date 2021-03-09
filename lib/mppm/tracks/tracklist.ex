@@ -159,7 +159,6 @@ defmodule Mppm.Tracklist do
 
   def init(_init_value) do
     Phoenix.PubSub.subscribe(Mppm.PubSub, "maps-status")
-      Phoenix.PubSub.subscribe(Mppm.PubSub, "servers-supervisors")
     state = fetch_all_tracklists()
     # {:ok, state, {:continue, :check_files}}
     {:ok, state}

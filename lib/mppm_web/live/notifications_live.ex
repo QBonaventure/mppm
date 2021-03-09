@@ -6,7 +6,7 @@ defmodule MppmWeb.NotificationsLive do
   end
 
 
-  def mount(_params, session, socket) do
+  def mount(_params, _session, socket) do
     :ok = Phoenix.PubSub.subscribe(Mppm.PubSub, "notifications")
 
     socket =

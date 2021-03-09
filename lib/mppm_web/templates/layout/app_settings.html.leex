@@ -4,20 +4,20 @@
       <span class="version-name"><%= serv_ver.version %></span>
       <span class="version-status"><%= Phoenix.Naming.humanize(serv_ver.status) %></span>
       <%= case serv_ver.status do %>
-        <%= :uninstalled -> %>
+        <% :uninstalled -> %>
           <button name="Install" phx-click="install-server" phx-value-version="<%= serv_ver.version %>">
             <i class="fa fa-download"></i>
           </button>
-        <%= :installing -> %>
+        <% :installing -> %>
           <button name="Install" disabled="disabled">
             <i class="fa fa-angle-double-down animate__animated animate__heartBeat animate__infinite"></i>
           </button>
-        <%= :installed -> %>
+        <% :installed -> %>
           <button name="Uninstall" phx-click="uninstall-server" phx-value-version="<%= serv_ver.version %>">
             <i class="fa fa-trash-alt"></i>
           </button>
-        <%= :in_use -> %>
-          
+        <% :in_use -> %>
+
       <% end %>
     </div>
   <% end %>

@@ -1,8 +1,7 @@
 defmodule Mppm.Application do
   require Logger
   use Application
-
-  @root_path Application.get_env(:mppm, :game_servers_root_path)
+  
 
   def start(_type, _args) do
     Mppm.GameServer.DedicatedServer.check_install()

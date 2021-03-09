@@ -4,7 +4,6 @@ defmodule Mppm.Service.ManiaExchange do
   @mx_maps_info "https://trackmania.exchange/api/maps/get_map_info/multi/"
   @mx_track_search_uri "https://trackmania.exchange/mapsearch2/search"
   @download_track_url "https://trackmania.exchange/tracks/download/"
-  @latest_awarded_maps_url @mx_track_search_uri <> "?mode=4&api=on"
 
 
   def get_maps_info(maps_ids) when is_list(maps_ids) do

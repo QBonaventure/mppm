@@ -3,7 +3,6 @@ defmodule MppmWeb.Live.Component.ServerLine do
   alias MppmWeb.DashboardView
   alias Mppm.GameServer.{Server,DedicatedServer}
   alias Mppm.ServerConfig
-  import Ecto.Changeset
 
   def preload(assigns) do
     configs = Mppm.Repo.all(Mppm.ServerConfig)
@@ -49,7 +48,6 @@ defmodule MppmWeb.Live.Component.ServerLine do
   def handle_event("switch-version-and-restart", %{"server_config" => %{"version" => version}}, socket) do
     server = socket.assigns.server
     server_config = Mppm.ServerConfig.get_server_config(server.login)
-    server_name = server.login
     {:ok, dedi_server} = DedicatedServer.get(String.to_integer(version))
 
     {:ok, updated_config} = ServerConfig.change_version(server.login, dedi_server)
@@ -77,21 +75,5 @@ defmodule MppmWeb.Live.Component.ServerLine do
     {:noreply, socket}
   end
 
-  # def handle_info("server-status", {:started, server_login})
-  # when server_login in [:starting, :started, :start_failed, :stopping, :stopped] do
-  #
-  # end
-  #
-  # def handle_info("status-change", socket) do
-  #   {:noreply, socket}
-  # end
-
-  defp from_server_assign(%{config: %Mppm.ServerConfig{id: id, login: login} = config, status: status}), do:
-    %{id: id, login: login, status: status, config: config}
-
-  defp version_changeset(version, data \\ %{}) do
-    data
-    |> cast(data, [:version])
-  end
 
 end

@@ -167,7 +167,7 @@ defmodule Mppm.ServerConfig do
         Mppm.ServersStatuses.update_server_config(server_login, new_config)
         Phoenix.PubSub.broadcast(Mppm.PubSub, "server-status", {:version_change, server_login, server_version})
         result
-      {:error, changeset} = result ->
+      {:error, _changeset} = result ->
         result
     end
   end

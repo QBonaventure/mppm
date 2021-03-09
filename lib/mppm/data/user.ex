@@ -17,7 +17,7 @@ defmodule Mppm.User do
     %Mppm.User{uuid: uuid, login: login, nickname: nickname}
 
 
-  def new_changeset(%User{} = user, %{uuid: uuid, nickname: nickname} = data)
+  def new_changeset(%User{} = user, %{uuid: uuid, nickname: _nickname} = data)
   when not is_nil(uuid) do
     data = Map.put(data, :login, uuid_to_login(uuid))
     user
@@ -25,7 +25,7 @@ defmodule Mppm.User do
     |> validate_required([:login, :nickname, :uuid])
   end
 
-  def new_changeset(%User{} = user, %{login: login, nickname: nickname} = data)
+  def new_changeset(%User{} = user, %{login: login, nickname: _nickname} = data)
   when not is_nil(login) do
     data = Map.put(data, :uuid, login_to_uuid(login))
     user

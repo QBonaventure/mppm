@@ -1,6 +1,5 @@
 defmodule Mppm.Note do
   use Ecto.Schema
-  import Ecto.Query
   import Ecto.Changeset
 
   schema "notifications" do

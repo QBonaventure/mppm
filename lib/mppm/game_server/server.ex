@@ -4,7 +4,6 @@ defmodule Mppm.GameServer.Server do
   use GenServer
   alias Mppm.ServerConfig
 
-  @config Application.get_env(:mppm, Mppm.Trackmania)
   @msg_waiting_ports "Waiting for game server ports to open..."
   @max_start_attempts 20
   @start_timeout 12000
@@ -122,33 +121,6 @@ defmodule Mppm.GameServer.Server do
     {:reply, state, state}
   end
 
-  def handle_cast({:relink_orphan_process, {login, pid, xmlrpc_port} = ss}, state) do
-    Mppm.Broker.Supervisor.child_spec(state.config, xmlrpc_port)
-    |> Mppm.GameServer.Supervisor.start_child
-
-    Mppm.ServersStatuses.update_server_status(login, :started)
-    state = %{state |
-      status: :started,
-      xmlrpc_port: xmlrpc_port,
-      listening_ports: %{xmlrpc: xmlrpc_port},
-      port: nil,
-      os_pid: pid,
-      rewrite_ruleset?: false,
-      rewrite_config?: false,
-      rewrite_tracklist?: false,
-      reload_match_settings?: false,
-      game_mode_id: nil
-    }
-
-    {:noreply, state}
-  end
-
-
-  def handle_cast(:closing_port, state) do
-    Mppm.ServersStatuses.update_server_status(state.config.login, :stopped)
-    {:noreply, %{state | exit_status: :port_closed, status: :stopped}}
-  end
-
 
   def handle_call(:pid, _, state) do
     {:reply, self(), state}
@@ -177,6 +149,33 @@ defmodule Mppm.GameServer.Server do
     {:reply, state.game_mode_id, state}
   end
 
+
+  def handle_cast({:relink_orphan_process, {login, pid, xmlrpc_port}}, state) do
+    Mppm.Broker.Supervisor.child_spec(state.config, xmlrpc_port)
+    |> Mppm.GameServer.Supervisor.start_child
+
+    Mppm.ServersStatuses.update_server_status(login, :started)
+    state = %{state |
+      status: :started,
+      xmlrpc_port: xmlrpc_port,
+      listening_ports: %{xmlrpc: xmlrpc_port},
+      port: nil,
+      os_pid: pid,
+      rewrite_ruleset?: false,
+      rewrite_config?: false,
+      rewrite_tracklist?: false,
+      reload_match_settings?: false,
+      game_mode_id: nil
+    }
+
+    {:noreply, state}
+  end
+
+
+  def handle_cast(:closing_port, state) do
+    Mppm.ServersStatuses.update_server_status(state.config.login, :stopped)
+    {:noreply, %{state | exit_status: :port_closed, status: :stopped}}
+  end
 
 
   def handle_info({:ruleset_change, server_login, _ruleset_or_tracklist}, state) do
@@ -277,7 +276,7 @@ defmodule Mppm.GameServer.Server do
   ############ Private functions #############
   ############################################
 
-  defp broadcast(server_login, msg) do
+  defp broadcast(_server_login, msg) do
     Phoenix.PubSub.broadcast(Mppm.PubSub, "server-status", msg)
   end
 

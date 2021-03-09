@@ -3,16 +3,16 @@ defmodule Mppm.FileManager.DownloadTask do
   require Logger
 
 
-  def handle_info(%HTTPoison.AsyncStatus{code: 200} = ss, state) do
+  def handle_info(%HTTPoison.AsyncStatus{code: 200}, state) do
     {:noreply, state}
   end
 
-  def handle_info(%HTTPoison.AsyncHeaders{headers: headers} = dsf, state) do
+  def handle_info(%HTTPoison.AsyncHeaders{headers: headers}, state) do
     {"Content-Length", file_size} = Enum.find(headers, & elem(&1, 0) == "Content-Length")
     {:noreply, %{state | file_size: String.to_integer(file_size)}}
   end
 
-  def handle_info(%HTTPoison.AsyncChunk{chunk: chunk} = qq, state) do
+  def handle_info(%HTTPoison.AsyncChunk{chunk: chunk}, state) do
     IO.binwrite(state.file_pid, chunk)
     {:noreply, %{state | downloaded: state.downloaded + byte_size(chunk)}}
   end

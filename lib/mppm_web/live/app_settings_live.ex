@@ -17,13 +17,11 @@ defmodule MppmWeb.AppSettingsLive do
     {:ok, socket}
   end
 
-  def handle_info({:server_versions_update, versions}, socket) do
-    {:noreply, assign(socket, server_versions: versions)}
-  end
 
-  def handle_params(%{}, uri, socket) do
+  def handle_params(%{}, _uri, socket) do
     {:noreply, socket}
   end
+
 
   ##############################################################################
   ################################### EVENTS ###################################
@@ -34,14 +32,21 @@ defmodule MppmWeb.AppSettingsLive do
     {:noreply, socket}
   end
 
+
   def handle_event("uninstall-server", %{"version" => version}, socket) do
     Mppm.GameServer.DedicatedServer.uninstall_game_server(String.to_integer(version))
     {:noreply, socket}
   end
 
+
   ##############################################################################
   ################################## MESSAGES ##################################
   ##############################################################################
+
+  def handle_info({:server_versions_update, versions}, socket) do
+    {:noreply, assign(socket, server_versions: versions)}
+  end
+
 
   def handle_info({:status_updated, %Mppm.GameServer.DedicatedServer{} = dedi}, socket) do
     server_versions = Enum.map(socket.assigns.server_versions, fn serv_ver ->

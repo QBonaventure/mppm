@@ -1,8 +1,6 @@
 defmodule MppmWeb.DashboardLive do
   use Phoenix.LiveView
 
-  @statuses Mppm.ServersStatuses.get_statuses_list()
-
 
   def render(assigns) do
     MppmWeb.DashboardView.render("index.html", assigns)
@@ -34,7 +32,7 @@ defmodule MppmWeb.DashboardLive do
     end
   end
 
-  def handle_params(%{}, uri, socket) do
+  def handle_params(%{}, _uri, socket) do
     {:noreply, socket}
   end
 
@@ -68,7 +66,7 @@ defmodule MppmWeb.DashboardLive do
 
   def handle_event("delete-game-server", %{"server-id" => server_id}, socket) do
     server_id = String.to_integer(server_id)
-    {:ok, server_config} =
+    {:ok, _server_config} =
       Mppm.Repo.get(Mppm.ServerConfig, server_id)
       |> Mppm.GameServer.Server.delete_game_server()
     servers_ids = Enum.reject(socket.assigns.servers_ids, & &1 == server_id)

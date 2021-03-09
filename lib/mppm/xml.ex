@@ -22,12 +22,11 @@ defmodule Mppm.XML do
       |> attributes_to_map()
       |> Map.merge(header)
 
-    dd =
-      parsed_data
-      |> elem(8)
-      |> Enum.at(1)
-      |> attributes_to_map()
-      |> Map.merge(info)
+    parsed_data
+    |> elem(8)
+    |> Enum.at(1)
+    |> attributes_to_map()
+    |> Map.merge(info)
   end
 
   defp attributes_to_map(data) do

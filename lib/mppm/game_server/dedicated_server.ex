@@ -20,7 +20,7 @@ defmodule Mppm.GameServer.DedicatedServer do
       status: atom(),
   }
   @type version :: pos_integer()
-  @type download_link :: string()
+  @type download_link :: String.t()
   @type release_datetime :: DateTime.t()
 
 
@@ -230,7 +230,7 @@ defmodule Mppm.GameServer.DedicatedServer do
   end
 
 
-  def handle_info({:version_change, server_login, %__MODULE__{} = _version}, state) do
+  def handle_info({:version_change, _server_login, %__MODULE__{} = _version}, state) do
     in_use_dedicated = in_use_servers()
     versions =
       state.versions
@@ -259,10 +259,6 @@ defmodule Mppm.GameServer.DedicatedServer do
   def notify_if_changed(_old_versions_list, new_versions_list) do
     Phoenix.PubSub.broadcast(Mppm.PubSub, "server-versions", {:server_versions_update, new_versions_list})
     :ok
-  end
-
-  def add_new_version(%__MODULE__{} = new_version) do
-
   end
 
   defp server_version_installed?(version), do:
@@ -323,7 +319,6 @@ defmodule Mppm.GameServer.DedicatedServer do
       Logger.info "No game server detected, installing the latest one..."
       Logger.info "Downloading files..."
       {:ok, %{"download_link" => download_link, "version" => version}} = Mppm.Service.UbiNadeoApi.latest_server_version()
-      install_path = "#{@root_path}TrackmaniaServer_#{version}"
       zip_path = "/tmp/TrackmaniaServer_#{version}.zip"
 
       {:ok, %HTTPoison.Response{body: body}} = HTTPoison.get(download_link)
@@ -352,7 +347,7 @@ defmodule Mppm.GameServer.DedicatedServer do
             dedicated_server
         end
       end)
-    {:ok, %{state | versions: versions}} |> IO.inspect(label: "UPDATE RETURNED")
+    {:ok, %{state | versions: versions}}
   end
 
   defp fresh_versions_list() do

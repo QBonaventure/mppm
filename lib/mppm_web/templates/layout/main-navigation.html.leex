@@ -6,7 +6,7 @@
       <li>
         <span>Servers</span>
         <ul>
-          <%= for {id, name} <- @servers do %>
+          <%= for {_id, name} <- @servers do %>
             <li><a href="/<%= name %>"><%= name %></a></li>
           <% end %>
         </ul>

@@ -1,6 +1,5 @@
 defmodule Mppm.Session.UserSession do
   alias __MODULE__
-  alias Mppm.Repo
   alias Mppm.Session.AgentStore
   alias Ecto.Changeset
   import Plug.Conn
