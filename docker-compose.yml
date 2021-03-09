@@ -5,7 +5,7 @@ services:
     env_file:
       - .env
     volumes:
-      - db-data:/var/lib/postgresql/data
+      - mppm-db-data:/var/lib/postgresql/data
     ports:
       - "5432"
   mppm:
@@ -14,7 +14,7 @@ services:
     env_file:
       - .env
     volumes:
-      - game_server:/opt/mppm/TrackmaniaServer
+      - mppm-data:/opt/mppm/game_servers
     ports:
       - "${MPPM_PORT}:${MPPM_PORT}"
       - "2350-2400:2350-2400"
@@ -24,7 +24,7 @@ services:
     depends_on:
       - db
 volumes:
-  game_server:
+  mppm-data:
     external: true
-  db-data:
+  mppm-db-data:
     external: true
