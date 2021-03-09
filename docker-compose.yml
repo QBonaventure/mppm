@@ -9,7 +9,7 @@ services:
     ports:
       - "5432"
   mppm:
-    image: qbonaventure/mppm:0.1.1
+    image: qbonaventure/mppm:0.2.1
     tty: true
     env_file:
       - .env

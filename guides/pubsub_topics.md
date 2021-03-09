@@ -32,6 +32,9 @@
 - {:start_failed, server_login}
 - {:stopping, server_login}
 - {:stopped, server_login}
+- {:created, Mppm.ServerConfig.t()}
+- {:deleted, Mppm.ServerConfig.t()}
+- {:updated, Mppm.ServerConfig.t()}
 
 ## "server-status:*"
 - {:new_chat_message, chat_message}

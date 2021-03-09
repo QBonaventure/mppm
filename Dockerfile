@@ -1,5 +1,8 @@
-FROM elixir:1.10
+################################################################################
+################################## APP BUILD ###################################
+################################################################################
 
+FROM elixir:1.10-slim as app-build
 
 RUN apt-get update && apt-get install -y \
   curl \
@@ -15,29 +18,43 @@ RUN mix local.hex --force && \
   mix local.rebar --force && \
   mix archive.install --force hex phx_new
 
-COPY mix.exs /app/
-
-COPY deps ./deps
-RUN ["mix", "deps.get"]
-RUN ["mix", "deps.compile"]
-
+WORKDIR /app
+COPY mix.exs mix.lock README.md LICENSE.md ./
 COPY assets ./assets
-WORKDIR /app/assets
-RUN ["npm", "install"]
+
+COPY lib ./lib
+COPY priv ./priv
+COPY config ./config
+RUN ls /app
+
+WORKDIR /app/config
+RUN for file in *.dist; do cp "$file" "${file%.*}"; done
+RUN ls .
 
 WORKDIR /app
+RUN mix do deps.get, deps.compile
+RUN MIX_ENV=prod mix compile
 
-COPY config/config.exs.dist ./config/config.exs
-COPY config/prod.exs.dist ./config/prod.exs
-COPY config/dev.exs.dist ./config/dev.exs
-COPY config/secret.exs.dist ./config/secret.exs
+RUN npm run deploy --prefix ./assets
+RUN mix phx.digest
 
-COPY README.md ./
-COPY LICENSE.md ./
-COPY .gitignore ./
 
-COPY priv ./priv
-COPY lib ./lib
+################################################################################
+################################# FINAL LAYER ##################################
+################################################################################
+
+from elixir:1.10-slim
+
+COPY --from=app-build /app/_build /app/_build
+COPY --from=app-build /app/priv /app/priv
+COPY --from=app-build /app/lib /app/lib
+COPY --from=app-build /app/deps /app/deps
+COPY --from=app-build /app/mix.* /app/
+COPY --from=app-build /app/mix.* /app/
+
+RUN mix local.hex --force
+
+WORKDIR /app
 
 COPY docker-entrypoint.sh /
 RUN chmod +x /docker-entrypoint.sh
