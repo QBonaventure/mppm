@@ -10,7 +10,7 @@ use Mix.Config
 # which you should run after static files are built and
 # before starting your production server.
 config :mppm, MppmWeb.Endpoint,
-  url: [host: System.get_env("MPPM_HOST"), port: System.get_env("MPPM_PORT")],
+  http: [port: System.get_env("MPPM_PORT")],
   cache_static_manifest: "priv/static/cache_manifest.json"
 
 # Do not print debug messages in production
@@ -37,4 +37,4 @@ config :mppm, Mppm.Service.Trackmania,
   site: "https://trackmania.com",
   response_type: "code"
 
-import_config "secret.exs"
+import_config "#{Mix.env()}.secret.exs"
