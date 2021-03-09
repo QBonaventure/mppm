@@ -27,6 +27,17 @@ defmodule Mppm.GameServer.Server do
     Mppm.Repo.one(from r in Mppm.GameRules, select: r.mode_id, where: r.server_id == ^server_id)
   end
 
+  def ids_list() do
+    Mppm.Repo.all(from s in Mppm.ServerConfig, select: s.id, order_by: s.id)
+  end
+
+
+  def delete_game_server(%Mppm.ServerConfig{} = server_config) do
+    {:ok, server_config} = Mppm.Repo.delete(server_config)
+    broadcast("server-status", {:deleted, server_config})
+    {:ok, server_config}
+  end
+
 
 
   def create_new_server(%Ecto.Changeset{data: %Mppm.ServerConfig{}} = server_config_changeset) do

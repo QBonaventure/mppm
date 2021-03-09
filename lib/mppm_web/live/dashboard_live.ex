@@ -10,15 +10,11 @@ defmodule MppmWeb.DashboardLive do
 
 
   def mount(_params, session, socket) do
-    servers = Mppm.ServersStatuses.all()
-    servers_versions = Mppm.Service.UbiNadeoApi.server_versions() |> elem(1)
-    servers_ids = Mppm.ServersStatuses.all() |> Enum.map(fn {_name, server} -> server.config.id end)
-
     socket =
       socket
       |> assign(new_server_changeset: Mppm.ServerConfig.create_server_changeset())
       |> assign(disabled_submit: true)
-      |> assign(servers_ids: servers_ids)
+      |> assign(servers_ids: Mppm.GameServer.Server.ids_list())
       |> assign(user_session: session)
       |> assign(server_versions: Mppm.GameServer.DedicatedServer.ready_to_use_servers())
 
@@ -68,6 +64,15 @@ defmodule MppmWeb.DashboardLive do
           assign(socket, new_server_changeset: changeset)
       end
     {:noreply, socket}
+  end
+
+  def handle_event("delete-game-server", %{"server-id" => server_id}, socket) do
+    server_id = String.to_integer(server_id)
+    {:ok, server_config} =
+      Mppm.Repo.get(Mppm.ServerConfig, server_id)
+      |> Mppm.GameServer.Server.delete_game_server()
+    servers_ids = Enum.reject(socket.assigns.servers_ids, & &1 == server_id)
+    {:noreply, assign(socket, servers_ids: servers_ids)}
   end
 
 

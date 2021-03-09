@@ -8,14 +8,17 @@
   <span class="max-pl"><%= @server.max_players %></span>
   <span class="players-pwd"><%= @server.player_pwd %></span>
   <span class="spec-pwd"><%= @server.spec_pwd %></span>
-  <span class="server-status">
-    <%= DashboardView.get_status_icon(@status, @server.login) %>
-  </span>
 
   <span class="server-version">
     <%= f = form_for @version_changeset, "#", [phx_change: "change-version", phx_target: @myself, phx_submit: "switch-version-and-restart"] %>
       <%= select f, :version, Enum.map(@servers_versions, & &1.version) %>
       <%= submit "OK & Restart?", disabled: !Map.has_key?(@version_changeset.changes, :version) %>
     </form>
+  </span>
+  <span class="server-status">
+    <%= DashboardView.get_status_icon(@status, @server.login) %>
+  </span>
+  <span class="delete-game-server" phx-click="delete-game-server" phx-value-server-id="<%= @server.id %>">
+    <i class="fa fa-trash-alt"></i>
   </span>
 </section>

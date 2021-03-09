@@ -31,8 +31,6 @@ defmodule MppmWeb.Live.Component.ServerLine do
   end
 
   def render(assigns) do
-    :ok = Phoenix.PubSub.subscribe(Mppm.PubSub, "server-status:"<>assigns.server.login)
-    # assigns = Map.put(assigns, :version_changeset, Mppm.ServerConfig.changeset(assigns.server.config))
     DashboardView.render("server-line.html", assigns)
   end
 
