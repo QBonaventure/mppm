@@ -18,7 +18,7 @@ config :mppm, MppmWeb.Endpoint,
   url: [host: System.get_env("MPPM_HOST"), port: System.get_env("MPPM_PORT")],
   secret_key_base: System.get_env("MPPM_APP_SECRET"),
   render_errors: [view: MppmWeb.ErrorView, accepts: ~w(html json)],
-  pubsub: [name: Mppm.PubSub, adapter: Phoenix.PubSub.PG2],
+  pubsub_server: Mppm.PubSub,
   live_view: [
     signing_salt: System.get_env("MPPM_APP_SALT")
   ]

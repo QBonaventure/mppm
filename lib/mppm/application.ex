@@ -8,6 +8,7 @@ defmodule Mppm.Application do
     Mppm.GameServer.DedicatedServer.check_install()
     children = [
       Mppm.Repo,
+      {Phoenix.PubSub, [name: Mppm.PubSub, adapter: Phoenix.PubSub.PG2]},
       MppmWeb.Endpoint,
       Mppm.Notifications,
       Mppm.Tracklist,
