@@ -18,19 +18,36 @@ defmodule Mppm.FileManager.DownloadTask do
   end
 
   def handle_info(%HTTPoison.AsyncEnd{}, state) do
-    File.close(state.file_pid)
+    {:stop, :normal, state}
+  end
 
+
+  def terminate(:normal, state) do
+    cleanup(state)
     if state.callback do
       {fun, args} = state.callback
       spawn(fn -> fun.(state.file_destination, args) end)
     end
+    Mppm.Notifications.notify(:info, download_success_msg(state.file_destination))
+  end
 
-    {:stop, :job_complete, state}
+  def terminate(_reason, state) do
+    cleanup(state)
+    Mppm.Notifications.notify(:info, download_failure_msg(state.file_destination))
   end
 
 
+  defp download_success_msg(filepath),
+    do: "Download of file \"#{filepath}\" complete!"
 
-  def child_spec(file_url, file_destination, callback) do
+  defp download_failure_msg(filepath),
+    do: "Download of file \"#{filepath}\" failed!"
+
+  defp cleanup(file_pid),
+    do: File.close(file_pid)
+
+
+  def child_spec(file_url, file_destination, callback \\ nil) do
     %{
       id: __MODULE__,
       start: {__MODULE__, :start_link, [file_url, file_destination, callback]},
