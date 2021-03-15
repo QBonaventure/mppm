@@ -5,18 +5,22 @@ defmodule MppmWeb.Live.Component.ServerLine do
   alias Mppm.ServerConfig
 
   def preload(assigns) do
-    configs = Mppm.Repo.all(Mppm.ServerConfig)
+    servers = Mppm.Repo.all(Mppm.GameServer.Server) |> Mppm.Repo.preload([:config, :ruleset, :tracklist])
     assigns
     |> Enum.map(fn assign ->
-      config = Enum.find(configs, & &1.id == assign.id)
+      server = Enum.find(servers, & &1.id == assign.id)
+      status =
+        case Map.get(assign, :status) do
+          {server_login, status} -> status
+          nil -> Map.get(Mppm.GameServer.Server.server_status(server.login), :status)
+        end
       assign
-      |> Map.put(:server, config)
-      |> Map.put(:status, Mppm.ServersStatuses.get_server_status(config.login))
+      |> Map.put(:server, server)
+      |> Map.put(:status, status)
     end)
   end
 
   def mount(socket) do
-    Phoenix.PubSub.subscribe(Mppm.PubSub, "server-status")
     {:ok, assign(socket, servers_versions: DedicatedServer.ready_to_use_servers())}
   end
 
@@ -25,7 +29,7 @@ defmodule MppmWeb.Live.Component.ServerLine do
       socket
       |> assign(server: assigns.server)
       |> assign(status: assigns.status)
-      |> assign(version_changeset: ServerConfig.changeset(assigns.server))
+      |> assign(version_changeset: Server.changeset(assigns.server))
     {:ok, socket}
   end
 
@@ -34,31 +38,26 @@ defmodule MppmWeb.Live.Component.ServerLine do
   end
 
 
-  ######################################################
-  ##################### EVENTS #########################
-  ######################################################
+  ##############################################################################
+  ################################### EVENTS ###################################
+  ##############################################################################
 
-  def handle_event("change-version", %{"server_config" => %{"version" => version}}, socket) do
-    server_name = socket.assigns.server.name
-    Mppm.Notifications.notify(:game_server, "Restart game server #{server_name} for version change to take effect")
-    changeset = ServerConfig.changeset(socket.assigns.server, %{version: version})
+  def handle_event("change-version", %{"server" => data}, socket) do
+    changeset = Server.changeset(socket.assigns.server, data)
     {:noreply, assign(socket, version_changeset: changeset)}
   end
 
-  def handle_event("switch-version-and-restart", %{"server_config" => %{"version" => version}}, socket) do
+  def handle_event("switch-version-and-restart", %{"server" => %{"exe_version" => version}}, socket) do
     server = socket.assigns.server
-    server_config = Mppm.ServerConfig.get_server_config(server.login)
-    {:ok, dedi_server} = DedicatedServer.get(String.to_integer(version))
+    {:ok, dedicated_server} = DedicatedServer.get(String.to_integer(version))
 
-    {:ok, updated_config} = ServerConfig.change_version(server.login, dedi_server)
-    updated_server = Map.put(server, :config, updated_config)
-    changeset = ServerConfig.changeset(server_config, %{})
+    {:ok, updated_server} = Server.change_version(server, dedicated_server)
 
     Task.start(Server, :restart, [server.login])
 
     socket =
       socket
-      |> assign(version_changeset: changeset)
+      |> assign(version_changeset: Server.changeset(updated_server))
       |> assign(server: updated_server)
     {:noreply, socket}
   end
@@ -66,6 +65,7 @@ defmodule MppmWeb.Live.Component.ServerLine do
 
   def handle_event("start-server", _params, socket) do
     Task.start(Mppm.GameServer.Server, :start, [socket.assigns.server.login])
+
     {:noreply, socket}
   end
 
@@ -74,6 +74,16 @@ defmodule MppmWeb.Live.Component.ServerLine do
     Task.start(Mppm.GameServer.Server, :stop, [socket.assigns.server.login])
     {:noreply, socket}
   end
+
+
+  ##############################################################################
+  ############################# PRIVATE FUNCTIONS ##############################
+  ##############################################################################
+
+  # defp server_status(server_login) do
+  #   # %{status: status} = Mppm.GameServer.Server.server_status(server_login)
+  #   status
+  # end
 
 
 end

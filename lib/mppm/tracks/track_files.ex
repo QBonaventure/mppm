@@ -35,16 +35,28 @@ defmodule Mppm.TracksFiles do
   end
 
 
-  def download_mx_track(%Mppm.Track{mx_track_id: _track_id} = track) do
-    track_file_path = @maps_path <> mx_track_path(track)
-    case Mppm.Service.ManiaExchange.download_track(track) do
-      {:ok, http_resp} ->
-        track_file_path |> File.write(http_resp.body)
+  def download_mx_track(%Mppm.Service.ManiaExchange.Track{mx_track_id: _track_id} = mx_track) do
+    track_file_path = @maps_path <> mx_track_path(mx_track)
+    download_url = Mppm.Service.ManiaExchange.map_download_url(mx_track)
+
+    {:ok, pid} = Mppm.FileManager.TasksSupervisor.download_file(download_url, track_file_path)
+    ref = Process.monitor(pid)
+
+    receive do
+      {:DOWN, ^ref, _, _, :normal} ->
         file_data = extract_track_file_data(track_file_path)
         user = Mppm.User.get(%Mppm.User{login: file_data.author})
 
-        track
+        # tags =
+        #   case track.tags do
+        #     nil -> []
+        #     tags -> tags
+        #   end
+
+        Mppm.Track
+        |> struct(Map.from_struct(mx_track))
         |> Map.put(:author, user)
+        # |> Map.put(:tags, tags)
         |> Mppm.Repo.insert(on_conflict: {:replace_all_except, [:id]}, conflict_target: :uuid)
       _ ->
         {:error, :download_failed}
@@ -52,7 +64,7 @@ defmodule Mppm.TracksFiles do
   end
 
 
-  def mx_track_path(%Mppm.Track{mx_track_id: track_id, name: track_name}), do:
+  def mx_track_path(%__struct__{mx_track_id: track_id, name: track_name}), do:
     "#{@mx_directory}#{track_id}_#{Slug.slugify(track_name)}.Map.Gbx"
 
 

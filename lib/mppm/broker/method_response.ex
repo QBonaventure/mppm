@@ -1,4 +1,5 @@
 defmodule Mppm.Broker.MethodResponse do
+  import Mppm.PubSub, only: [broadcast: 2]
 
 
   def pubsub_topic(server_login), do: "server_status:"<>server_login
@@ -21,22 +22,22 @@ defmodule Mppm.Broker.MethodResponse do
   end
 
   defp dispatch_response(server_login, %{"UId" => uuid}) do
-    Phoenix.PubSub.broadcast(Mppm.PubSub, "maps-status", {:update_server_map, server_login, uuid})
-    Phoenix.PubSub.broadcast(Mppm.PubSub, "maps-status", {:current_track_info, server_login, uuid})
+    broadcast("maps-status", {:update_server_map, server_login, uuid})
+    broadcast("maps-status", {:current_track_info, server_login, uuid})
   end
 
 
   defp dispatch_response(server_login, [%{"PlayerId" => 0} | remainder]) do
     Enum.each(
       remainder,
-      & Phoenix.PubSub.broadcast(Mppm.PubSub, "players-status", {:user_connection_to_server, server_login, Map.get(&1, "Login"), Map.get(&1, "SpectatorStatus") != 0})
+      & broadcast("players-status", {:user_connection_to_server, server_login, Map.get(&1, "Login"), Map.get(&1, "SpectatorStatus") != 0})
     )
     Enum.each(remainder, & GenServer.cast(Mppm.ConnectedUsers, {:user_connection, server_login, Map.get(&1, "Login"), Map.get(&1, "SpectatorStatus") != 0}))
   end
 
   defp dispatch_response(server_login, %{"ScriptName" => script_name}) do
     game_mode = Mppm.Repo.get_by(Mppm.Type.GameMode, script_name: script_name)
-    Phoenix.PubSub.broadcast(Mppm.PubSub, "server-status:"<>server_login, {:current_game_mode, game_mode})
+    broadcast("server-status:"<>server_login, {:current_game_mode, game_mode})
   end
 
 

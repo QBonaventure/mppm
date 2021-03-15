@@ -1,6 +1,8 @@
 defmodule Mppm.GameServer.DedicatedServer do
   use GenServer
   import Ecto.Query, only: [from: 2]
+  use Ecto.Schema
+  import Ecto.Changeset
   require Logger
 
   @moduledoc """
@@ -11,8 +13,8 @@ defmodule Mppm.GameServer.DedicatedServer do
   @root_path Application.get_env(:mppm, :game_servers_root_path)
   @user_data_path "#{@root_path}UserData"
 
-  @enforce_keys [:version, :release_datetime, :download_link, :status]
-  defstruct [:version, :release_datetime, :download_link, status: :unknown]
+  # @enforce_keys [:version, :release_datetime, :download_link, :status]
+  # defstruct [:version, :release_datetime, :download_link, status: :unknown]
   @type t :: %__MODULE__{
       version: version(),
       release_datetime: release_datetime(),
@@ -24,8 +26,26 @@ defmodule Mppm.GameServer.DedicatedServer do
   @type release_datetime :: DateTime.t()
 
 
+  embedded_schema do
+    field :version, :integer
+    field :release_datetime, :utc_datetime
+    field :download_link, :string
+    field :status, :string
+    embeds_many :servers, Mppm.GameServer.Server
+  end
+
+  @required_fields [:version, :release_datetime, :download_link, :status]
+  @fields @required_fields ++ [:servers]
+  def changeset(%__MODULE__{} = dedicated_server, data \\ %{}) do
+    dedicated_server
+    |> cast(data, @fields)
+    |> validate_required(@required_fields)
+  end
+
 
   @spec get(version()) :: {:ok, t()} | {:error, :not_found}
+  def get(version) when is_binary(version),
+    do: version |> String.to_integer() |> get()
   def get(version) do
     res =
       GenServer.call(__MODULE__, {:list_versions})
@@ -265,7 +285,7 @@ defmodule Mppm.GameServer.DedicatedServer do
     File.exists?("#{@root_path}TrackmaniaServer_#{version}/TrackmaniaServer")
 
   defp in_use_servers() do
-    Mppm.Repo.all(from s in Mppm.ServerConfig, select: s.version, distinct: true)
+    Mppm.Repo.all(from s in Mppm.GameServer.Server, select: s.exe_version, distinct: true)
   end
 
   defp link_to_user_data(install_path), do:

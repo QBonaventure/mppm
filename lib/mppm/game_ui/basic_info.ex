@@ -53,11 +53,11 @@ defmodule Mppm.GameUI.BasicInfo do
   defp track_text(%Mppm.Track{author: %Mppm.User{nickname: author_name}, name: map_name}), do:
     map_name<>" by "<>author_name
 
-  defp get_server_tracks(server_login), do:
-    {
-      GenServer.call(Mppm.Tracklist, {:get_server_current_track, server_login}),
-      GenServer.call(Mppm.Tracklist, {:get_server_next_track, server_login})
-    }
+  defp get_server_tracks(server_login) do
+    {:ok, current_track} = Mppm.Tracklist.get_server_current_track(server_login)
+    {:ok, next_track} = Mppm.Tracklist.get_server_next_track(server_login)
+    {current_track, next_track}
+  end
 
   def handle_info({:tracklist_update, _, tracklist}, state) do
     tracklist = tracklist |> Mppm.Repo.preload(:server)

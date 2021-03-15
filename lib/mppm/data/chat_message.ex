@@ -6,7 +6,7 @@ defmodule Mppm.ChatMessage do
 
   schema "chat_messages" do
     belongs_to :user, Mppm.User, foreign_key: :user_id
-    belongs_to :server, Mppm.ServerConfig, foreign_key: :server_id
+    belongs_to :server, Mppm.GameServer.Server, foreign_key: :server_id
     field :text, :string
   end
 

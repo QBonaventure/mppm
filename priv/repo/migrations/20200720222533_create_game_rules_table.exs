@@ -3,7 +3,7 @@ defmodule Mppm.Repo.Migrations.CreateGameRulesTable do
 
   def change do
     create table(:game_rules, primary_key: false) do
-      add :server_id, references(:servers_configs, on_delete: :delete_all), primary_key: true
+      add :server_id, references(:servers, on_delete: :delete_all), primary_key: true
       add :mode_id, references(:game_modes)
 
       ### Time Attack

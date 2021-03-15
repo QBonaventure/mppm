@@ -6,23 +6,27 @@ defmodule Mppm.ServersStatuses do
   @allowed_statuses [:stopping, :stopped, :starting, :started, :failed]
 
   def fetch_all_configs(), do:
-    Mppm.Repo.all(Mppm.ServerConfig) |> Mppm.Repo.preload([ruleset: [:mode]])
+    Mppm.Repo.all(Mppm.ServerConfig)
+     # |> Mppm.Repo.preload([ruleset: [:mode]])
 
 
   def all() do
     Agent.get(__MODULE__, & &1)
   end
 
+
   def server_id(server_login) do
     server = Agent.get(__MODULE__, & Map.get(&1, server_login))
     server.config.id
   end
+
 
   def get_list_of_running() do
     Agent.get(__MODULE__, & &1)
     |> Enum.filter(& elem(&1, 1).status == :started)
     |> Enum.map(& elem(&1, 0))
   end
+
 
   def get_start_flag(server_login) do
     case get_server_status(server_login) do
@@ -32,6 +36,7 @@ defmodule Mppm.ServersStatuses do
       status -> status
     end
   end
+
 
   def get_stop_flag(server_login) do
     case get_server_status(server_login) do
@@ -56,12 +61,12 @@ defmodule Mppm.ServersStatuses do
 
   def is_stopped?(server_login), do: :stopped == get_server_status(server_login)
 
-  def add_new_server(%ServerConfig{ruleset: %Ecto.Association.NotLoaded{}} = server_config), do:
-    server_config |> Mppm.Repo.preload(ruleset: [:mode]) |> add_new_server()
-  def add_new_server(%ServerConfig{ruleset: %Mppm.GameRules{mode: %Ecto.Association.NotLoaded{}}} = server_config), do:
-    server_config |> Mppm.Repo.preload(ruleset: [:mode]) |> add_new_server()
-  def add_new_server(%ServerConfig{} = server_config), do:
-    Agent.update(__MODULE__, & Map.put_new(&1, server_config.login, %{config: server_config, next_config: nil, status: :stopped}))
+  # def add_new_server(%ServerConfig{ruleset: %Ecto.Association.NotLoaded{}} = server_config), do:
+  #   server_config |> Mppm.Repo.preload(ruleset: [:mode]) |> add_new_server()
+  # def add_new_server(%ServerConfig{ruleset: %Mppm.GameRules{mode: %Ecto.Association.NotLoaded{}}} = server_config), do:
+  #   server_config |> Mppm.Repo.preload(ruleset: [:mode]) |> add_new_server()
+  # def add_new_server(%ServerConfig{} = server_config), do:
+  #   Agent.update(__MODULE__, & Map.put_new(&1, server_config.login, %{config: server_config, next_config: nil, status: :stopped}))
 
 
   def update_server_status(login, status) when status in @allowed_statuses do

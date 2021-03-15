@@ -5,14 +5,14 @@
   </span>
   <span class="login"><%= @server.login %></span>
   <span class="name"><%= @server.name %></span>
-  <span class="max-pl"><%= @server.max_players %></span>
-  <span class="players-pwd"><%= @server.player_pwd %></span>
-  <span class="spec-pwd"><%= @server.spec_pwd %></span>
+  <span class="max-pl"><%= @server.config.max_players %></span>
+  <span class="players-pwd"><%= @server.config.player_pwd %></span>
+  <span class="spec-pwd"><%= @server.config.spec_pwd %></span>
 
   <span class="server-version">
     <%= f = form_for @version_changeset, "#", [phx_change: "change-version", phx_target: @myself, phx_submit: "switch-version-and-restart"] %>
-      <%= select f, :version, Enum.map(@servers_versions, & &1.version) %>
-      <%= submit "OK & Restart?", disabled: !Map.has_key?(@version_changeset.changes, :version) %>
+      <%= select f, :exe_version, Enum.map(@servers_versions, & &1.version) %>
+      <%= submit "OK & Restart?", disabled: !Map.has_key?(@version_changeset.changes, :exe_version) %>
     </form>
   </span>
   <span class="server-status">

@@ -7,10 +7,8 @@ defmodule MppmWeb.MainNavigationLive do
 
 
   def mount(_params, session, socket) do
-    servers =
-      Mppm.ServersStatuses.all()
-      |> Enum.map(fn {name, %{config: %{id: id}}} -> {id, name} end)
-      |> Enum.sort_by(& elem(&1, 1))
+    Phoenix.PubSub.subscribe(Mppm.PubSub, "server-status")
+    servers = build_list()
 
     socket =
       socket
@@ -20,9 +18,33 @@ defmodule MppmWeb.MainNavigationLive do
     {:ok, socket}
   end
 
+
   def handle_event("restart", _params, socket) do
     :init.restart
     {:noreply, socket}
   end
+
+
+  def handle_info({:created, server_login}, socket) do
+    {:noreply, assign(socket, servers: build_list())}
+  end
+
+
+  def handle_info({:deleted, server_login}, socket) do
+    {:noreply, assign(socket, servers: build_list())}
+  end
+
+
+  def handle_info(_unhandled_info, socket) do
+    {:noreply, socket}
+  end
+
+
+  def build_list() do
+    Mppm.Repo.all(Mppm.GameServer.Server)
+    |> Enum.map(& {&1.id, &1.login})
+    |> Enum.sort_by(& elem(&1, 1))
+  end
+
 
 end

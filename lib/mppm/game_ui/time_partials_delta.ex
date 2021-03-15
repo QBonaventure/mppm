@@ -60,7 +60,7 @@ defmodule Mppm.GameUI.TimePartialsDelta do
 
   def handle_info({:player_waypoint, server_login, user_login, waypoint_nb, time}, state) do
     best_time =
-      case Map.get(state, server_login, :no_key) do
+      case Map.get(state, server_login) do
         %Mppm.TimeRecord{} = best_time ->
           best_time
         :no_key ->
@@ -70,6 +70,7 @@ defmodule Mppm.GameUI.TimePartialsDelta do
                GenServer.cast(self(), {:set_new_top_record, server_login, best_time})
                best_time
             end
+        nil -> nil
       end
 
     if !is_nil(best_time) do
@@ -84,7 +85,7 @@ defmodule Mppm.GameUI.TimePartialsDelta do
         end
     end
 
-    {:noreply, state}
+    {:noreply, %{state | server_login => best_time}}
   end
 
 

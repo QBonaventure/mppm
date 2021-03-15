@@ -3,7 +3,7 @@ defmodule Mppm.Repo.Migrations.AddTracklistTable do
 
   def change do
     create table(:tracklists, primary_key: false) do
-      add :server_id, references(:servers_configs, on_delete: :delete_all), primary_key: true
+      add :server_id, references(:servers, on_delete: :delete_all), primary_key: true
       add :tracks_ids, {:array, :integer}
     end
   end

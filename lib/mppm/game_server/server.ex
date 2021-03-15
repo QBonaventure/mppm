@@ -1,50 +1,178 @@
 defmodule Mppm.GameServer.Server do
   require Logger
-  import Ecto.Query
+  use Ecto.Schema
   use GenServer
+  import Ecto.Changeset
+  import Ecto.Query
+  import Mppm.PubSub, only: [broadcast: 2]
   alias Mppm.ServerConfig
+  alias __MODULE__
 
   @msg_waiting_ports "Waiting for game server ports to open..."
   @max_start_attempts 20
   @start_timeout 12000
+  @allowed_statuses [:starting, :started, :stopping, :stopped, :unknown]
+
+  schema "servers" do
+    field :login, :string
+    field :password, :string
+    field :name, :string
+    field :comment, :string
+    field :exe_version, :integer
+    has_one :config, Mppm.ServerConfig, foreign_key: :server_id, on_replace: :update
+    has_one :ruleset, Mppm.GameRules, foreign_key: :server_id, on_replace: :update
+    has_one :tracklist, Mppm.Tracklist, foreign_key: :server_id, on_replace: :update
+  end
+
+  @type t() :: %Mppm.GameServer.Server{
+    login: server_login(),
+    password: String.t(),
+    name: String.t(),
+    comment: String.t(),
+    exe_version: integer(),
+  }
+  @type server_login() :: String.t()
+  @type status() :: atom()
 
 
+  @required [:login, :password, :name, :exe_version, :config, :ruleset]
+  def changeset(%__MODULE__{} = server, data \\ %{}) do
+    data =
+      case is_nil(server.id) do
+        false ->
+          data
+        true ->
+          data
+          |> Map.put_new("ruleset", %{"mode_id" => 1})
+          |> Map.put_new("tracklist", %{"tracks" => Mppm.Track.get_random_tracks(1)})
+      end
 
+    server
+    |> cast(data, [:login, :password, :name, :comment, :exe_version])
+    |> cast_assoc(:config, with: &Mppm.ServerConfig.changeset/2)
+    |> cast_assoc(:ruleset, with: &Mppm.GameRules.changeset/2)
+    |> cast_assoc(:tracklist, with: &Mppm.Tracklist.changeset/2)
+    |> validate_required(@required)
+    |> unique_constraint(:login, name: :uk_servers_login)
+  end
+
+
+  @doc """
+  Starts a game server.
+  """
+  @spec start(server_login()) :: {:ok, :started} | {:none, status()}
   def start(server_login) when is_binary(server_login) do
-    GenServer.call(proc_name(server_login), :start, @start_timeout)
+    case GenServer.call(proc_name(server_login), :start_lock) do
+      {:ok, :starting} ->
+        broadcast("server-status", {:starting, server_login})
+        {:ok, server} = GenServer.call(proc_name(server_login), :start, @start_timeout)
+        broadcast("server-status", {server.status, server_login})
+        {:ok, server.status}
+      {:ok, status} = res ->
+        {:none, status}
+    end
   end
 
+
+  @doc """
+  Stops a game server.
+  """
+  @spec stop(server_login()) :: {:ok, :stopped} | {:none, status()}
   def stop(server_login) when is_binary(server_login) do
-    GenServer.call(proc_name(server_login), :stop)
+    case GenServer.call(proc_name(server_login), :stop_lock) do
+      {:ok, :stopping} ->
+        broadcast("server-status", {:stopping, server_login})
+        {:ok, server} = GenServer.call(proc_name(server_login), :stop)
+        broadcast("server-status", {server.status, server_login})
+        {:ok, :stopped}
+      {:ok, status} ->
+        {:none, status}
+    end
   end
+
 
   def restart(server_login) when is_binary(server_login) do
-    GenServer.call(proc_name(server_login), :restart)
+    stop(server_login)
+    start(server_login)
   end
+
+  def get_server(server_login) do
+    {:ok, server} = GenServer.call(proc_name(server_login), :get_server)
+  end
+
+
+  def server_status(server_login),
+    do: GenServer.call(proc_name(server_login), :status, 1000)
+
+  def server_id(server_login),
+    do: GenServer.call(proc_name(server_login), :id)
+
+
+  def update(%Ecto.Changeset{} = changeset) do
+    case Mppm.Repo.update(changeset) do
+      {:ok, new_server} ->
+        # IO.inspect changeset
+        IO.inspect Mppm.GameRules.propagate_ruleset_changes(changeset), label: "---RESULT-----"
+        # propagate_ruleset_changes(changeset)
+        GenServer.call(proc_name(changeset.data.login), {:update, new_server})
+        {:ok, new_server}
+      {:error, changeset} ->
+        {:error, changeset}
+    end
+  end
+
+
+  @doc """
+  Updates the executable version a game server is running on.
+
+  It does require a server restart for the change to be effective.
+
+  Returns: {:ok, Mppm.GameServer.Server.t()} on success,
+  {:error, Ecto.Changeset.t()} otherwise.
+  """
+  @spec change_version(Mppm.GameServer.Server.t(), Mppm.GameServer.DedicatedServer.t()) :: {:ok, Mppm.GameServer.Server.t()} | {:error, Ecto.Changeset.t()}
+  def change_version(%__MODULE__{} = server, %Mppm.GameServer.DedicatedServer{} = exe_version) do
+    changeset = changeset(server, %{"exe_version" => exe_version.version})
+    case Mppm.Repo.update(changeset) do
+      {:ok, new_server} ->
+        GenServer.call(proc_name(server.login), {:update, new_server})
+        {:ok, new_server}
+      {:error, changeset} ->
+        {:error, changeset}
+    end
+  end
+
 
   def get_next_game_mode_id(server_id) do
     Mppm.Repo.one(from r in Mppm.GameRules, select: r.mode_id, where: r.server_id == ^server_id)
   end
 
+
   def ids_list() do
-    Mppm.Repo.all(from s in Mppm.ServerConfig, select: s.id, order_by: s.id)
+    Mppm.Repo.all(from s in __MODULE__, select: s.id, order_by: s.id)
   end
 
 
-  def delete_game_server(%Mppm.ServerConfig{} = server_config) do
-    {:ok, server_config} = Mppm.Repo.delete(server_config)
-    broadcast("server-status", {:deleted, server_config})
-    {:ok, server_config}
+  def list_of_running() do
+    DynamicSupervisor.which_children(Mppm.GameServer.Supervisor)
+    |> Enum.map(fn {_id, pid, _type, [_module]} ->
+      %{login: login, status: status} = :sys.get_state(pid)
+      {login, status}
+    end)
+    |> Enum.filter(fn {_login, status} -> status == :stopped end)
   end
 
 
-
-  def create_new_server(%Ecto.Changeset{data: %Mppm.ServerConfig{}} = server_config_changeset) do
-    with {:ok, server_config} <- Mppm.Repo.insert(server_config_changeset),
-      %Mppm.Tracklist{} <- Mppm.Tracklist.new_server_tracklist(server_config)
+  @doc """
+  Creates a game server and starts the supervisor
+  """
+  @spec create_new_server(Ecto.Changeset.t()) :: {:ok, Server.t()} | {:error, {:insert_failed, Ecto.Changeset.t()}}
+  def create_new_server(%Ecto.Changeset{} = server_changeset) do
+    with {:ok, server} <- Mppm.Repo.insert(server_changeset)
     do
-      {:ok, _pid} = Mppm.GameServer.Supervisor.start_server_supervisor(server_config)
-      {:ok, server_config}
+      broadcast("server-status", {:created, server.login})
+      {:ok, _pid} = Mppm.GameServer.Supervisor.start_server_supervisor(server)
+      {:ok, server}
     else
       {:error, %Ecto.Changeset{} = changeset} ->
         {:error, {:insert_fail, changeset}}
@@ -52,42 +180,52 @@ defmodule Mppm.GameServer.Server do
   end
 
 
-  ############################################
-  ########### GenServer callbacks ############
-  ############################################
+  @doc """
+  Deletes the game server and stops the GenServer
+  """
+  @spec delete_game_server(t()) :: {:ok, t()}
+  def delete_game_server(%__MODULE__{} = server) do
+    Mppm.GameServer.Supervisor.stop_server_supervisor(proc_name(server.login))
+    {:ok, server} = Mppm.Repo.delete(server)
+    broadcast("server-status", {:deleted, server})
+    {:ok, server}
+  end
 
-  def child_spec(%ServerConfig{} = server_config) do
+  ##############################################################################
+  ############################ GenServer Callbacks #############################
+  ##############################################################################
+
+  def child_spec(%__MODULE__{} = server) do
     %{
       id: __MODULE__,
-      start: {__MODULE__, :start_link, [[server_config], []]},
+      start: {__MODULE__, :start_link, [[server], []]},
       restart: :transient,
-      name: {:global, {:game_server, server_config.login}}
+      name: proc_name(server.login)
     }
   end
 
-  def start_link([%ServerConfig{} = server_config], _opts \\ []) do
-    GenServer.start_link(__MODULE__, server_config, name: {:global, {:game_server, server_config.login}})
+  def start_link([%__MODULE__{} = server], _opts \\ []) do
+    GenServer.start_link(__MODULE__, server, name: proc_name(server.login))
   end
 
 
-  def init(%ServerConfig{} = server_config) do
+  def init(%__MODULE__{config: %Ecto.Association.NotLoaded{}} = server),
+    do: init(Mppm.Repo.preload(server, :config))
+  def init(%__MODULE__{ruleset: %Ecto.Association.NotLoaded{}} = server),
+    do: init(Mppm.Repo.preload(server, :ruleset))
+  def init(%__MODULE__{} = server) do
     Phoenix.PubSub.subscribe(Mppm.PubSub, "tracklist-status")
     Phoenix.PubSub.subscribe(Mppm.PubSub, "ruleset-status")
 
     state = %{
+      server: server,
       current_track: nil,
       port: nil,
       os_pid: nil,
       exit_status: nil,
       latest_output: nil,
       listening_ports: nil,
-      xmlrpc_port: nil,
       status: :stopped,
-      config: server_config,
-      rewrite_ruleset?: false,
-      rewrite_config?: false,
-      rewrite_tracklist?: false,
-      reload_match_settings?: false,
       game_mode_id: nil
     }
 
@@ -95,36 +233,83 @@ defmodule Mppm.GameServer.Server do
   end
 
 
+  def handle_call(:start_lock, _from, %{status: :stopped} = state) do
+    {:reply, {:ok, :starting}, %{state | status: :starting}}
+  end
+  def handle_call(:start_lock, _from, state),
+    do: {:reply, {:ok, state.status}, state}
+
+
+  def handle_call(:stop_lock, _from, %{status: :started} = state) do
+    {:reply, {:ok, :stopping}, %{state | status: :stopping}}
+  end
+  def handle_call(:stop_lock, _from, state),
+    do: {:reply, {:ok, state.status}, state}
+
+
   def handle_call(:start, _from, state) do
-    case Mppm.ServersStatuses.get_start_flag(state.config.login) do
-      :ok ->
-        {_, state} = start_server(state)
-        {:reply, {:ok, :starting}, %{state | status: :starting}}
-      _ ->
-        {:reply, {:ok, :not_startable}, state}
-    end
+    {:ok, _filename} = ServerConfig.create_config_file(state.server)
+    {:ok, _filename} = Mppm.GameRules.create_ruleset_file(state.server)
+    {:ok, _filename} = Mppm.Tracklist.create_tracklist(state.server)
+
+    command = get_command(state.server)
+    port = Port.open({:spawn, command}, [:binary, :exit_status])
+    {:os_pid, os_pid} = Port.info(port, :os_pid)
+    Port.monitor(port)
+
+    state =
+      case get_listening_ports(os_pid) do
+        {:ok, listening_ports} ->
+          {:ok, _child_pid} =
+            Mppm.Broker.Supervisor.child_spec(state.server, listening_ports.xmlrpc)
+            |> Mppm.GameServer.Supervisor.start_child()
+          %{
+            state |
+            status: :started,
+            listening_ports: listening_ports,
+            port: port,
+            os_pid: os_pid,
+            game_mode_id: get_next_game_mode_id(state.server.id)
+          }
+        {:error, _} ->
+          Logger.info "["<>state.server.login<>"] Server couldn't start"
+          %{state | status: :stopped}
+      end
+
+    {:reply, {:ok, state}, state}
   end
 
   def handle_call(:stop, _from, state) do
-    case Mppm.ServersStatuses.get_stop_flag(state.config.login) do
-      :ok ->
-        {_, state} = stop_server(state)
-        {:reply, {:ok, :stopping}, %{state | status: :stopping}}
-      _ ->
-      {:reply, {:ok, :not_stoppable}, state}
-    end
+    Supervisor.stop({:global, {:broker_supervisor, state.server.login}})
+    pid =
+      case state.port do
+        nil ->
+          state.os_pid
+        port ->
+          {:os_pid, pid} = Port.info(port, :os_pid)
+          Port.close(port)
+          pid
+      end
+    kill_server_process(pid)
+    Logger.info "["<>state.server.login<>"] Server has been stopped"
+
+    state =  %{state | os_pid: nil, listening_ports: nil, port: nil, status: :stopped}
+
+    {:reply, {:ok, state}, state}
   end
 
-  def handle_call(:restart, _from, state) do
-    {_, state} = stop_server(state)
-    {_, state} = start_server(state)
-    {:reply, state, state}
+
+  def handle_call({:update, new_server}, _from, state) do
+    broadcast("server-status", {:updated, new_server})
+    {:reply, {:ok, new_server}, %{state | server: new_server}}
   end
 
 
-  def handle_call(:pid, _, state) do
-    {:reply, self(), state}
-  end
+  def handle_call(:get_server, _from, state),
+    do: {:reply, {:ok, state.server}, state}
+
+  def handle_call(:id, _from, state),
+    do: {:reply, state.server.id, state}
 
 
   def handle_call(:xmlrpc_port, _, state) do
@@ -136,7 +321,7 @@ defmodule Mppm.GameServer.Server do
 
 
   def handle_call(:status, _, state) do
-    {:reply, %{state: state.status, port: state.port, os_pid: state.os_pid}, state}
+    {:reply, %{status: state.status, port: state.port, os_pid: state.os_pid}, state}
   end
 
 
@@ -151,35 +336,24 @@ defmodule Mppm.GameServer.Server do
 
 
   def handle_cast({:relink_orphan_process, {login, pid, xmlrpc_port}}, state) do
-    Mppm.Broker.Supervisor.child_spec(state.config, xmlrpc_port)
+    Mppm.Broker.Supervisor.child_spec(state.server, xmlrpc_port)
     |> Mppm.GameServer.Supervisor.start_child
-
-    Mppm.ServersStatuses.update_server_status(login, :started)
     state = %{state |
       status: :started,
-      xmlrpc_port: xmlrpc_port,
       listening_ports: %{xmlrpc: xmlrpc_port},
       port: nil,
       os_pid: pid,
-      rewrite_ruleset?: false,
-      rewrite_config?: false,
-      rewrite_tracklist?: false,
-      reload_match_settings?: false,
       game_mode_id: nil
     }
+
+    broadcast("server-status", {:started, state.server.login})
 
     {:noreply, state}
   end
 
 
-  def handle_cast(:closing_port, state) do
-    Mppm.ServersStatuses.update_server_status(state.config.login, :stopped)
-    {:noreply, %{state | exit_status: :port_closed, status: :stopped}}
-  end
-
-
   def handle_info({:ruleset_change, server_login, _ruleset_or_tracklist}, state) do
-    case server_login == state.config.login do
+    case server_login == state.server.login do
       true -> {:noreply, %{state | rewrite_ruleset?: true}}
       false -> {:noreply, state}
     end
@@ -187,18 +361,16 @@ defmodule Mppm.GameServer.Server do
 
 
   def handle_info({:tracklist_update, server_login, ruleset_or_tracklist}, state) do
-    case server_login == state.config.login do
-      true ->
-        Mppm.ServerConfig.create_tracklist(ruleset_or_tracklist)
-        {:noreply, %{state | rewrite_tracklist?: true}}
-      false -> {:noreply, state}
+    if server_login == state.server.login do
+      GenServer.cast(broker_req_pname(server_login), :reload_match_settings)
     end
+    {:noreply, state}
   end
 
 
   def handle_info({:podium_start, _server_login}, state) do
     Mppm.ServerConfig
-    |> Mppm.Repo.get(state.config.id)
+    |> Mppm.Repo.get(state.server.id)
     |> Mppm.Repo.preload(:ruleset)
     |> Mppm.ServerConfig.create_ruleset_file()
     {:noreply, state}
@@ -206,37 +378,33 @@ defmodule Mppm.GameServer.Server do
 
 
   def handle_info({:podium_end, server_login}, state) do
-    case state.config.login == server_login do
-      true ->
-        GenServer.cast({:global, {:broker_requester, server_login}}, :reload_match_settings)
-        {:noreply, %{state | reload_match_settings?: false}}
-      false ->
-        {:noreply, state}
+    if state.server.login == server_login do
+      GenServer.cast(broker_req_pname(server_login), :reload_match_settings)
     end
+    {:noreply, state}
   end
 
 
   def handle_info({:end_of_game, _server_login}, state) do
-    {:noreply, %{state | game_mode_id: get_next_game_mode_id(state.config.id)}}
+    {:noreply, %{state | game_mode_id: get_next_game_mode_id(state.server.id)}}
   end
 
 
   def handle_info({:start_of_match, server_login}, state) do
-    if state.config.login == server_login do
-      GenServer.cast({:global, {:broker_requester, server_login}}, :reload_match_settings)
+    if state.server.login == server_login do
+      GenServer.cast(broker_req_pname(server_login), :reload_match_settings)
     end
+    {:noreply, state}
+  end
+
+
+  def handle_info(_unhandled_message, state) do
     {:noreply, state}
   end
 
 
   def handle_info({:current_game_mode, %Mppm.Type.GameMode{id: mode_id}}, state) do
     {:noreply, %{state | game_mode_id: mode_id}}
-  end
-
-
-  def handle_info(:stop, state) do
-    stop_server(state)
-    {:noreply, %{state | exit_status: :port_closed, status: :stopped}}
   end
 
 
@@ -255,7 +423,7 @@ defmodule Mppm.GameServer.Server do
   def handle_info({_port, {:data, text_line}}, state) do
     latest_output = text_line |> String.trim
 
-    Logger.info "[#{state.config.login}] #{latest_output}"
+    Logger.info "[#{state.server.login}] #{latest_output}"
 
     {:noreply, %{state | latest_output: latest_output}}
   end
@@ -276,14 +444,13 @@ defmodule Mppm.GameServer.Server do
   ############ Private functions #############
   ############################################
 
-  defp broadcast(_server_login, msg) do
-    Phoenix.PubSub.broadcast(Mppm.PubSub, "server-status", msg)
-  end
-
   defp proc_name(server_login), do:
     {:global, {:game_server, server_login}}
 
-  defp get_command(%ServerConfig{login: filename, version: version}) do
+  defp broker_req_pname(server_login),
+    do: {:global, {:broker_requester, server_login}}
+
+  defp get_command(%__MODULE__{login: filename, exe_version: version}) do
     "#{Mppm.GameServer.DedicatedServer.executable_path(version)} /nologs /dedicated_cfg=#{filename}.txt /game_settings=MatchSettings/#{filename}.txt /nodaemon"
   end
 
@@ -319,68 +486,6 @@ defmodule Mppm.GameServer.Server do
         Process.sleep(1000)
         get_listening_ports(pid, tries+1)
     end
-  end
-
-
-  defp start_server(state) do
-    broadcast("server-status", {:starting, state.config.login})
-    config = Mppm.Repo.get(Mppm.ServerConfig, state.config.id) |> Mppm.Repo.preload(:ruleset)
-    ServerConfig.create_config_file(config)
-    ServerConfig.create_ruleset_file(config)
-    GenServer.call(Mppm.Tracklist, {:get_server_tracklist, config.login})
-    |> Mppm.ServerConfig.create_tracklist()
-
-    command = get_command(config)
-    port = Port.open({:spawn, command}, [:binary, :exit_status])
-    {:os_pid, os_pid} = Port.info(port, :os_pid)
-    Port.monitor(port)
-
-    state =
-      case get_listening_ports(os_pid) do
-        {:ok, listening_ports} ->
-          {:ok, _child_pid} =
-            Mppm.Broker.Supervisor.child_spec(state.config, listening_ports.xmlrpc)
-            |> Mppm.GameServer.Supervisor.start_child()
-          Mppm.ServersStatuses.update_server_status(state.config.login, :started)
-          broadcast("server-status", {:started, state.config.login})
-          %{
-            state |
-            config: config,
-            status: :started,
-            listening_ports: listening_ports,
-            port: port,
-            os_pid: os_pid,
-            game_mode_id: get_next_game_mode_id(state.config.id)
-          }
-        {:error, _} ->
-          Mppm.ServersStatuses.update_server_status(state.config.login, :failed)
-          Logger.info "["<>state.config.login<>"] Server couldn't start"
-            broadcast("server-status", {:start_failed, state.config.login})
-          %{state | status: :stopped}
-      end
-    {:ok, state}
-  end
-
-
-  defp stop_server(state) do
-    broadcast("server-status", {:stopping, state.config.login})
-    Supervisor.stop({:global, {:broker_supervisor, state.config.login}})
-    pid =
-      case state.port do
-        nil ->
-          state.os_pid
-        port ->
-          {:os_pid, pid} = Port.info(port, :os_pid)
-          Port.close(port)
-          pid
-      end
-    kill_server_process(pid)
-
-    Mppm.ServersStatuses.update_server_status(state.config.login, :stopped)
-    Logger.info "["<>state.config.login<>"] Server has been stopped"
-
-    broadcast("server-status", {:stopped, state.config.login})
-    {:ok, %{state | os_pid: nil, listening_ports: nil, port: nil, status: :stopped}}
   end
 
 end

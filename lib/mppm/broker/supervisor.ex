@@ -1,12 +1,12 @@
 defmodule Mppm.Broker.Supervisor do
   use Supervisor
 
-  def child_spec(game_server_config, xmlrpc_port) do
+  def child_spec(game_server, xmlrpc_port) do
     %{
       id: __MODULE__,
       start: {__MODULE__, :start_link, [[
-          game_server_config.login,
-          game_server_config.superadmin_pass,
+          game_server.login,
+          game_server.config.superadmin_pass,
           xmlrpc_port
         ]]
       },

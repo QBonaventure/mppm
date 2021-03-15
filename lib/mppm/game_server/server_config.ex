@@ -6,7 +6,7 @@ defmodule Mppm.ServerConfig do
   alias __MODULE__
   alias Mppm.Repo
   import Record
-  alias Mppm.GameServer.DedicatedServer
+  alias Mppm.GameServer.{DedicatedServer,Server}
 
   defrecord(:xmlElement, extract(:xmlElement, from_lib: "xmerl/include/xmerl.hrl"))
   defrecord(:xmlAttribute, extract(:xmlAttribute, from_lib: "xmerl/include/xmerl.hrl"))
@@ -18,13 +18,9 @@ defmodule Mppm.ServerConfig do
   @maps_path @root_path <> "UserData/Maps/"
 
 
+  @primary_key {:server_id, :id, autogenerate: false}
   schema "servers_configs" do
-    has_one :ruleset, Mppm.GameRules, foreign_key: :server_id, on_replace: :update
-    many_to_many :tracks, Mppm.Track, join_through: "tracklists", join_keys: [server_id: :id, track_id: :id]
-    field :login, :string
-    field :password, :string
-    field :name, :string
-    field :comment, :string
+    belongs_to :server, Mppm.GameServer.Server, primary_key: true, define_field: false
     field :max_players, :integer, default: 32
     field :player_pwd, :string
     field :spec_pwd, :string
@@ -48,23 +44,28 @@ defmodule Mppm.ServerConfig do
     field :visuals_server_to_client_sending_rate, :integer, default: 64
     field :disable_replay_recording, :boolean, default: true
     field :workers_nb, :integer, default: 2
-    field :version, :integer
   end
 
-  def get_all() do
-    Mppm.Repo.all(Mppm.ServerConfig)
-    |> Mppm.Repo.preload(ruleset: [:mode])
+
+
+
+  def changeset(%ServerConfig{} = config, data \\ %{}) do
+    data =
+      data
+      |> defaults_missing_passwords()
+    config
+    |> cast(data, [
+      :player_pwd, :spec_pwd, :superadmin_pass, :admin_pass, :user_pass,
+      :max_players, :ip_address, :client_inputs_max_latency, :connection_upload_rate,
+      :connection_download_rate, :packet_assembly_multithread, :packets_per_frame,
+      :full_packets_per_frame, :visuals_delay, :trust_client_to_server_sending_rate,
+      :visuals_server_to_client_sending_rate, :disable_replay_recording, :workers_nb
+    ])
+    |> validate_required([:superadmin_pass])
   end
 
-  def get_server_id(server_login), do:
-    Mppm.Repo.get_by(Mppm.ServerConfig, login: server_login) |> Map.get(:id)
 
-  def get_server_config(server_login), do:
-    Mppm.Repo.get_by(Mppm.ServerConfig, login: server_login)
-    |> Mppm.Repo.preload(ruleset: [:mode, :ta_respawn_behaviour, :rounds_respawn_behaviour])
-
-
-  @required [:login, :password, :max_players]
+  @required [:max_players]
   @users_pwd [:superadmin_pass, :admin_pass, :user_pass]
   def new_config(data \\ %{}) do
     data =
@@ -73,53 +74,33 @@ defmodule Mppm.ServerConfig do
 
     %Mppm.ServerConfig{}
     |> cast(data, [
-      :login, :password, :name, :comment, :player_pwd, :spec_pwd,
+      :player_pwd, :spec_pwd,
       :max_players, :superadmin_pass, :admin_pass, :user_pass,
       :ip_address, :client_inputs_max_latency, :connection_upload_rate,
       :connection_download_rate, :packet_assembly_multithread, :packets_per_frame,
       :full_packets_per_frame, :visuals_delay, :trust_client_to_server_sending_rate,
-      :visuals_server_to_client_sending_rate, :disable_replay_recording, :workers_nb,
-      :version,
+      :visuals_server_to_client_sending_rate, :disable_replay_recording, :workers_nb
       ])
-    |> put_assoc(:ruleset, %Mppm.GameRules{mode_id: 1})
     |> validate_required(@required)
   end
 
 
-  @required [:login, :password, :max_players]
+  @required [:max_players]
   @users_pwd [:superadmin_pass, :admin_pass, :user_pass]
   def create_server_changeset(data \\ %{}), do:
     create_server_changeset(%ServerConfig{}, data)
   def create_server_changeset(%ServerConfig{} = server_config, data) do
-    data =
-      defaults_missing_passwords(data)
-      |> Map.put_new("mode_id", 1)
+    data = defaults_missing_passwords(data)
 
     server_config
     |> cast(data, [
-      :login, :password, :name, :comment, :player_pwd, :spec_pwd,
-      :max_players, :superadmin_pass, :admin_pass, :user_pass,
-      :ip_address, :client_inputs_max_latency, :connection_upload_rate,
+      :player_pwd, :spec_pwd, :max_players, :superadmin_pass, :admin_pass,
+      :user_pass, :ip_address, :client_inputs_max_latency, :connection_upload_rate,
       :connection_download_rate, :packet_assembly_multithread, :packets_per_frame,
       :full_packets_per_frame, :visuals_delay, :trust_client_to_server_sending_rate,
       :visuals_server_to_client_sending_rate, :disable_replay_recording, :workers_nb,
-      :version,
       ])
-    |> put_assoc(:ruleset, %Mppm.GameRules{mode_id: 1})
     |> validate_required(@required)
-    |> unique_constraint(:login, name: :uk_server_configs_login)
-  end
-
-  def changeset(%ServerConfig{} = config, params \\ %{}) do
-    config
-    |> cast(params, [:name, :comment, :player_pwd, :spec_pwd, :max_players, :ip_address,
-    :client_inputs_max_latency, :connection_upload_rate,
-    :connection_download_rate, :packet_assembly_multithread, :packets_per_frame,
-    :full_packets_per_frame, :visuals_delay, :trust_client_to_server_sending_rate,
-    :visuals_server_to_client_sending_rate, :disable_replay_recording, :workers_nb,
-    :version,
-    ])
-    |> cast_assoc(:ruleset)
   end
 
 
@@ -139,63 +120,131 @@ defmodule Mppm.ServerConfig do
   # end
 
 
-  def update(changeset) do
-    case changeset |> Repo.update do
-      {:ok, server_config} ->
-        server_config = server_config |> Mppm.Repo.preload(:ruleset, force: true)
-        create_config_file(server_config)
+#   def update(changeset) do
+#     case changeset |> Repo.update do
+#       {:ok, server_config} ->
+#         server_config = server_config |> Mppm.Repo.preload(:ruleset, force: true)
+#         create_config_file(server_config)
+#
+#         if ruleset_changes = Map.get(changeset.changes, :ruleset) do
+#           propagate_ruleset_changes(server_config, changeset)
+#           if Map.has_key?(ruleset_changes.changes, :mode_id) do
+#             Phoenix.PubSub.broadcast(Mppm.PubSub, "ruleset-status", {:ruleset_change, server_config.login, server_config.ruleset})
+#           end
+#         end
+#
+#       {:error, _changeset} ->
+#         {:ok, nil}
+#     end
+#   end
 
-        if ruleset_changes = Map.get(changeset.changes, :ruleset) do
-          propagate_ruleset_changes(server_config, changeset)
-          if Map.has_key?(ruleset_changes.changes, :mode_id) do
-            Phoenix.PubSub.broadcast(Mppm.PubSub, "ruleset-status", {:ruleset_change, server_config.login, server_config.ruleset})
-          end
-        end
+#
 
-      {:error, _changeset} ->
-        {:ok, nil}
-    end
+  def create_config_file(%Server{config: %Ecto.Association.NotLoaded{}} = server),
+    do: server |> Mppm.Repo.preload(:config) |> create_config_file()
+  def create_config_file(%Server{config: %__MODULE{} = config} = server) do
+    source_path = "#{@config_path}dedicated_cfg.default.txt"
+    xml = Mppm.XML.from_file(source_path)
+
+    authorization_levels = {:authorization_levels, [], [
+      {:level, [], [
+        {:name, [], ['SuperAdmin']},
+        {:password, [], [Mppm.XML.charlist(config.superadmin_pass)]}
+      ]},
+      {:level, [], [
+        {:name, [], ['Admin']},
+        {:password, [], [Mppm.XML.charlist(config.admin_pass)]}
+      ]},
+      {:level, [], [
+        {:name, [], ['User']},
+        {:password, [], [Mppm.XML.charlist(config.user_pass)]}
+      ]},
+    ]}
+
+    masterserver_account =
+      elem(xml, 2)
+      |> List.keyfind(:masterserver_account, 0)
+      |> elem(2)
+      |> List.keyreplace(:password, 0, {:password, [], [Mppm.XML.charlist(server.password)]})
+      |> List.keyreplace(:login, 0, {:login, [], [Mppm.XML.charlist(server.login)]})
+    masterserver_account = {:masterserver_account, [], masterserver_account}
+
+    server_options =
+      elem(xml, 2)
+      |> List.keyfind(:server_options, 0)
+      |> elem(2)
+      |> List.keyreplace(:name, 0, {:name, [], [Mppm.XML.charlist(server.name)]})
+      |> List.keyreplace(:comment, 0, {:comment, [], [Mppm.XML.charlist(server.comment)]})
+      |> List.keyreplace(:max_players, 0, {:max_players, [], [Mppm.XML.charlist(config.max_players)]})
+      |> List.keyreplace(:password_spectator, 0, {:password_spectator, [], [Mppm.XML.charlist(config.spec_pwd)]})
+      |> List.keyreplace(:password, 0, {:password, [], [Mppm.XML.charlist(config.player_pwd)]})
+      |> List.keyreplace(:disable_horns, 0, {:disable_horns, [], [Mppm.XML.charlist(config.disable_horns)]})
+      |> List.keyreplace(:keep_player_slots, 0, {:keep_player_slots, [], [Mppm.XML.charlist(config.keep_player_slot)]})
+      |> List.keyreplace(:autosave_replays, 0, {:autosave_replays, [], [Mppm.XML.charlist(config.autosave_replays)]})
+      |> List.keyreplace(:autosave_validation_replays, 0, {:autosave_validation_replays, [], [Mppm.XML.charlist(config.autosave_validation_replays)]})
+      |> List.keyreplace(:clientinputs_maxlatency, 0, {:clientinputs_maxlatency, [], [Mppm.XML.charlist(config.client_inputs_max_latency)]})
+    server_options = {:server_options, [], server_options}
+
+    system_config =
+      elem(xml, 2)
+      |> List.keyfind(:system_config, 0)
+      |> elem(2)
+      |> List.keyreplace(:force_ip_address, 0, {:force_ip_address, [], [Mppm.XML.charlist(config.ip_address)]})
+      |> List.keyreplace(:connection_uploadrate, 0, {:connection_uploadrate, [], [Mppm.XML.charlist(config.connection_upload_rate)]})
+      |> List.keyreplace(:connection_downloadrate, 0, {:connection_downloadrate, [], [Mppm.XML.charlist(config.connection_download_rate)]})
+      |> List.keyreplace(:workerthreadcount, 0, {:workerthreadcount, [], [Mppm.XML.charlist(config.workers_nb)]})
+      |> List.keyreplace(:packetassembly_multithread, 0, {:packetassembly_multithread, [], [Mppm.XML.charlist(config.packet_assembly_multithread)]})
+      |> List.keyreplace(:packetassembly_packetsperframe, 0, {:packetassembly_packetsperframe, [], [Mppm.XML.charlist(config.packets_per_frame)]})
+      |> List.keyreplace(:packetassembly_fullpacketsperframe, 0, {:packetassembly_fullpacketsperframe, [], [Mppm.XML.charlist(config.full_packets_per_frame)]})
+      |> List.keyreplace(:delayedvisuals_s2c_sendingrate, 0, {:delayedvisuals_s2c_sendingrate, [], [Mppm.XML.charlist(config.visuals_server_to_client_sending_rate)]})
+      |> List.keyreplace(:trustclientsimu_c2s_sendingrate, 0, {:trustclientsimu_c2s_sendingrate, [], [Mppm.XML.charlist(config.trust_client_to_server_sending_rate)]})
+      |> List.keyreplace(:disable_replay_recording, 0, {:disable_replay_recording, [], [Mppm.XML.charlist(config.disable_replay_recording)]})
+    system_config = {:system_config, [], system_config}
+
+    new_xml = {:dedicated, [], [authorization_levels, masterserver_account, server_options, system_config]}
+
+    pp = :xmerl.export_simple([new_xml], :xmerl_xml)
+    |> List.flatten
+
+    filename = server.login <> ".txt"
+
+    Logger.info "["<>server.login<>"] Writing new config file"
+    :file.write_file(@config_path <> filename, pp)
+
+    {:ok, filename}
   end
 
 
-  @spec change_version(String.t(), DedicatedServer.t()) :: {:ok, Ecto.Schema.t()} | {:error, Ecto.Changeset.t()}
-  def change_version(server_login, %DedicatedServer{version: version} = server_version) do
-    config = get_server_config(server_login)
-    changeset = Mppm.ServerConfig.changeset(config, %{version: version})
-    case Mppm.Repo.update(changeset) do
-      {:ok, new_config} = result ->
-        Mppm.ServersStatuses.update_server_config(server_login, new_config)
-        Phoenix.PubSub.broadcast(Mppm.PubSub, "server-status", {:version_change, server_login, server_version})
-        result
-      {:error, _changeset} = result ->
-        result
-    end
-  end
 
 
-  def propagate_ruleset_changes(%ServerConfig{} = server_config, %Ecto.Changeset{changes: %{ruleset: %Ecto.Changeset{changes: changes}}}) do
-    pid = {:global, {:broker_requester, server_config.login}}
-    mode_vars =
-      GenServer.call({:global, {:game_server, server_config.login}}, :get_current_game_mode_id)
-      |> Mppm.GameRules.get_script_variables_by_mode()
+  #
+  # def get_tracks_list(server_login) do
+  #   "#{@maps_path}MatchSettings/#{server_login}.txt"
+  #   |> get_default_xml
+  #   |> elem(2)
+  #   |> Enum.filter(fn {key, _attr, _value} -> key == :map end)
+  #   |> Enum.map(fn {:map, _, [{_, _, [track_path]}]} ->
+  #     %Mppm.Track{
+  #       name: clear_filename(track_path)
+  #     }
+  #   end)
+  # end
+  #
+  # def clear_filename(filename) do
+  #   filename
+  #   |> List.to_string
+  #   |> String.split("/")
+  #   |> List.last
+  #   |> String.split(".")
+  #   |> List.first
+  # end
+  #
+  #
+  #
+  #
 
-    to_update =
-      Map.from_struct(server_config.ruleset)
-      |> Enum.filter(fn {key, _value} -> Map.has_key?(mode_vars, key) end)
 
-    GenServer.call(pid, {:update_ruleset, to_update})
-    if switch_game_mode?(changes) do
-      GenServer.call(pid, {:switch_game_mode, Mppm.Repo.get(Mppm.Type.GameMode, changes.mode_id)})
-    end
-
-    {:ok, to_update}
-  end
-  def propagate_ruleset_changes(_pid, _changeset), do: {:no, nil}
-
-  def switch_game_mode?(%{mode_id: _}), do: true
-  def switch_game_mode?(_), do: false
-
-  def defaults_missing_passwords(data) do
+  defp defaults_missing_passwords(data) do
     Enum.reduce @users_pwd, data, fn field, acc ->
       Map.put_new(acc, to_string(field), generate_random_password(12))
     end
@@ -204,223 +253,6 @@ defmodule Mppm.ServerConfig do
 
   def generate_random_password(length) do
     :crypto.strong_rand_bytes(length) |> Base.url_encode64 |> binary_part(0, length)
-  end
-
-
-  def create_config_file(%ServerConfig{} = serv_config) do
-    source_path = "#{@config_path}dedicated_cfg.default.txt"
-    xml = get_default_xml(source_path)
-
-    authorization_levels = {:authorization_levels, [], [
-      {:level, [], [
-        {:name, [], ['SuperAdmin']},
-        {:password, [], [charlist(serv_config.superadmin_pass)]}
-      ]},
-      {:level, [], [
-        {:name, [], ['Admin']},
-        {:password, [], [charlist(serv_config.admin_pass)]}
-      ]},
-      {:level, [], [
-        {:name, [], ['User']},
-        {:password, [], [charlist(serv_config.user_pass)]}
-      ]},
-    ]}
-
-    masterserver_account =
-      elem(xml, 2)
-      |> List.keyfind(:masterserver_account, 0)
-      |> elem(2)
-      |> List.keyreplace(:password, 0, {:password, [], [charlist(serv_config.password)]})
-      |> List.keyreplace(:login, 0, {:login, [], [charlist(serv_config.login)]})
-#      |> List.keyreplace(:validation_key, 0, {:validation_key, [], [charlist(Application.get_env(:mppm, :masteraccount_validation_key))]})
-    masterserver_account = {:masterserver_account, [], masterserver_account}
-
-    server_options =
-      elem(xml, 2)
-      |> List.keyfind(:server_options, 0)
-      |> elem(2)
-      |> List.keyreplace(:name, 0, {:name, [], [charlist(serv_config.name)]})
-      |> List.keyreplace(:comment, 0, {:comment, [], [charlist(serv_config.comment)]})
-      |> List.keyreplace(:max_players, 0, {:max_players, [], [charlist(serv_config.max_players)]})
-      |> List.keyreplace(:password_spectator, 0, {:password_spectator, [], [charlist(serv_config.spec_pwd)]})
-      |> List.keyreplace(:password, 0, {:password, [], [charlist(serv_config.player_pwd)]})
-      |> List.keyreplace(:disable_horns, 0, {:disable_horns, [], [charlist(serv_config.disable_horns)]})
-      |> List.keyreplace(:keep_player_slots, 0, {:keep_player_slots, [], [charlist(serv_config.keep_player_slot)]})
-      |> List.keyreplace(:autosave_replays, 0, {:autosave_replays, [], [charlist(serv_config.autosave_replays)]})
-      |> List.keyreplace(:autosave_validation_replays, 0, {:autosave_validation_replays, [], [charlist(serv_config.autosave_validation_replays)]})
-      |> List.keyreplace(:clientinputs_maxlatency, 0, {:clientinputs_maxlatency, [], [charlist(serv_config.client_inputs_max_latency)]})
-    server_options = {:server_options, [], server_options}
-
-    system_config =
-      elem(xml, 2)
-      |> List.keyfind(:system_config, 0)
-      |> elem(2)
-      |> List.keyreplace(:force_ip_address, 0, {:force_ip_address, [], [charlist(serv_config.ip_address)]})
-      |> List.keyreplace(:connection_uploadrate, 0, {:connection_uploadrate, [], [charlist(serv_config.connection_upload_rate)]})
-      |> List.keyreplace(:connection_downloadrate, 0, {:connection_downloadrate, [], [charlist(serv_config.connection_download_rate)]})
-      |> List.keyreplace(:workerthreadcount, 0, {:workerthreadcount, [], [charlist(serv_config.workers_nb)]})
-      |> List.keyreplace(:packetassembly_multithread, 0, {:packetassembly_multithread, [], [charlist(serv_config.packet_assembly_multithread)]})
-      |> List.keyreplace(:packetassembly_packetsperframe, 0, {:packetassembly_packetsperframe, [], [charlist(serv_config.packets_per_frame)]})
-      |> List.keyreplace(:packetassembly_fullpacketsperframe, 0, {:packetassembly_fullpacketsperframe, [], [charlist(serv_config.full_packets_per_frame)]})
-      |> List.keyreplace(:delayedvisuals_s2c_sendingrate, 0, {:delayedvisuals_s2c_sendingrate, [], [charlist(serv_config.visuals_server_to_client_sending_rate)]})
-      |> List.keyreplace(:trustclientsimu_c2s_sendingrate, 0, {:trustclientsimu_c2s_sendingrate, [], [charlist(serv_config.trust_client_to_server_sending_rate)]})
-      |> List.keyreplace(:disable_replay_recording, 0, {:disable_replay_recording, [], [charlist(serv_config.disable_replay_recording)]})
-    system_config = {:system_config, [], system_config}
-
-    new_xml = {:dedicated, [], [authorization_levels, masterserver_account, server_options, system_config]}
-
-    pp = :xmerl.export_simple([new_xml], :xmerl_xml)
-    |> List.flatten
-
-    filename = serv_config.login <> ".txt"
-
-    Logger.info "["<>serv_config.login<>"] Writing new config file"
-    :file.write_file(@config_path <> filename, pp)
-
-    filename
-  end
-
-
-  def create_ruleset_file(%ServerConfig{ruleset: %Ecto.Association.NotLoaded{}} = serv_config), do:
-    create_ruleset_file(serv_config |> Mppm.Repo.preload(ruleset: [:mode]))
-  def create_ruleset_file(%ServerConfig{ruleset: %Mppm.GameRules{mode: %Ecto.Association.NotLoaded{}}} = serv_config), do:
-    create_ruleset_file(serv_config |> Mppm.Repo.preload(ruleset: [:mode]))
-  def create_ruleset_file(%ServerConfig{} = server_config) do
-    target_path = "#{@maps_path}MatchSettings/#{server_config.login}.txt"
-
-    script_settings = {
-      :mode_script_settings,
-      [],
-      Mppm.GameRules.get_script_variables_by_mode(server_config.ruleset.mode)
-      |> Enum.map(fn {key, value} ->
-        {:setting, [
-          name: value,
-          type: get_type(Map.get(server_config.ruleset, key)),
-          value: script_setting_value_correction(Map.get(server_config.ruleset, key))], []}
-      end)
-    }
-
-    game_info = {:gameinfos, [], [
-      {:game_mode, [], [charlist(0)]},
-      {:script_name, [], [charlist(server_config.ruleset.mode.script_name)]}
-    ]}
-
-    tracklist =
-      case File.exists?(target_path) do
-        true ->
-          get_default_xml(target_path)
-        false ->
-          get_default_xml("#{@maps_path}MatchSettings/tracklist.txt")
-      end
-      |> elem(2)
-      |> Enum.filter(fn {v, _, _} -> Enum.member?([:map, :startindex], v) end)
-
-    new_xml =
-      {:playlist, [], [game_info, script_settings] ++ tracklist}
-      |> List.wrap
-      |> :xmerl.export_simple(:xmerl_xml)
-      |> List.flatten
-
-    Logger.info "["<>server_config.login<>"] Writing new ruleset"
-    :file.write_file(target_path, new_xml)
-  end
-
-
-  def get_tracks_list(server_login) do
-    "#{@maps_path}MatchSettings/#{server_login}.txt"
-    |> get_default_xml
-    |> elem(2)
-    |> Enum.filter(fn {key, _attr, _value} -> key == :map end)
-    |> Enum.map(fn {:map, _, [{_, _, [track_path]}]} ->
-      %Mppm.Track{
-        name: clear_filename(track_path)
-      }
-    end)
-  end
-
-  def clear_filename(filename) do
-    filename
-    |> List.to_string
-    |> String.split("/")
-    |> List.last
-    |> String.split(".")
-    |> List.first
-  end
-
-
-  def create_tracklist(%Mppm.ServerConfig{id: id}), do:
-    Mppm.Repo.get(Mppm.Tracklist, id) |> create_tracklist()
-
-  def create_tracklist(%Mppm.Tracklist{server: %Ecto.Association.NotLoaded{}} = tracklist), do:
-    Mppm.Repo.preload(tracklist, :server) |> create_tracklist()
-
-  def create_tracklist(%Mppm.Tracklist{tracks: []} = tracklist) do
-    tracklist
-    |> Map.put(:tracks, Mppm.Repo.all(from t in Mppm.Track, where: t.id in ^tracklist.tracks_ids))
-    |> create_tracklist()
-  end
-
-  def create_tracklist(%Mppm.Tracklist{server: %{login: login}} = tracklist) do
-    target_path = "#{@maps_path}MatchSettings/#{login}.txt"
-
-    game_info =
-      get_default_xml(target_path)
-      |> elem(2)
-      |> Enum.filter(& Enum.member?([:gameinfos, :mode_script_settings], elem(&1, 0)))
-
-    tracks =
-      tracklist.tracks
-      |> Enum.map(& {:map, [], [{:file, [], [charlist(Mppm.TracksFiles.mx_track_path(&1))]}] })
-      |> List.insert_at(0, {:startindex, [], [charlist("1")]})
-
-    new_xml = {:playlist, [], game_info ++ tracks}
-    pp = :xmerl.export_simple([new_xml], :xmerl_xml) |> List.flatten
-
-    Logger.info "["<>login<>"] Writing new tracklist"
-    :file.write_file(target_path, pp)
-  end
-
-
-  defp script_setting_value_correction(true), do: 1
-  defp script_setting_value_correction(false), do: 0
-  defp script_setting_value_correction(value), do: value
-
-
-  defp get_type(value) when is_boolean(value), do: "boolean"
-  defp get_type(value) when is_integer(value), do: "integer"
-  defp get_type(value) when is_binary(value), do: "text"
-
-  defp charlist(value) when is_binary(value), do: String.to_charlist(value)
-  defp charlist(value) when is_integer(value), do: Integer.to_string(value) |> String.to_charlist
-  defp charlist(%Postgrex.INET{} = value), do: charlist(EctoNetwork.INET.decode(value))
-  defp charlist(true), do: ['True']
-  defp charlist(false), do: ['False']
-  defp charlist(nil = _value), do: []
-
-
-  def get_default_xml(path) do
-    {result, _misc} = path |>:xmerl_scan.file([{:space, :normalize}])
-    [clean] = :xmerl_lib.remove_whitespace([result])
-    :xmerl_lib.simplify_element(clean)
-  end
-
-
-  def get_available_titlepacks do
-    'ls #{@root_path}UserData/Packs/'
-    |> :os.cmd
-    |> to_string
-    |> String.split("\n", trim: true)
-    |> Enum.map(fn pack ->
-        String.replace_suffix(pack, ".Title.Pack.gbx", "")
-      end)
-  end
-
-  def get_available_controllers do
-    'ls /opt/mppm/'
-    |> :os.cmd
-    |> to_string
-    |> String.split("\n", trim: true)
-    |> Enum.filter(fn x -> x != "maniaplanet" end)
   end
 
 end

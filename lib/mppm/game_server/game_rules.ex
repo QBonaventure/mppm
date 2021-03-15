@@ -2,6 +2,11 @@ defmodule Mppm.GameRules do
   use Ecto.Schema
   import Ecto.Changeset
   alias __MODULE__
+  alias Mppm.GameServer.Server
+  require Logger
+
+  @root_path Application.get_env(:mppm, :game_servers_root_path)
+  @maps_path @root_path <> "UserData/Maps/"
 
   @script_settings %{
     :time_attack => %{
@@ -56,16 +61,18 @@ defmodule Mppm.GameRules do
 
   @primary_key {:server_id, :id, autogenerate: false}
   schema "game_rules" do
-    belongs_to :server, Mppm.ServerConfig, foreign_key: :id, primary_key: true, define_field: false
+    belongs_to :server, Mppm.GameServer.Server, primary_key: true, define_field: false
     belongs_to :mode, Mppm.Type.GameMode, foreign_key: :mode_id
     ### Fields for TA
-    belongs_to :ta_respawn_behaviour, Mppm.Ruleset.RespawnBehaviour, foreign_key: :ta_respawn_behaviour_id
+    belongs_to :ta_respawn_behaviour, Mppm.Ruleset.RespawnBehaviour, foreign_key: :ta_respawn_behaviour_id, define_field: false
+    field :ta_respawn_behaviour_id, :integer, read_after_writes: true
     field :ta_time_limit, :integer, default: 600
     field :ta_warmup_nb, :integer, default: 0
     field :ta_warmup_duration, :integer, default: 0
     field :ta_forced_laps_nb, :integer, default: 0
     ### Fields for Rounds
-    belongs_to :rounds_respawn_behaviour, Mppm.Ruleset.RespawnBehaviour, foreign_key: :rounds_respawn_behaviour_id
+    belongs_to :rounds_respawn_behaviour, Mppm.Ruleset.RespawnBehaviour, foreign_key: :rounds_respawn_behaviour_id, define_field: false
+    field :rounds_respawn_behaviour_id, :integer, read_after_writes: true
     field :rounds_pts_limit, :integer, default: 100
     field :rounds_finish_timeout, :integer, default: -1
     field :rounds_forced_laps_nb, :integer, default: 3
@@ -75,7 +82,8 @@ defmodule Mppm.GameRules do
     field :rounds_warmup_duration, :integer, default: 0
     field :rounds_pts_repartition, :string, default: ""
     ### Fields for Team
-    belongs_to :team_respawn_behaviour, Mppm.Ruleset.RespawnBehaviour, foreign_key: :team_respawn_behaviour_id
+    belongs_to :team_respawn_behaviour, Mppm.Ruleset.RespawnBehaviour, foreign_key: :team_respawn_behaviour_id, define_field: false
+    field :team_respawn_behaviour_id, :integer, read_after_writes: true
     field :team_cumulate_pts, :boolean, default: false
     field :team_custom_pts_repartition, :boolean, default: false
     field :team_finish_timeout, :integer, default: -1
@@ -112,7 +120,10 @@ defmodule Mppm.GameRules do
   ]
 
 
-  def changeset(%GameRules{} = ruleset, data) do
+  def changeset(%GameRules{} = ruleset, data \\ %{}) do
+    data =
+      data
+      |> Map.put_new("ta_respawn_behaviour_id", 0)
     ruleset
     |> cast(data, @all_fields)
     |> cast_assoc(:mode)
@@ -123,8 +134,73 @@ defmodule Mppm.GameRules do
     |> validate_number(:ta_time_limit, greater_than_or_equal_to: 0)
   end
 
-  def get_options_list(), do:
-    List.delete(@all_fields, :server_id)
+  def get_options_list(),
+    do: List.delete(@all_fields, :server_id)
 
+
+  def create_ruleset_file(%Server{ruleset: %Ecto.Association.NotLoaded{}} = server),
+    do: server |> Mppm.Repo.preload(ruleset: [:mode]) |> create_ruleset_file()
+  def create_ruleset_file(%Server{ruleset: %Mppm.GameRules{mode: %Ecto.Association.NotLoaded{}}} = server),
+    do: server |> Mppm.Repo.preload(ruleset: [:mode]) |> create_ruleset_file()
+  def create_ruleset_file(%Server{ruleset: ruleset} = server) do
+    target_path = "#{@maps_path}MatchSettings/#{server.login}.txt"
+
+    script_settings = {
+      :mode_script_settings,
+      [],
+      Mppm.GameRules.get_script_variables_by_mode(ruleset.mode)
+      |> Enum.map(fn {key, value} ->
+        {:setting, [
+          name: value,
+          type: Mppm.XML.get_type(Map.get(ruleset, key)),
+          value: Mppm.XML.script_setting_value_correction(Map.get(ruleset, key))], []}
+      end)
+    }
+
+    game_info = {:gameinfos, [], [
+      {:game_mode, [], [Mppm.XML.charlist(0)]},
+      {:script_name, [], [Mppm.XML.charlist(ruleset.mode.script_name)]}
+    ]}
+
+    tracklist =
+      case File.exists?(target_path) do
+        true ->
+          Mppm.XML.from_file(target_path)
+        false ->
+          Mppm.XML.from_file("#{@maps_path}MatchSettings/tracklist.txt")
+      end
+      |> elem(2)
+      |> Enum.filter(fn {v, _, _} -> Enum.member?([:map, :startindex], v) end)
+
+    new_xml =
+      {:playlist, [], [game_info, script_settings] ++ tracklist}
+      |> List.wrap
+      |> :xmerl.export_simple(:xmerl_xml)
+      |> List.flatten
+
+    Logger.info "["<>server.login<>"] Writing new ruleset"
+    :ok = :file.write_file(target_path, new_xml)
+
+    {:ok, target_path}
+  end
+
+  def propagate_ruleset_changes(%Ecto.Changeset{data: %Server{login: login}, changes: %{ruleset: %{changes: ruleset_changes}}}) do
+    mode_vars =
+      GenServer.call({:global, {:game_server, login}}, :get_current_game_mode_id)
+      |> get_script_variables_by_mode()
+
+    to_update = Enum.filter(ruleset_changes, fn {key, _value} -> Map.has_key?(mode_vars, key) end)
+
+    GenServer.call({:global, {:broker_requester, login}}, {:update_ruleset, to_update})
+    if switch_game_mode?(ruleset_changes) do
+      GenServer.call({:global, {:broker_requester, login}}, {:switch_game_mode, Mppm.Repo.get(Mppm.Type.GameMode, ruleset_changes.mode_id)})
+    end
+
+    :ok
+  end
+  def propagate_ruleset_changes(_changeset), do: :none
+
+  def switch_game_mode?(%{mode_id: _}), do: true
+  def switch_game_mode?(_), do: false
 
 end

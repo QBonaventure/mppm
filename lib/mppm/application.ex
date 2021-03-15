@@ -1,7 +1,7 @@
 defmodule Mppm.Application do
   require Logger
   use Application
-  
+
 
   def start(_type, _args) do
     Mppm.GameServer.DedicatedServer.check_install()
@@ -10,16 +10,15 @@ defmodule Mppm.Application do
       {Phoenix.PubSub, [name: Mppm.PubSub, adapter: Phoenix.PubSub.PG2]},
       MppmWeb.Endpoint,
       Mppm.Notifications,
-      Mppm.Tracklist,
       Mppm.ConnectedUsers,
       {
         DynamicSupervisor, strategy: :one_for_one, name: Mppm.FileManager.TasksSupervisor
       },
       Mppm.GameServer.DedicatedServer,
-      Mppm.ServersStatuses,
       {
         DynamicSupervisor, strategy: :one_for_one, name: Mppm.GameServer.Supervisor
       },
+      Mppm.Tracklist,
       Mppm.TracksFiles,
       %{
         id: Mppm.GameServer.Starter,

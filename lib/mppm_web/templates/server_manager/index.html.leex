@@ -1,7 +1,7 @@
 <section id="server-info">
   <div>
-    <span>Login: <%= @server_info.login %></span>
-    <span>Password: <details><%= @server_info.password %></details></span>
+    <span>Login: <%= @server.login %></span>
+    <span>Password: <details><%= @server.password %></details></span>
   </div>
 </section>
 
@@ -148,113 +148,109 @@
 
       <section id="server-settings">
         <h1>Server settings</h1>
+        <%= inputs_for f, :config, fn c -> %>
+          <label>
+            Pl. pwd: <%= text_input c, :player_pwd %>
+          </label>
+          <%= error_tag c, :player_pwd %>
 
-        <label>
-          Pl. pwd: <%= text_input f, :player_pwd %>
-        </label>
-        <%= error_tag f, :player_pwd %>
+          <label>
+            Spec. pwd: <%= text_input c, :spec_pwd %>
+          </label>
+          <%= error_tag c, :spec_pwd %>
 
-        <label>
-          Spec. pwd: <%= text_input f, :spec_pwd %>
-        </label>
-        <%= error_tag f, :spec_pwd %>
+          <label>
+            Max players: <%= text_input c, :max_players %>
+          </label>
+          <%= error_tag c, :max_players %>
 
-        <label>
-          Max players: <%= text_input f, :max_players %>
-        </label>
-        <%= error_tag f, :max_players %>
+          <label>
+            Disable horns: <%= checkbox c, :disable_horns %>
+          </label>
+          <%= error_tag c, :disable_horns %>
 
-        <label>
-          Disable horns: <%= checkbox f, :disable_horns %>
-        </label>
-        <%= error_tag f, :disable_horns %>
+          <label>
+            Autosave replays: <%= checkbox c, :autosave_replays %>
+          </label>
+          <%= error_tag c, :autosave_replays %>
 
-        <label>
-          Autosave replays: <%= checkbox f, :autosave_replays %>
-        </label>
-        <%= error_tag f, :autosave_replays %>
+          <label>
+            Autosave valid. replays: <%= checkbox c, :autosave_validation_replays %>
+          </label>
+          <%= error_tag c, :autosave_validation_replays %>
 
-        <label>
-          Autosave valid. replays: <%= checkbox f, :autosave_validation_replays %>
-        </label>
-        <%= error_tag f, :autosave_validation_replays %>
+          <label>
+            Keep players slot: <%= checkbox c, :keep_player_slot %>
+          </label>
+          <%= error_tag c, :keep_player_slot %>
 
-        <label>
-          Keep players slot: <%= checkbox f, :keep_player_slot %>
-        </label>
-        <%= error_tag f, :keep_player_slot %>
-
-        <label>
-          Comment: <%= textarea f, :comment %>
-        </label>
-        <%= error_tag f, :comment %>
-
-        <h2>Advanced settings</h2>
-        <label>
-          IP address: <%= text_input f, :ip_address %>
-        </label>
-        <%= error_tag f, :ip_address %>
-        <label>
-          Bind to IP: <%= text_input f, :bind_ip %>
-        </label>
-        <%= error_tag f, :bind_ip %>
+          <h2>Advanced settings</h2>
+          <label>
+            IP address: <%= text_input c, :ip_address %>
+          </label>
+          <%= error_tag c, :ip_address %>
+          <label>
+            Bind to IP: <%= text_input c, :bind_ip %>
+          </label>
+          <%= error_tag c, :bind_ip %>
 
 
 
-        <label>
-          Conn. U/L rate: <%= text_input f, :connection_upload_rate %>
-        </label>
-        <%= error_tag f, :connection_upload_rate %>
+          <label>
+            Conn. U/L rate: <%= text_input c, :connection_upload_rate %>
+          </label>
+          <%= error_tag c, :connection_upload_rate %>
 
-        <label>
-          Conn. D/L rate: <%= text_input f, :connection_download_rate %>
-        </label>
-        <%= error_tag f, :connection_download_rate %>
+          <label>
+            Conn. D/L rate: <%= text_input c, :connection_download_rate %>
+          </label>
+          <%= error_tag c, :connection_download_rate %>
 
-        <label>
-          Cl. inp. max latency: <%= text_input f, :client_inputs_max_latency %>
-        </label>
-        <%= error_tag f, :client_inputs_max_latency %>
+          <label>
+            Cl. inp. max latency: <%= text_input c, :client_inputs_max_latency %>
+          </label>
+          <%= error_tag c, :client_inputs_max_latency %>
 
-        <label>
-          Pck ass. multith.: <%= select f, :packet_assembly_multithread, [true, false] %>
-        </label>
-        <%= error_tag f, :packet_assembly_multithread %>
+          <label>
+            Pck ass. multith.: <%= select c, :packet_assembly_multithread, [true, false] %>
+          </label>
+          <%= error_tag c, :packet_assembly_multithread %>
 
-        <label>
-          Packets/frame: <%= text_input f, :packets_per_frame %>
-        </label>
-        <%= error_tag f, :packets_per_frame %>
+          <label>
+            Packets/frame: <%= text_input c, :packets_per_frame %>
+          </label>
+          <%= error_tag c, :packets_per_frame %>
 
-        <label>
-          Full packets/frame: <%= text_input f, :full_packets_per_frame %>
-        </label>
-        <%= error_tag f, :full_packets_per_frame %>
+          <label>
+            Full packets/frame: <%= text_input c, :full_packets_per_frame %>
+          </label>
+          <%= error_tag c, :full_packets_per_frame %>
 
-        <label>
-          Visuals delays: <%= text_input f, :visuals_delay %>
-        </label>
-        <%= error_tag f, :visuals_delay %>
+          <label>
+            Visuals delays: <%= text_input c, :visuals_delay %>
+          </label>
+          <%= error_tag c, :visuals_delay %>
 
-        <label>
-          Trust, C2S send/: <%= text_input f, :trust_client_to_server_sending_rate %>
-        </label>
-        <%= error_tag f, :trust_client_to_server_sending_rate %>
+          <label>
+            Trust, C2S send/: <%= text_input c, :trust_client_to_server_sending_rate %>
+          </label>
+          <%= error_tag c, :trust_client_to_server_sending_rate %>
 
-        <label>
-          Visuals, S2C send/: <%= text_input f, :visuals_server_to_client_sending_rate %>
-        </label>
-        <%= error_tag f, :visuals_server_to_client_sending_rate %>
+          <label>
+            Visuals, S2C send/: <%= text_input c, :visuals_server_to_client_sending_rate %>
+          </label>
+          <%= error_tag c, :visuals_server_to_client_sending_rate %>
 
-        <label>
-          Worker nb.: <%= text_input f, :workers_nb %>
-        </label>
-        <%= error_tag f, :workers_nb %>
+          <label>
+            Worker nb.: <%= text_input c, :workers_nb %>
+          </label>
+          <%= error_tag c, :workers_nb %>
 
-        <label>
-          Disable replay recording: <%= select f, :disable_replay_recording, [true, false] %>
-        </label>
-        <%= error_tag f, :disable_replay_recording %>
+          <label>
+            Disable replay recording: <%= select c, :disable_replay_recording, [true, false] %>
+          </label>
+          <%= error_tag c, :disable_replay_recording %>
+        <% end %>
       </section>
 
     </form>

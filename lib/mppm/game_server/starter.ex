@@ -12,9 +12,9 @@ defmodule Mppm.GameServer.Starter do
   end
 
   def handle_info(:start_children, _) do
-    Mppm.ServersStatuses.all
-    |> Enum.each(fn {_server_login, %{config: server_config}} ->
-      {:ok, _server_pid} = Mppm.GameServer.Supervisor.start_server_supervisor(server_config)
+    Mppm.Repo.all(Mppm.GameServer.Server)
+    |> Enum.each(fn server ->
+      {:ok, _server_pid} = Mppm.GameServer.Supervisor.start_server_supervisor(server)
     end)
     relink_lost_processes()
 

@@ -7,143 +7,181 @@ defmodule Mppm.Tracklist do
   use Ecto.Schema
   import Ecto.Query
   import Ecto.Changeset
+  require Logger
+
+  @maps_path Application.get_env(:mppm, :game_servers_root_path) <> "UserData/Maps/"
 
 
   @primary_key {:server_id, :id, autogenerate: false}
   schema "tracklists"  do
-    belongs_to :server, Mppm.ServerConfig, foreign_key: :server_id, primary_key: true, define_field: false
+    belongs_to :server, Mppm.GameServer.Server, foreign_key: :server_id, primary_key: true, define_field: false
     field :tracks_ids, {:array, :integer}, default: []
     field :tracks, {:array, :map}, default: [], virtual: true
   end
 
+  @type t() :: %Mppm.Tracklist{
+    server: Mppm.GameServer.Server.t(),
+    tracks_ids: [track_id()],
+    tracks: [track()]
+  }
+  @type track_id() :: integer()
+  @type track :: Mppm.Track.t()
 
   def changeset(%Mppm.Tracklist{} = tracklist, params \\ %{}) do
+    tracks_ids = Enum.map(params["tracks"], & &1.id)
+    params = Map.put(params, "tracks_ids", tracks_ids)
     tracklist
     |> cast(params, [:tracks_ids, :server_id, :tracks])
     |> cast_assoc(:server)
   end
 
+  @spec get_tracklist(Mppm.GameServer.Server.t() | String.t()) :: t()
+
+  def get_tracklist(server_login) when is_binary(server_login) do
+    GenServer.call(__MODULE__, {:get_server_tracklist, server_login})
+  end
 
   @doc """
   Persist a tracklist in DB, both insert or update.
   """
-  def upsert_tracklist(%Mppm.Tracklist{} = tracklist) do
-    mx_tracks_ids = Enum.map(tracklist.tracks, & Map.get(&1, :mx_track_id))
-    tracks = Mppm.Repo.all(from t in Mppm.Track, where: t.mx_track_id in ^mx_tracks_ids)
-
-    mxds =
-      mx_tracks_ids
-      |> Enum.map(fn mx_id ->
-        Enum.find(tracks, mx_id, fn track_struct -> track_struct.mx_track_id == mx_id end)
-      end)
-      |> Enum.map(fn track ->
-        case track do
-          %Mppm.Track{} ->
-            track
-          mx_id when is_integer(mx_id) ->
-            Mppm.TracksFiles.download_mx_track(Enum.find(tracklist.tracks, & &1.mx_track_id == mx_id))
-        end
-      end)
-      |> Enum.map(& &1.id)
-
-
-    {:ok, tracklist} =
-      %{tracklist | tracks_ids: mxds}
-      |> Mppm.Repo.preload(:server)
-      |> Mppm.Repo.insert(on_conflict: [set: [tracks_ids: mxds]], conflict_target: :server_id)
-
-    :ok = Phoenix.PubSub.broadcast(Mppm.PubSub, "tracklist-status", {:tracklist_update, tracklist.server.login, tracklist})
-    tracklist
-  end
-
-  def new_server_tracklist(%Mppm.ServerConfig{id: server_id}) do
-    tracks = Mppm.Track.get_random_tracks(1)
-    tracklist = %Mppm.Tracklist{server_id: server_id, tracks: tracks}
-    GenServer.call(__MODULE__, {:upsert_tracklist, tracklist})
+  def upsert_tracklist(%Mppm.Tracklist{} = tracklist, changes) do
+    {:ok, updated_tracklist} = GenServer.call(__MODULE__, {:update_tracklist, tracklist, changes})
+    {:ok, updated_tracklist}
   end
 
 
   @doc """
     Adds a track to the tracklist. Downloads it if it doesn't exist yet.
+
+    Returns: {:ok, tracklist} on success.
   """
+  @spec add_track(t(), track(), integer()) :: {:ok, t()}
+  def add_track(%Mppm.Tracklist{server: %Ecto.Association.NotLoaded{}} = tracklist, track, index),
+    do: tracklist |> Mppm.Repo.preload(:server) |> add_track(track, index)
   def add_track(%Mppm.Tracklist{} = tracklist, %Mppm.Track{} = track, index) do
-    track =
-      case File.exists?(Mppm.TracksFiles.mx_track_path(track)) do
-        false -> {:ok, track} =
-          Mppm.TracksFiles.download_mx_track(track)
-          track
-        true -> track
-      end
-    %{tracklist | tracks: List.insert_at(tracklist.tracks, index, track)}
-  end
-
-
-  @doc """
-    Removes a track from the tracklist.
-  """
-  def remove_track(%Mppm.Tracklist{} = tracklist, track_id) when is_integer(track_id) do
-    %{tracklist | tracks: Enum.reject(tracklist.tracks, & &1.id == track_id)}
-  end
-
-
-  def reindex_for_next_track(%Mppm.Tracklist{} = tracklist, uuid) do
-    [curr_track | tracks] = Map.get(tracklist, :tracks)
-    next_track_index = tracks |> Enum.find_index(& &1.id == uuid)
-    {to_last, to_first} = Enum.split(tracks, next_track_index)
-    Map.put(tracklist, :tracks, [curr_track] ++ to_first ++ to_last)
-  end
-
-
-  def reindex_from_current_track(%Mppm.Tracklist{} = tracklist, uuid) do
-    case Enum.count(tracklist.tracks) do
-      size when size <= 1 ->
-        tracklist
-      _ ->
-        tracks = Map.get(tracklist, :tracks)
-        cur_track_index = tracks |> Enum.find_index(& &1.uuid == uuid)
-        {to_last, to_first} = Enum.split(tracks, cur_track_index)
-
-        Map.put(tracklist, :tracks, to_first ++ to_last)
+    case Enum.any?(tracklist.tracks, & &1.uuid == track.uuid) do
+      true ->
+        {:none, tracklist}
+      false ->
+        GenServer.call(__MODULE__, {:add_track, tracklist, track, index})
     end
   end
 
 
 
-  def handle_call({:get_server_current_track, server_login}, _from, state) do
-    track = Map.get(state, server_login) |> Map.get(:tracks) |> List.first()
-    {:reply, track, state}
+  @doc """
+    Removes a track from the tracklist.
+  """
+  def remove_track(%Mppm.Tracklist{server: %Ecto.Association.NotLoaded{}} = tracklist, track_id),
+    do: tracklist |> Mppm.Repo.preload(:server) |> remove_track(track_id)
+  def remove_track(%Mppm.Tracklist{} = tracklist, track_id) when is_integer(track_id) do
+    GenServer.call(__MODULE__, {:remove_track, tracklist, track_id})
   end
 
-  def handle_call({:get_server_next_track, server_login}, _from, state) do
-    tracks = Map.get(state, server_login) |> Map.get(:tracks)
-    {:reply, Enum.at(tracks, 1, List.first(tracks)), state}
+  def move_track_to(tracklist, track_id, index) do
+    tracks_ids =
+      tracklist.tracks_ids
+      |> Enum.reject(& &1 == track_id)
+      |> List.insert_at(index, track_id)
+    GenServer.call(__MODULE__, {:update, tracklist, %{tracks_ids: tracks_ids}})
   end
+
+
+  def reindex_for_next_track(%Mppm.Tracklist{} = tracklist, track_id) do
+    [curr_track_id | tracks_ids] = Map.get(tracklist, :tracks_ids)
+    next_track_index = Enum.find_index(tracklist.tracks_ids, & &1 == track_id)
+    {to_last, to_first} = Enum.split(tracks_ids, next_track_index-1)
+    tracks_ids = [curr_track_id] ++ to_first ++ to_last
+    GenServer.call(__MODULE__, {:update, tracklist, %{tracks_ids: tracks_ids}})
+  end
+
+
+  def create_tracklist(%Mppm.GameServer.Server{id: id}),
+    do: Mppm.Tracklist |> Mppm.Repo.get(id) |> Mppm.Repo.preload(:server) |> create_tracklist()
+  def create_tracklist(%Mppm.Tracklist{server: %Ecto.Association.NotLoaded{}} = tracklist),
+    do: tracklist |> Mppm.Repo.preload(:server) |> create_tracklist()
+  def create_tracklist(%Mppm.Tracklist{tracks: []} = tracklist) do
+    tracklist
+    |> Map.put(:tracks, Mppm.Repo.all(from t in Mppm.Track, where: t.id in ^tracklist.tracks_ids))
+    |> create_tracklist()
+  end
+  def create_tracklist(%Mppm.Tracklist{server: %{login: login}} = tracklist) do
+    target_path = "#{@maps_path}MatchSettings/#{login}.txt"
+
+    game_info =
+      target_path
+      |> Mppm.XML.from_file()
+      |> elem(2)
+      |> Enum.filter(& Enum.member?([:gameinfos, :mode_script_settings], elem(&1, 0)))
+
+    tracks =
+      tracklist.tracks
+      |> Enum.map(& {:map, [], [{:file, [], [Mppm.XML.charlist(Mppm.TracksFiles.mx_track_path(&1))]}] })
+      |> List.insert_at(0, {:startindex, [], [Mppm.XML.charlist("1")]})
+
+    new_xml = {:playlist, [], game_info ++ tracks}
+    new_xml = :xmerl.export_simple([new_xml], :xmerl_xml) |> List.flatten
+
+    Logger.info "["<>login<>"] Writing new tracklist"
+    :ok = :file.write_file(target_path, new_xml)
+
+    {:ok, target_path}
+  end
+
+
+  def get_server_current_track(server_login) do
+    {:ok, tracklist} = GenServer.call(__MODULE__, {:get_server_tracklist, server_login})
+    {:ok, Map.get(tracklist, :tracks) |> List.first()}
+  end
+
+
+  def get_server_next_track(server_login) do
+    {:ok, tracklist} = GenServer.call(__MODULE__, {:get_server_tracklist, server_login})
+    tracks = Map.get(tracklist, :tracks)
+    {:ok, Enum.at(tracks, 1, List.first(tracks))}
+  end
+
+
+  ##############################################################################
+  ############################# GenServerCallbacks #############################
+  ##############################################################################
 
   def handle_call({:get_server_tracklist, server_login}, _from, state) do
-    {:reply, Map.get(state, server_login), state}
+    {:reply, {:ok, Map.get(state, server_login)}, state}
   end
 
-  def handle_call({:upsert_tracklist, tracklist}, _from, state) do
-    tracklist = Mppm.Tracklist.upsert_tracklist(tracklist) |> Mppm.Repo.preload(:server)
-    Phoenix.PubSub.broadcast(Mppm.PubSub, "tracklist-status", {:tracklist_update, tracklist.server.login, tracklist})
-    {:reply, tracklist, Map.put(state, tracklist.server.login, tracklist)}
+  def handle_call({:update, tracklist, changes}, _from, state) do
+    {:ok, updated_tracklist} = upsert(tracklist, changes)
+    {:reply, {:ok, updated_tracklist}, %{state | updated_tracklist.server.login => updated_tracklist}}
   end
 
-  def handle_cast({:insert_track, server_login, %Mppm.Track{} = track, index}, state) do
-    tracklist = Map.get(state, server_login) |> add_track(track, index)
-    Mppm.Tracklist.upsert_tracklist(tracklist)
-    Phoenix.PubSub.broadcast(Mppm.PubSub, "tracklist-status", {:tracklist_update, server_login, tracklist})
-    {:noreply, %{state | server_login => tracklist}}
+  def handle_call({:add_track, tracklist, track, index}, _from, state) do
+    tracks_ids = List.insert_at(tracklist.tracks_ids, index, track.id)
+    tracklist = Map.put(tracklist, :tracks, tracklist.tracks++[track])
+    {:ok, updated_tracklist} = upsert(tracklist, %{tracks_ids: tracks_ids})
+    {:reply, {:ok, updated_tracklist}, %{state | tracklist.server.login => updated_tracklist}}
   end
 
-  def handle_info({message, server_login, uuid}, state)
+  def handle_call({:remove_track, tracklist, track_id}, _from, state) do
+    tracks_ids = Enum.reject(tracklist.tracks_ids, & &1 == track_id)
+    tracks = Enum.reject(tracklist.tracks, & &1.id == track_id)
+
+    {:ok, updated_tracklist} = upsert(tracklist, %{tracks_ids: tracks_ids})
+    {:reply, {:ok, updated_tracklist}, %{state | tracklist.server.login => updated_tracklist}}
+  end
+
+
+  def handle_info({message, server_login, uuid} = msg, state)
   when message in [:current_track_info, :loaded_map] do
-    tracklist = reindex_from_current_track(Map.get(state, server_login), uuid)
-    Phoenix.PubSub.broadcast(Mppm.PubSub, "tracklist-status", {:tracklist_update, server_login, tracklist})
+    tracklist = Map.get(state, server_login)
+    current_track_index = Enum.find_index(tracklist.tracks, & &1.uuid == uuid)
+    {to_last, to_first} = Enum.split(tracklist.tracks_ids, current_track_index)
 
-    Mppm.ServerConfig.create_tracklist(tracklist)
-    {:noreply, %{state | server_login => tracklist}}
+    {:ok, updated_tracklist} = upsert(tracklist, %{tracks_ids: to_first ++ to_last})
+    {:noreply, %{state | server_login => updated_tracklist}}
   end
+
+
 
   def handle_info({:server_supervisor_started, server_config}, state), do:
     {:noreply, %{state | server_config.login => Mppm.Repo.get(Mppm.Tracklist, server_config.id)}}
@@ -153,22 +191,37 @@ defmodule Mppm.Tracklist do
   end
 
 
-
-
   def start_link(_init_value), do: GenServer.start_link(__MODULE__, nil, name: __MODULE__)
 
   def init(_init_value) do
     Phoenix.PubSub.subscribe(Mppm.PubSub, "maps-status")
     state = fetch_all_tracklists()
-    # {:ok, state, {:continue, :check_files}}
     {:ok, state}
+  end
+
+
+  ##############################################################################
+  ############################# Private Functions ##############################
+  ##############################################################################
+
+
+  defp upsert(%Mppm.Tracklist{server: %Ecto.Association.NotLoaded{}} = tracklist, changes),
+    do: tracklist |> Mppm.Repo.preload(:server) |> upsert(changes)
+  defp upsert(tracklist, changes) do
+    {:ok, tracklist} =
+      Ecto.Changeset.change(tracklist, changes)
+      |> Mppm.Repo.update()
+    tracklist = sort_tracks(tracklist)
+    create_tracklist(tracklist)
+    Mppm.PubSub.broadcast("tracklist-status", {:tracklist_update, tracklist.server.login, tracklist})
+    {:ok, tracklist}
   end
 
 
   defp fetch_all_tracklists() do
     Mppm.Repo.all(
       from tl in Mppm.Tracklist,
-      join: sc in Mppm.ServerConfig, on: tl.server_id == sc.id,
+      join: sc in Mppm.GameServer.Server, on: tl.server_id == sc.id,
       select: {sc.login, tl})
     |> Enum.map(fn {server_login, tracklist} ->
       {server_login, Map.put(
@@ -185,5 +238,11 @@ defmodule Mppm.Tracklist do
     |> Map.new
   end
 
+
+  def sort_tracks(%Mppm.Tracklist{} = tracklist) do
+    tracks = Enum.map(tracklist.tracks, & {&1.id, &1}) |> Map.new()
+    sorted_tracks = Enum.map(tracklist.tracks_ids, & Map.get(tracks, &1))
+    Map.put(tracklist, :tracks, sorted_tracks)
+  end
 
 end

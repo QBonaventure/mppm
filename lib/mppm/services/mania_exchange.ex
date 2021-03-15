@@ -18,9 +18,8 @@ defmodule Mppm.Service.ManiaExchange do
   end
 
 
-  def download_track(%Mppm.Track{mx_track_id: track_id}) do
-    HTTPoison.get("/tracks/download/"<>Integer.to_string(track_id))
-  end
+  def map_download_url(%Mppm.Service.ManiaExchange.Track{mx_track_id: track_id}),
+    do: @host <> "/tracks/download/" <> Integer.to_string(track_id)
 
 
   @spec make_maps_info_request([String.t()]) :: [Mppm.Track.t()]
@@ -80,7 +79,7 @@ defmodule Mppm.Service.ManiaExchange do
     tracks =
       body
       |> Map.get("results")
-      |> Enum.map(& Mppm.Track.track_from_mx(&1))
+      |> Enum.map(& Mppm.Service.ManiaExchange.Track.cast(&1))
     pagination = %{
       page: response.request.params.page,
       item_count: body |> Map.get("totalItemCount"),

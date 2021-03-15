@@ -21,141 +21,139 @@
 
 
 <section id="server-form">
-  <a href="https://players.trackmania.com/en/player/server"target="_blank">Create a new server login (trackmania.com)</a>
-  <%= f = form_for @new_server_changeset, "#", [phx_change: :validate, phx_submit: "create-server"] %>
+  <a href="https://players.trackmania.com/server/dedicated" target="_blank">Create a new server login (trackmania.com)</a>
+  <%= s = form_for @new_server_changeset, "#", [phx_change: :validate, phx_submit: "create-server"] %>
 
     <label>
-      Login: <%= text_input f, :login %>
+      Login: <%= text_input s, :login %>
     </label>
-    <%= error_tag f, :login %>
-
-
-    <label>
-      Password: <%= password_input f, :password, value: input_value(f, :password) %>
-    </label>
-    <%= error_tag f, :password %>
+    <%= error_tag s, :login %>
 
 
     <label>
-      Name: <%= text_input f, :name %>
+      Password: <%= password_input s, :password, value: input_value(s, :password) %>
     </label>
-    <%= error_tag f, :name %>
-
-    <label>
-      Exe version: <%= select f, :version, Enum.map(Mppm.GameServer.DedicatedServer.ready_to_use_servers(), & &1.version)  %>
-    </label>
-    <%= error_tag f, :version %>
+    <%= error_tag s, :password %>
 
 
     <label>
-      Comment: <%= textarea f, :comment %>
+      Name: <%= text_input s, :name %>
     </label>
-    <%= error_tag f, :comment %>
+    <%= error_tag s, :name %>
+
+    <label>
+      Exe version: <%= select s, :exe_version, Enum.map(Mppm.GameServer.DedicatedServer.ready_to_use_servers(), & &1.version)  %>
+    </label>
+    <%= error_tag s, :exe %>
 
 
     <label>
-      Max players: <%= text_input f, :max_players %>
+      Comment: <%= textarea s, :comment %>
     </label>
-    <%= error_tag f, :name %>
+    <%= error_tag s, :comment %>
 
-
-    <label>
-      Players password: <%= text_input f, :player_pwd %>
-    </label>
-    <%= error_tag f, :player_pwd %>
-
-
-    <label>
-      Spectators password: <%= text_input f, :spec_pwd %>
-    </label>
-    <%= error_tag f, :spec_pwd %>
-
-
-    <label>
-      SuperAdmin password: <%= text_input f, :superadmin_pass %>
-    </label>
-    <%= error_tag f, :superadmin_pass %>
-
-
-    <label>
-      Admin password: <%= text_input f, :admin_pass %>
-    </label>
-    <%= error_tag f, :admin_pass %>
-
-
-    <label>
-      User password: <%= text_input f, :user_pass %>
-    </label>
-    <%= error_tag f, :user_pass %>
-
-
-    <label>
-      Public IP: <%= text_input f, :ip_address %>
-    </label>
-    <%= error_tag f, :ip_address %>
-
-    <label>
-      Bind to IP: <%= text_input f, :bind_ip %>
-    </label>
-    <%= error_tag f, :bind_ip %>
-
+    <%= inputs_for s, :config, fn c -> %>
+      <label>
+        Max players: <%= text_input c, :max_players %>
+      </label>
+      <%= error_tag c, :name %>
 
 
       <label>
-        Cl. inp. max latency: <%= text_input f, :client_inputs_max_latency %>
+        Players password: <%= text_input c, :player_pwd %>
       </label>
-      <%= error_tag f, :client_inputs_max_latency %>
+      <%= error_tag c, :player_pwd %>
+
 
       <label>
-        Conn. U/L rate: <%= text_input f, :connection_upload_rate %>
+        Spectators password: <%= text_input c, :spec_pwd %>
       </label>
-      <%= error_tag f, :connection_upload_rate %>
+      <%= error_tag c, :spec_pwd %>
+
 
       <label>
-        Conn. D/L rate: <%= text_input f, :connection_download_rate %>
+        SuperAdmin password: <%= text_input c, :superadmin_pass %>
       </label>
-      <%= error_tag f, :connection_download_rate %>
+      <%= error_tag c, :superadmin_pass %>
+
 
       <label>
-        Packet ass. multithread: <%= select f, :packet_assembly_multithread, [true, false] %>
+        Admin password: <%= text_input c, :admin_pass %>
       </label>
-      <%= error_tag f, :packet_assembly_multithread %>
+      <%= error_tag c, :admin_pass %>
+
 
       <label>
-        Packets/frame: <%= text_input f, :packets_per_frame %>
+        User password: <%= text_input c, :user_pass %>
       </label>
-      <%= error_tag f, :packets_per_frame %>
+      <%= error_tag c, :user_pass %>
+
 
       <label>
-        Full packets/frame: <%= text_input f, :full_packets_per_frame %>
+        Public IP: <%= text_input c, :ip_address %>
       </label>
-      <%= error_tag f, :full_packets_per_frame %>
+      <%= error_tag c, :ip_address %>
 
       <label>
-        Visuals delays: <%= text_input f, :visuals_delay %>
+        Bind to IP: <%= text_input c, :bind_ip %>
       </label>
-      <%= error_tag f, :visuals_delay %>
+      <%= error_tag c, :bind_ip %>
 
       <label>
-        Trust cl., C2S send rate: <%= text_input f, :trust_client_to_server_sending_rate %>
+        Cl. inp. max latency: <%= text_input c, :client_inputs_max_latency %>
       </label>
-      <%= error_tag f, :trust_client_to_server_sending_rate %>
+      <%= error_tag c, :client_inputs_max_latency %>
 
       <label>
-        Visuals S2C send rate: <%= text_input f, :visuals_server_to_client_sending_rate %>
+        Conn. U/L rate: <%= text_input c, :connection_upload_rate %>
       </label>
-      <%= error_tag f, :visuals_server_to_client_sending_rate %>
+      <%= error_tag c, :connection_upload_rate %>
 
       <label>
-        Thread nb.: <%= text_input f, :workers_nb %>
+        Conn. D/L rate: <%= text_input c, :connection_download_rate %>
       </label>
-      <%= error_tag f, :workers_nb %>
+      <%= error_tag c, :connection_download_rate %>
 
       <label>
-        Disable replay recording: <%= select f, :disable_replay_recording, [true, false] %>
+        Packet ass. multithread: <%= select c, :packet_assembly_multithread, [true, false] %>
       </label>
-      <%= error_tag f, :disable_replay_recording %>
+      <%= error_tag c, :packet_assembly_multithread %>
 
+      <label>
+        Packets/frame: <%= text_input c, :packets_per_frame %>
+      </label>
+      <%= error_tag c, :packets_per_frame %>
+
+      <label>
+        Full packets/frame: <%= text_input c, :full_packets_per_frame %>
+      </label>
+      <%= error_tag c, :full_packets_per_frame %>
+
+      <label>
+        Visuals delays: <%= text_input c, :visuals_delay %>
+      </label>
+      <%= error_tag c, :visuals_delay %>
+
+      <label>
+        Trust cl., C2S send rate: <%= text_input c, :trust_client_to_server_sending_rate %>
+      </label>
+      <%= error_tag c, :trust_client_to_server_sending_rate %>
+
+      <label>
+        Visuals S2C send rate: <%= text_input c, :visuals_server_to_client_sending_rate %>
+      </label>
+      <%= error_tag c, :visuals_server_to_client_sending_rate %>
+
+      <label>
+        Thread nb.: <%= text_input c, :workers_nb %>
+      </label>
+      <%= error_tag c, :workers_nb %>
+
+      <label>
+        Disable replay recording: <%= select c, :disable_replay_recording, [true, false] %>
+      </label>
+      <%= error_tag c, :disable_replay_recording %>
+    <% end %>
 
     <%= submit "Submit" , disabled: Kernel.not @new_server_changeset.valid? %>
     <%= tag(:input, type: "button", value: "Cancel", phx_click: "cancel-form") %>

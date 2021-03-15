@@ -60,7 +60,7 @@ defmodule Mppm.TimeTracker do
 
   def handle_cast({:player_waypoint, server_login, %{"isendlap" => true, "login" => player_login, "racetime" => time}}, state) do
     user = Mppm.Repo.get_by(Mppm.User, login: player_login)
-    track = GenServer.call(Mppm.Tracklist, {:get_server_current_track, server_login})
+    {:ok, track} = Mppm.Tracklist.get_server_current_track(server_login)
 
     case is_new_record?(time, Mppm.Repo.get_by(Mppm.TimeRecord, user_id: user.id, track_id: track.id)) do
       true ->

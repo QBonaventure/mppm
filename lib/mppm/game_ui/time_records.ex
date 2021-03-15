@@ -123,10 +123,10 @@ defmodule Mppm.GameUI.TimeRecords do
 
   def start_link(_init_value), do: GenServer.start_link(__MODULE__, nil, name: __MODULE__)
   def init(_) do
-    state =
-      Mppm.ServersStatuses.get_list_of_running()
-      |> Enum.map(& {&1, GenServer.call(Mppm.TimeTracker, {:get_server_records, &1})})
-      |> Map.new
+    state = %{}
+      # Mppm.ServersStatuses.get_list_of_running()
+      # |> Enum.map(& {&1, GenServer.call(Mppm.TimeTracker, {:get_server_records, &1})})
+      # |> Map.new
 
     :ok = Phoenix.PubSub.subscribe(Mppm.PubSub, "maps-status")
     :ok = Phoenix.PubSub.subscribe(Mppm.PubSub, "time-status")

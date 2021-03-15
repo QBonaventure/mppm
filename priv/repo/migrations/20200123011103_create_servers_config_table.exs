@@ -3,10 +3,7 @@ defmodule Mppm.Repo.Migrations.CreateServersConfigTable do
 
   def change do
     create table(:servers_configs) do
-      add :login, :string
-      add :password, :string
-      add :name, :string
-      add :comment, :string
+      add :server_id, references(:servers, on_delete: :delete_all), primary_key: true
       add :max_players, :integer
       add :player_pwd, :string
       add :spec_pwd, :string
@@ -31,7 +28,5 @@ defmodule Mppm.Repo.Migrations.CreateServersConfigTable do
       add :disable_replay_recording, :boolean, default: true
       add :visuals_delay, :integer, default: 400
     end
-
-    create unique_index(:servers_configs, [:login], name: :uk_server_configs_login)
   end
 end

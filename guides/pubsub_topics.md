@@ -32,9 +32,9 @@
 - {:start_failed, server_login}
 - {:stopping, server_login}
 - {:stopped, server_login}
-- {:created, Mppm.ServerConfig.t()}
-- {:deleted, Mppm.ServerConfig.t()}
-- {:updated, Mppm.ServerConfig.t()}
+- {:created, Mppm.GameServer.Server.t()}
+- {:deleted, Mppm.GameServer.Server.t()}
+- {:updated, Mppm.GameServer.Server.t()}
 
 ## "server-status:*"
 - {:new_chat_message, chat_message}
@@ -49,7 +49,6 @@
 - {:podium_start, server_login}
 - {:podium_end, server_login}
 - {:broker_started, state.login}
-- {:version_change, server_version}
 
 
 ## "broker-status:*"
