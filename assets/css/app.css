@@ -1,14 +1,88 @@
 /* This file is for your main application css. */
 
+:root {
+  --ftc-red-color: 153, 27, 21;
+  --ftc-white-color: 233, 223, 192;
+  --mx-lightgreen: 110, 250, 160;
+  --mx-darkgreen: 0, 50, 40;
+  /* --mx-dark-green: 0, 50, 40; */
+  --mx: 0,122,76;
+  --mx-plain-green: 0,113,90;
+  --mx-pastel: 204,227,227;
+
+}
+
 @import "./phoenix.css";
 @import "./notifications.css";
 @import "./app_settings.css";
 @import "./system_watcher.css";
 @import "../node_modules/nprogress/nprogress.css";
 
+html {
+  min-height: 100%;
+  position: relative;
+}
+
+body {
+  margin: 0;
+  margin-bottom: 120px;
+}
 
 body > header {
-  height: 30px;
+  height: 31px;
+  margin-bottom: 0;
+  position: relative;
+  z-index: 500;
+  background-color: rgb(var(--ftc-white-color));
+  border-bottom: 3px solid rgb(var(--ftc-red-color));
+}
+
+body > main.container {
+  overflow: auto;
+  box-shadow: 0px 0px 27px rgba(30,30,30,.1);
+  padding: 25px 20px;
+}
+
+body > footer {
+  clear: both;
+  background-color: rgb(var(--ftc-white-color));
+  min-height: 120px;
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  margin-top: 16px;
+  padding: 12px 0;
+  border-top: 3px solid rgb(var(--ftc-red-color));
+}
+
+footer img#fearthec-footer-logo {
+    width: 170px;
+    border-right: 1px solid #666;
+    padding-right: 20px;
+    padding: 10px 20px 10px 0px;
+}
+
+footer span.footer-link {
+    position: absolute;
+    padding: 5px;
+}
+
+footer span.footer-link a {
+  colot: black;
+}
+
+footer div#footer-tech-stacks {
+    width: 158px;
+    float: right;
+    padding: 10px 0px 10px 20px;
+    right: 0;
+    top: 20px;
+    border-left: 1px solid #666;
+}
+
+footer img#elixir-logo {
+    max-width: 52%;
 }
 
 /********************************************************/
@@ -26,7 +100,7 @@ nav[role=session-management] h1 {
 
 nav[role=session-management] > * {
   float: left;
-  padding: 5px 10px;
+  padding: 5px 10px 3px;
   margin: 0;
   line-height: 1.25;
   background-color: rgb(var(--ftc-white-color));
@@ -81,20 +155,6 @@ nav#main-menu li > ul a {
 nav#main-menu .restart {
   background-color: red;
   color: white;
-}
-
-
-
-:root {
-  --ftc-red-color: 153, 27, 21;
-  --ftc-white-color: 233, 223, 192;
-  --mx-lightgreen: 110, 250, 160;
-  --mx-darkgreen: 0, 50, 40;
-  /* --mx-dark-green: 0, 50, 40; */
-  --mx: 0,122,76;
-  --mx-plain-green: 0,113,90;
-  --mx-pastel: 204,227,227;
-
 }
 
 form > span {
@@ -176,12 +236,14 @@ span.server-version button[disabled] {
     width: 100%;
     position: relative;
     clear: both;
+    overflow: auto;
 }
 
 #server-update-form section {
-    width: 48%;
-    position: absolute;
+    width: 520px;
+    position: relative;
     border: 1px solid lightgrey;
+    float: left;
 }
 
 #server-update-form h1,
@@ -218,11 +280,13 @@ span.server-version button[disabled] {
   margin: 1px;
 }
 
-#ruleset-subform div {
+#ruleset-subform div,
+#server-settings div {
   position: relative;
 }
 
-#ruleset-subform div .help-block {
+#ruleset-subform div .help-block,
+#server-settings div .help-block {
   background-color: lightpink;
   border: 1px solid red;
   padding: 3px;
@@ -232,19 +296,23 @@ span.server-version button[disabled] {
   top: 10px;
 }
 
-#ruleset-subform div:nth-child(odd) {
+#ruleset-subform div:nth-child(odd),
+#server-settings div:nth-child(odd) {
   float: left;
 }
-#ruleset-subform div:nth-child(odd) .help-block  {
+#ruleset-subform div:nth-child(odd) .help-block,
+#server-settings div:nth-child(odd) .help-block  {
   position: absolute;
   width: 150px;
   left: -150px;
 }
 
-#server-update-form #ruleset-subform div:nth-child(even) {
+#server-update-form #ruleset-subform div:nth-child(even),
+#server-update-form #server-settings div:nth-child(even) {
   float: right;
 }
-#ruleset-subform div:nth-child(even) .help-block  {
+#ruleset-subform div:nth-child(even) .help-block,
+#server-settings div:nth-child(even) .help-block  {
   position: absolute;
   width: 150px;
   right: -150px;
@@ -258,7 +326,7 @@ span.server-version button[disabled] {
 }
 
 
-#server-update-form div {
+#server-update-form section div {
   width: 50%;
 }
 

@@ -22,8 +22,7 @@ defmodule Mppm.Broker.MethodResponse do
   end
 
   defp dispatch_response(server_login, %{"UId" => uuid}) do
-    broadcast("maps-status", {:update_server_map, server_login, uuid})
-    broadcast("maps-status", {:current_track_info, server_login, uuid})
+    broadcast("maps-status", {:current_track, server_login, uuid})
   end
 
 

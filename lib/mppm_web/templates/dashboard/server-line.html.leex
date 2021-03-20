@@ -18,7 +18,9 @@
   <span class="server-status">
     <%= DashboardView.get_status_icon(@status, @server.login) %>
   </span>
-  <span class="delete-game-server" phx-click="delete-game-server" phx-value-server-id="<%= @server.id %>">
-    <i class="fa fa-trash-alt"></i>
-  </span>
+  <%= if @status == :stopped do %>
+    <span class="delete-game-server" phx-click="delete-game-server" phx-value-server-id="<%= @server.id %>">
+      <i class="fa fa-trash-alt"></i>
+    </span>
+  <% end %>
 </section>

@@ -2,11 +2,9 @@ defmodule Mppm.ServerConfig do
   require Logger
   use Ecto.Schema
   import Ecto.Changeset
-  import Ecto.Query
   alias __MODULE__
-  alias Mppm.Repo
   import Record
-  alias Mppm.GameServer.{DedicatedServer,Server}
+  alias Mppm.GameServer.Server
 
   defrecord(:xmlElement, extract(:xmlElement, from_lib: "xmerl/include/xmerl.hrl"))
   defrecord(:xmlAttribute, extract(:xmlAttribute, from_lib: "xmerl/include/xmerl.hrl"))

@@ -1,5 +1,4 @@
 defmodule Mppm.GameServer.Supervisor do
-  alias Mppm.ServerConfig
   alias Mppm.GameServer.Server
 
 

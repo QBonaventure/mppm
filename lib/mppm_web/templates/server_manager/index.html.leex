@@ -79,7 +79,7 @@
 <section id="server-users" x-data="{ open: false}">
   <h1 @click="open = true">Server Users</h1>
   <div class="displayable" x-show.transition="open" @click.away="open = false">
-  <%= live_component @socket, MppmWeb.Live.Component.UsersManager, users: @users %>
+  <%= live_component @socket, MppmWeb.Live.Component.UsersManager, users: @users, server: @server %>
 </section>
 
 
@@ -87,8 +87,11 @@
   <h1 @click="open = true">Server Settings</h1>
   <div class="displayable" x-show.transition="open" @click.away="open = false">
     <%= f = form_for @changeset, "#", [phx_change: :validate, phx_submit: "update-config"] %>
-    <%= submit "Submit" , disabled: Kernel.not @changeset.valid? %>
-    <%= tag(:input, type: "button", value: "Cancel", phx_click: "cancel-form") %>
+
+    <div class="form-controls">
+      <%= submit "Submit" , disabled: Kernel.not @changeset.valid? %>
+      <%= tag(:input, type: "button", value: "Cancel", phx_click: "cancel-form") %>
+    </div>
 
     <% game_modes = @game_modes |> Enum.map(&{&1.name, &1.id}) %>
     <% respawn_behaviours = @respawn_behaviours |> Enum.map(&{&1.name, &1.id}) %>
@@ -149,107 +152,28 @@
       <section id="server-settings">
         <h1>Server settings</h1>
         <%= inputs_for f, :config, fn c -> %>
-          <label>
-            Pl. pwd: <%= text_input c, :player_pwd %>
-          </label>
-          <%= error_tag c, :player_pwd %>
-
-          <label>
-            Spec. pwd: <%= text_input c, :spec_pwd %>
-          </label>
-          <%= error_tag c, :spec_pwd %>
-
-          <label>
-            Max players: <%= text_input c, :max_players %>
-          </label>
-          <%= error_tag c, :max_players %>
-
-          <label>
-            Disable horns: <%= checkbox c, :disable_horns %>
-          </label>
-          <%= error_tag c, :disable_horns %>
-
-          <label>
-            Autosave replays: <%= checkbox c, :autosave_replays %>
-          </label>
-          <%= error_tag c, :autosave_replays %>
-
-          <label>
-            Autosave valid. replays: <%= checkbox c, :autosave_validation_replays %>
-          </label>
-          <%= error_tag c, :autosave_validation_replays %>
-
-          <label>
-            Keep players slot: <%= checkbox c, :keep_player_slot %>
-          </label>
-          <%= error_tag c, :keep_player_slot %>
+          <%= MppmWeb.ServerManagerView.text_input(c, :player_pwd, "Pl. pwd") %>
+          <%= MppmWeb.ServerManagerView.text_input(c, :spec_pwd, "Spec. pwd") %>
+          <%= MppmWeb.ServerManagerView.text_input(c, :max_players, "Max players") %>
+          <%= MppmWeb.ServerManagerView.checkbox(c, :disable_horns, "Disable horns") %>
+          <%= MppmWeb.ServerManagerView.checkbox(c, :autosave_replays, "Autosave replays") %>
+          <%= MppmWeb.ServerManagerView.checkbox(c, :autosave_validation_replays, "Autosave valid. replays") %>
+          <%= MppmWeb.ServerManagerView.checkbox(c, :keep_player_slot, "Keep pl. slot") %>
 
           <h2>Advanced settings</h2>
-          <label>
-            IP address: <%= text_input c, :ip_address %>
-          </label>
-          <%= error_tag c, :ip_address %>
-          <label>
-            Bind to IP: <%= text_input c, :bind_ip %>
-          </label>
-          <%= error_tag c, :bind_ip %>
-
-
-
-          <label>
-            Conn. U/L rate: <%= text_input c, :connection_upload_rate %>
-          </label>
-          <%= error_tag c, :connection_upload_rate %>
-
-          <label>
-            Conn. D/L rate: <%= text_input c, :connection_download_rate %>
-          </label>
-          <%= error_tag c, :connection_download_rate %>
-
-          <label>
-            Cl. inp. max latency: <%= text_input c, :client_inputs_max_latency %>
-          </label>
-          <%= error_tag c, :client_inputs_max_latency %>
-
-          <label>
-            Pck ass. multith.: <%= select c, :packet_assembly_multithread, [true, false] %>
-          </label>
-          <%= error_tag c, :packet_assembly_multithread %>
-
-          <label>
-            Packets/frame: <%= text_input c, :packets_per_frame %>
-          </label>
-          <%= error_tag c, :packets_per_frame %>
-
-          <label>
-            Full packets/frame: <%= text_input c, :full_packets_per_frame %>
-          </label>
-          <%= error_tag c, :full_packets_per_frame %>
-
-          <label>
-            Visuals delays: <%= text_input c, :visuals_delay %>
-          </label>
-          <%= error_tag c, :visuals_delay %>
-
-          <label>
-            Trust, C2S send/: <%= text_input c, :trust_client_to_server_sending_rate %>
-          </label>
-          <%= error_tag c, :trust_client_to_server_sending_rate %>
-
-          <label>
-            Visuals, S2C send/: <%= text_input c, :visuals_server_to_client_sending_rate %>
-          </label>
-          <%= error_tag c, :visuals_server_to_client_sending_rate %>
-
-          <label>
-            Worker nb.: <%= text_input c, :workers_nb %>
-          </label>
-          <%= error_tag c, :workers_nb %>
-
-          <label>
-            Disable replay recording: <%= select c, :disable_replay_recording, [true, false] %>
-          </label>
-          <%= error_tag c, :disable_replay_recording %>
+          <%= MppmWeb.ServerManagerView.text_input(c, :ip_address, "IP address") %>
+          <%= MppmWeb.ServerManagerView.text_input(c, :bind_ip, "Bind to IP") %>
+          <%= MppmWeb.ServerManagerView.text_input(c, :connection_upload_rate, "Conn. U/L rate") %>
+          <%= MppmWeb.ServerManagerView.text_input(c, :connection_download_rate, "Conn. D/L rate") %>
+          <%= MppmWeb.ServerManagerView.text_input(c, :client_inputs_max_latency, "Cl. inp. max latency") %>
+          <%= MppmWeb.ServerManagerView.select(c, :packet_assembly_multithread, "Pck ass. multith.", [true, false]) %>
+          <%= MppmWeb.ServerManagerView.text_input(c, :packets_per_frame, "Packets/frame") %>
+          <%= MppmWeb.ServerManagerView.text_input(c, :full_packets_per_frame, "Full packets/frame") %>
+          <%= MppmWeb.ServerManagerView.text_input(c, :visuals_delay, "Visuals delays") %>
+          <%= MppmWeb.ServerManagerView.text_input(c, :trust_client_to_server_sending_rate, "Trust, C2S send/") %>
+          <%= MppmWeb.ServerManagerView.text_input(c, :visuals_server_to_client_sending_rate, "Visuals, S2C send/") %>
+          <%= MppmWeb.ServerManagerView.text_input(c, :workers_nb, "Worker nb.") %>
+          <%= MppmWeb.ServerManagerView.select(c, :disable_replay_recording, "Disable replay recording", [true, false]) %>
         <% end %>
       </section>
 

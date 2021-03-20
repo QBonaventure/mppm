@@ -11,7 +11,6 @@ defmodule Mppm.GameServer.Server do
   @msg_waiting_ports "Waiting for game server ports to open..."
   @max_start_attempts 20
   @start_timeout 12000
-  @allowed_statuses [:starting, :started, :stopping, :stopped, :unknown]
 
   schema "servers" do
     field :login, :string
@@ -68,7 +67,7 @@ defmodule Mppm.GameServer.Server do
         {:ok, server} = GenServer.call(proc_name(server_login), :start, @start_timeout)
         broadcast("server-status", {server.status, server_login})
         {:ok, server.status}
-      {:ok, status} = res ->
+      {:ok, status} ->
         {:none, status}
     end
   end
@@ -97,7 +96,7 @@ defmodule Mppm.GameServer.Server do
   end
 
   def get_server(server_login) do
-    {:ok, server} = GenServer.call(proc_name(server_login), :get_server)
+    {:ok, _server} = GenServer.call(proc_name(server_login), :get_server)
   end
 
 
@@ -111,9 +110,7 @@ defmodule Mppm.GameServer.Server do
   def update(%Ecto.Changeset{} = changeset) do
     case Mppm.Repo.update(changeset) do
       {:ok, new_server} ->
-        # IO.inspect changeset
-        IO.inspect Mppm.GameRules.propagate_ruleset_changes(changeset), label: "---RESULT-----"
-        # propagate_ruleset_changes(changeset)
+        Mppm.GameRules.propagate_ruleset_changes(changeset)
         GenServer.call(proc_name(changeset.data.login), {:update, new_server})
         {:ok, new_server}
       {:error, changeset} ->
@@ -153,13 +150,19 @@ defmodule Mppm.GameServer.Server do
   end
 
 
+
   def list_of_running() do
     DynamicSupervisor.which_children(Mppm.GameServer.Supervisor)
     |> Enum.map(fn {_id, pid, _type, [_module]} ->
-      %{login: login, status: status} = :sys.get_state(pid)
-      {login, status}
+      case :sys.get_state(pid) do
+        %{server: %Server{login: login}, os_pid: os_pid, status: status} ->
+          %{login: login, status: status, pid: os_pid}
+        _ ->
+          %{}
+      end
     end)
-    |> Enum.filter(fn {_login, status} -> status == :stopped end)
+    |> Enum.reject(& &1 == %{})
+    |> Enum.reject(& Map.get(&1, :status, :stopped) == :stopped)
   end
 
 
@@ -170,7 +173,7 @@ defmodule Mppm.GameServer.Server do
   def create_new_server(%Ecto.Changeset{} = server_changeset) do
     with {:ok, server} <- Mppm.Repo.insert(server_changeset)
     do
-      broadcast("server-status", {:created, server.login})
+      broadcast("server-status", {:created, server})
       {:ok, _pid} = Mppm.GameServer.Supervisor.start_server_supervisor(server)
       {:ok, server}
     else
@@ -190,6 +193,7 @@ defmodule Mppm.GameServer.Server do
     broadcast("server-status", {:deleted, server})
     {:ok, server}
   end
+
 
   ##############################################################################
   ############################ GenServer Callbacks #############################
@@ -335,7 +339,7 @@ defmodule Mppm.GameServer.Server do
   end
 
 
-  def handle_cast({:relink_orphan_process, {login, pid, xmlrpc_port}}, state) do
+  def handle_cast({:relink_orphan_process, {_login, pid, xmlrpc_port}}, state) do
     Mppm.Broker.Supervisor.child_spec(state.server, xmlrpc_port)
     |> Mppm.GameServer.Supervisor.start_child
     state = %{state |
@@ -360,7 +364,7 @@ defmodule Mppm.GameServer.Server do
   end
 
 
-  def handle_info({:tracklist_update, server_login, ruleset_or_tracklist}, state) do
+  def handle_info({:tracklist_update, server_login, _ruleset_or_tracklist}, state) do
     if server_login == state.server.login do
       GenServer.cast(broker_req_pname(server_login), :reload_match_settings)
     end
@@ -369,10 +373,10 @@ defmodule Mppm.GameServer.Server do
 
 
   def handle_info({:podium_start, _server_login}, state) do
-    Mppm.ServerConfig
+    Mppm.GameServer
     |> Mppm.Repo.get(state.server.id)
     |> Mppm.Repo.preload(:ruleset)
-    |> Mppm.ServerConfig.create_ruleset_file()
+    |> Mppm.GameRules.create_ruleset_file()
     {:noreply, state}
   end
 
@@ -394,11 +398,6 @@ defmodule Mppm.GameServer.Server do
     if state.server.login == server_login do
       GenServer.cast(broker_req_pname(server_login), :reload_match_settings)
     end
-    {:noreply, state}
-  end
-
-
-  def handle_info(_unhandled_message, state) do
     {:noreply, state}
   end
 

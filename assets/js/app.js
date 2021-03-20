@@ -22,7 +22,42 @@ import NProgress from "nprogress"
 
 let Hooks = {}
 
+Hooks.draggable_user_hook = {
+  mounted() {
+    this.el.addEventListener("dragstart", e => {
+      e.dataTransfer.effectAllowed = "copy";
+      e.dataTransfer.dropEffect = "copy";
+      e.dataTransfer.setData("text/plain", e.target.id); // save the elements id as a payload
+    })
+  }
+}
 
+Hooks.draggable_search_user_hook = {
+  mounted() {
+    this.el.addEventListener("dragstart", e => {
+      e.dataTransfer.effectAllowed = "copy";
+      e.dataTransfer.dropEffect = "copy";
+      e.dataTransfer.setData("text/plain", e.target.id); // save the elements id as a payload
+    })
+  }
+}
+
+Hooks.element_dropzone = {
+  mounted() {
+    this.el.addEventListener("dragover", e => {
+      e.preventDefault();
+      e.dataTransfer.effectAllowed = "copy";
+      e.dataTransfer.dropEffect = "copy";
+    })
+    this.el.addEventListener("drop", e => {
+      e.preventDefault();
+      var target = e.currentTarget.id
+      var element_id = e.dataTransfer.getData("text/plain")
+      // var element_id = e.currentTarget.parentNode.id
+      this.pushEvent("element-dropped", {target: target, element_id: element_id});
+    })
+  }
+}
 
 Hooks.draggable_role_hook = {
   mounted() {

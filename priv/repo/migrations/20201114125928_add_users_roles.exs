@@ -9,6 +9,7 @@ defmodule Mppm.Repo.Migrations.AddUsersRoles do
 
     create table(:rel_users_roles, primary_key: false) do
       add :user_id, references(:users), primary_key: true
+      add :server_id, references(:servers), primary_key: true
       add :user_role_id, references(:ref_users_roles), primary_key: true
     end
 

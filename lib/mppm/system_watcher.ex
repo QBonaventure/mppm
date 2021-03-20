@@ -2,34 +2,29 @@ defmodule Mppm.SystemWatcher do
   use GenServer
 
 
-  @cmd "top -bn1 -d 1 -p $(pgrep -d',' Track)"
-  @cmd2 ~w(| grep Track)
+  @cmd "top -bn1 -d 1 -p $(pgrep -d',' Track) 2>/dev/null"
+  @time_interval 1000
 
 
-  def handle_info({port, {:data, data}}, state) do
+  def handle_info({_port, {:data, data}}, _state) do
     data = parse(data)
     Mppm.PubSub.broadcast("system-stats", {:servers_stats, data})
     {:noreply, data}
   end
 
-  def handle_info({port, {:exit_status, 1}}, state) do
+  def handle_info({_port, {:exit_status, 1}}, _state) do
     Mppm.PubSub.broadcast("system-stats", {:servers_stats, []})
     {:noreply, []}
   end
 
-  def handle_info({port, {:exit_status, 0}}, state) do
+  def handle_info({_port, {:exit_status, 0}}, state) do
     {:noreply, state}
   end
 
   def handle_info(:fetch_data, state) do
-    port = Port.open({:spawn, @cmd}, [:binary, :exit_status])
-    Process.send_after(__MODULE__, :fetch_data, 2000)
+    spawn_command()
     {:noreply, state}
   end
-
-def test() do
-data = System.cmd("top -bn1 -d 2 -p $(pgrep -d',' Track)", []) |> parse
-end
 
   def parse(data) do
     data =
@@ -61,9 +56,13 @@ end
 
   def start_link(_init_value), do: GenServer.start_link(__MODULE__, nil, name: __MODULE__)
   def init(_) do
-    port = Port.open({:spawn, @cmd}, [:binary, :exit_status])
-    Process.send_after(__MODULE__, :fetch_data, 2000)
+    spawn_command()
     {:ok, %{}}
+  end
+
+  defp spawn_command() do
+    Port.open({:spawn, @cmd}, [:binary, :exit_status])
+    Process.send_after(__MODULE__, :fetch_data, @time_interval)
   end
 
 

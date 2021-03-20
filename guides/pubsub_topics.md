@@ -3,11 +3,17 @@
 
 \* > server login
 
+## "user-status"
+
+- {:app_role_updated, user, role}
+
+
 ## "players-status"
 
+- {:user_disconnection, server_login, user_login, reason}
 - {:user_connection_to_server, server_login, user_login, is_spectator?}
 - {:servers_users_updated, server_login, servers_users}
-- {:role_rmoved, , role}
+- {:role_removed, , role}
 - {:role_granted, , role}
 
 ## "maps-status"
@@ -20,8 +26,14 @@
 
 ## "race-status"
 
+- {:player_start, server_login, user_login}
 - {:player_waypoint, server_login, user_login, waypoint_nb, time}
+- {:player_end_lap, server_login, user_login, waypoint_nb, time}
+- {:player_end_race, server_login, user_login, waypoint_nb, time}
+- {:player_giveup, server_login, user_login}
+- {:player_respawn, server_login, user_login}
 - {:turn_start, server_login}
+- {:new_race_record, server_login, %Mppm.TimeRecord.t()}
 
 ## "server-version-status"
 - {:new_server_version, server_version_nb}
@@ -35,13 +47,11 @@
 - {:created, Mppm.GameServer.Server.t()}
 - {:deleted, Mppm.GameServer.Server.t()}
 - {:updated, Mppm.GameServer.Server.t()}
-
-## "server-status:*"
 - {:new_chat_message, chat_message}
-- {:beginmatch}
-- {:endmatch}
-- {:beginmap, track_info_map}
-- {:endmap}
+- {:beginmatch, server_login}
+- {:endmatch, server_login}
+- {:beginmap, server_login, track_info_map}
+- {:endmap, server_login}
 - {:start_of_match, server_login}
 - {:score, server_login}
 - {:end_of_game, server_login}

@@ -10,33 +10,41 @@ defmodule Mppm.Broker.MethodCall do
     dispatch_message(server_login, method_name, data)
   end
 
-
-
-  def dispatch_script_callback(server_login, "Trackmania.Event.WayPoint", %{"login" => user_login, "checkpointinrace" => waypoint_nb, "laptime" => time} = data) do
-    broadcast("race-status", {:player_waypoint, server_login, user_login, waypoint_nb, time})
-    GenServer.cast(Mppm.TimeTracker, {:player_waypoint, server_login, data})
+  def dispatch_script_callback(server_login, "Trackmania.Event.WayPoint",
+  %{"login" => user_login, "checkpointinrace" => waypoint_nb, "laptime" => time,
+    "isendlap" => lap?, "isendrace" => race?}) do
+    case {lap?, race?} do
+      {false, false} ->
+        broadcast("race-status", {:player_waypoint, server_login, user_login, waypoint_nb, time})
+      {true, false} ->
+        broadcast("race-status", {:player_end_lap, server_login, user_login, waypoint_nb, time})
+      {_, true} ->
+        broadcast("race-status", {:player_end_race, server_login, user_login, waypoint_nb, time})
+    end
   end
 
-  def dispatch_script_callback(_server_login,  "Trackmania.Event.StartLine",
-  %{"accountid" => _user_uid, "login" => _user_login, "time" => _time}) do
+  def dispatch_script_callback(server_login,  "Trackmania.Event.StartLine",
+  %{"accountid" => _user_uid, "login" => user_login, "time" => _time}) do
+    broadcast("race-status", {:player_start, server_login, user_login})
   end
 
-  def dispatch_script_callback(_server_login, "Trackmania.Event.GiveUp",
-  %{"accountid" => _user_uid, "login" => _user_login, "time" => _time}) do
+  def dispatch_script_callback(server_login, "Trackmania.Event.GiveUp",
+  %{"accountid" => _user_uid, "login" => user_login, "time" => _time}) do
+    broadcast("race-status", {:player_giveup, server_login, user_login})
   end
 
-  def dispatch_script_callback(_server_login, "Trackmania.Event.Respawn",
-  %{"accountid" => _user_uid, "login" => _user_login, "checkpointinlap" => _waypoint_in_lap, "checkpointinrace" => _waypoint_in_race,
+  def dispatch_script_callback(server_login, "Trackmania.Event.Respawn",
+  %{"accountid" => _user_uid, "login" => user_login, "checkpointinlap" => _waypoint_in_lap, "checkpointinrace" => _waypoint_in_race,
   "laptime" => _laptime, "racetime" => _racetime, "speed" => _speed, "nbrespawns" => _respawns_nb, "time" => _time}) do
+    broadcast("race-status", {:player_respawn, server_login, user_login})
   end
 
-  def dispatch_script_callback(_server_login, "Trackmania.Event.SkipOutro", data) do
-    IO.inspect {"SkipOutro", data}
+  def dispatch_script_callback(_server_login, "Trackmania.Event.SkipOutro", _data) do
   end
 
   def dispatch_script_callback(server_login, "Maniaplanet.StartServer_Start",
   %{"mode" => %{"name" => _mode_name, "updated" => _updated?}, "restarted" => _restarted?, "time" => _time}) do
-    broadcast("server-status:"<>server_login, {:end_of_game, server_login})
+    broadcast("server-status", {:end_of_game, server_login})
   end
 
   def dispatch_script_callback(_server_login, "Maniaplanet.StartServer_End",
@@ -45,12 +53,12 @@ defmodule Mppm.Broker.MethodCall do
 
   def dispatch_script_callback(server_login, "Maniaplanet.StartMatch_Start",
   %{"count" => _count, "time" => _time}) do
-    broadcast("server-status:"<>server_login, {:start_of_match, server_login})
+    broadcast("server-status", {:start_of_match, server_login})
   end
 
   def dispatch_script_callback(server_login, "Maniaplanet.StartMatch_End",
   %{"count" => _count, "time" => _time}) do
-    broadcast("server-status:"<>server_login, {:end_of_game, server_login})
+    broadcast("server-status", {:end_of_game, server_login})
   end
 
   def dispatch_script_callback(_server_login, "Maniaplanet.LoadingMap_Start",
@@ -123,7 +131,7 @@ defmodule Mppm.Broker.MethodCall do
 
   def dispatch_script_callback(server_login, "Maniaplanet.EndMap_Start",
   %{"map" => _track_map, "count" => _count}) do
-    broadcast("server-status:"<>server_login, {:end_of_game, server_login})
+    broadcast("server-status", {:end_of_game, server_login})
   end
 
   def dispatch_script_callback(_server_login, "Maniaplanet.EndMap_End",
@@ -139,18 +147,18 @@ defmodule Mppm.Broker.MethodCall do
 
   def dispatch_script_callback(server_login, "Maniaplanet.Podium_Start",
   %{"time" => _time}) do
-    broadcast("server-status:"<>server_login, {:podium_start, server_login})
+    broadcast("server-status", {:podium_start, server_login})
   end
 
   def dispatch_script_callback(server_login, "Maniaplanet.Podium_End",
   %{"time" => _time}) do
-    broadcast("server-status:"<>server_login, {:podium_end, server_login})
+    broadcast("server-status", {:podium_end, server_login})
   end
 
   def dispatch_script_callback(server_login, "Trackmania.Scores",
   %{"players" => _players_map_list, "responseid" => _response_id, "section" => _section, "teams" => _teams_list,
   "useteams" => _use_teams?, "winnerplayer" => _winner_player, "winnerteam" => _winning_team}) do
-    broadcast("server-status:"<>server_login, {:score, server_login})
+    broadcast("server-status", {:score, server_login})
   end
 
 
@@ -170,23 +178,23 @@ defmodule Mppm.Broker.MethodCall do
   end
 
   def dispatch_message(server_login, "ManiaPlanet.EndMatch", [_list_of_user_ranking, _winning_team_id]) do
-    broadcast("server-status:"<>server_login, {:endmatch})
+    broadcast("server-status", {:endmatch, server_login})
   end
 
   def dispatch_message(server_login, "ManiaPlanet.EndMap", [%{"UId" => uuid} = _track_info_map]) do
     broadcast("maps-status", {:endmap, server_login, uuid})
-    broadcast("server-status:"<>server_login, {:endmap})
+    broadcast("server-status", {:endmap, server_login})
   end
 
 
   def dispatch_message(server_login, "ManiaPlanet.BeginMap", [%{"UId" => uuid} = track_info_map]) do
     broadcast("maps-status", {:beginmap, server_login, uuid})
-    broadcast("server-status:"<>server_login, {:beginmap, track_info_map})
+    broadcast("server-status", {:beginmap, server_login, track_info_map})
   end
 
 
   def dispatch_message(server_login, "ManiaPlanet.BeginMatch", []) do
-    broadcast("server-status:"<>server_login, {:beginmatch})
+    broadcast("server-status", {:beginmatch, server_login})
   end
 
 
@@ -208,7 +216,7 @@ defmodule Mppm.Broker.MethodCall do
         %Mppm.ChatMessage{}
         |> Mppm.ChatMessage.changeset(user, server, %{text: text})
         |> Mppm.Repo.insert
-      broadcast("server-status:"<>server_login, {:new_chat_message, chat_message})
+      broadcast("server-status", {:new_chat_message, chat_message})
     end
   end
 
@@ -219,7 +227,8 @@ defmodule Mppm.Broker.MethodCall do
   end
 
 
-  def dispatch_message(server_login, "ManiaPlanet.PlayerDisconnect", [user_login, _reason]) do
+  def dispatch_message(server_login, "ManiaPlanet.PlayerDisconnect", [user_login, reason]) do
+    broadcast("players-status", {:user_disconnection, server_login, user_login, reason})
     GenServer.cast(Mppm.ConnectedUsers, {:user_disconnection, server_login, user_login})
   end
 
@@ -238,7 +247,7 @@ defmodule Mppm.Broker.MethodCall do
 
 
   def dispatch_message(_server_login, method_name, data) do
-    IO.inspect %{method: method_name, data: data}
+    IO.inspect %{method: method_name, data: data}, label: "Unhandled message"
   end
 
   defp broadcast(topic, msg), do:

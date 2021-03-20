@@ -88,6 +88,14 @@ defmodule Mppm.GameUI.LiveRaceRanking do
   end
 
 
+  def handle_info({:player_giveup, server_login, user_login}, state) do
+    current_list = Map.delete(Map.get(state, server_login), user_login)
+    state =  %{state | server_login => current_list}
+    GenServer.cast(self(), {:update_table, server_login, state})
+    {:noreply, state}
+  end
+
+
   def handle_info({:servers_users_updated, server_login, _servers_users}, state) do
     GenServer.cast(self(), {:update_table, server_login, state})
     {:noreply, state}
@@ -118,15 +126,10 @@ defmodule Mppm.GameUI.LiveRaceRanking do
   end
 
 
-
-
   def start_link(_init_value), do: GenServer.start_link(__MODULE__, nil, name: __MODULE__)
   def init(_) do
     :ok = Phoenix.PubSub.subscribe(Mppm.PubSub, "race-status")
     :ok = Phoenix.PubSub.subscribe(Mppm.PubSub, "players-status")
-    # for server_login <- Mppm.ServersStatuses.get_list_of_running() do
-    #   :ok = Phoenix.PubSub.subscribe(Mppm.PubSub, "server-status:"<>server_login)
-    # end
     {:ok, %{}}
   end
 

@@ -2,6 +2,7 @@ defmodule Mppm.Service.ManiaExchange do
   alias Mppm.Service.ManiaExchange.Query
   use HTTPoison.Base
   alias HTTPoison.Response
+  alias Mppm.Service.ManiaExchange.Track, as: MXTrack
 
   @mx_maps_info "https://trackmania.exchange/api/maps/get_map_info/multi/"
   @mx_track_search_uri "https://trackmania.exchange/mapsearch2/search"
@@ -19,15 +20,15 @@ defmodule Mppm.Service.ManiaExchange do
 
 
   def map_download_url(%Mppm.Service.ManiaExchange.Track{mx_track_id: track_id}),
-    do: @host <> "/tracks/download/" <> Integer.to_string(track_id)
+    do: @download_track_url<> Integer.to_string(track_id)
 
 
-  @spec make_maps_info_request([String.t()]) :: [Mppm.Track.t()]
+  @spec make_maps_info_request([String.t()]) :: [MXTrack.t()]
   def make_maps_info_request(maps_ids) when is_list(maps_ids), do: maps_ids |> Enum.join(",") |> make_maps_info_request()
   def make_maps_info_request(map_id) when is_integer(map_id), do: Integer.to_string(map_id) |> make_maps_info_request()
   def make_maps_info_request(maps_ids) when is_binary(maps_ids) do
     {:ok, %Response{body: data}} = Mppm.Service.ManiaExchange.get("/api/maps/get_map_info/multi/" <> maps_ids)
-    Enum.map(data, & Mppm.Track.track_from_mx(&1))
+    Enum.map(data, &MXTrack.cast(&1))
   end
 
 
@@ -79,7 +80,7 @@ defmodule Mppm.Service.ManiaExchange do
     tracks =
       body
       |> Map.get("results")
-      |> Enum.map(& Mppm.Service.ManiaExchange.Track.cast(&1))
+      |> Enum.map(& MXTrack.cast(&1))
     pagination = %{
       page: response.request.params.page,
       item_count: body |> Map.get("totalItemCount"),

@@ -14,7 +14,7 @@
   <body>
     <header>
       <div class="container">
-        <%= live_render(@conn, MppmWeb.UserSessionLive, user_session: @user_session) %>
+        <%= live_render(@conn, MppmWeb.UserSessionLive, user_session: @user_session, uri: "/" <> Enum.join(@conn.path_info, "/")) %>
         <a href="/" id="app-logo">
           MPPM
         </a>
@@ -26,10 +26,22 @@
     <main role="main" class="container">
       <p class="alert alert-info" role="alert"><%= get_flash(@conn, :info) %></p>
       <p class="alert alert-danger" role="alert"><%= get_flash(@conn, :error) %></p>
-    <%= @inner_content %>
-  </main>
-  <%= live_render(@conn, MppmWeb.SystemWatcherLive) %>
-  <%= live_render(@conn, MppmWeb.NotificationsLive) %>
-  <script type="text/javascript" src="<%= Routes.static_path(@conn, "/js/app.js") %>"></script>
+      <%= @inner_content %>
+    </main>
+    <%= live_render(@conn, MppmWeb.SystemWatcherLive) %>
+    <%= live_render(@conn, MppmWeb.NotificationsLive) %>
+
+    <footer>
+      <div class="container">
+        <img id="fearthec-footer-logo" src="https://fearthec-documentations.s3.eu-west-3.amazonaws.com/images/ftc-logo.png" />
+        <span class="footer-link">Need help? <a href="https://discord.gg/Fz5dDuN">Discord!</a></span>
+        <div id="footer-tech-stacks">
+            <img src="images/elixir.png" id="elixir-logo" />
+          <img src="images/phoenix.png" id="phoenix-logo" />
+        </div>
+      </div>
+    </footer>
+    <script type="text/javascript" src="<%= Routes.static_path(@conn, "/js/app.js") %>"></script>
   </body>
+
 </html>

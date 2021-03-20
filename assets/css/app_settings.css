@@ -55,3 +55,63 @@
   top: -5px;
   margin: 0;
 }
+
+
+/******************************************************************************/
+/********************************* APP ROLES **********************************/
+/******************************************************************************/
+
+#app-roles {
+  width: 150px;
+  border: 1px solid lightgrey;
+  border-top: 0;
+  text-align: center;
+}
+
+#app-roles h1 {
+  font-size: 16px;
+  margin: 0;
+  padding: 2px;
+  background-color: rgb(var(--ftc-white-color));
+  color: rgb(var(--ftc-red-color));
+  font-weight: bold;
+}
+
+#app-roles h1,
+#app-roles section > div,
+#app-roles #users-searchbox-results div {
+  border-top: 1px solid lightgrey;
+}
+
+#app-roles section span {
+  display: block;
+  width: 100%;
+}
+
+#app-roles span.username {
+  margin-bottom: -7px;
+}
+
+#app-roles hr {
+  margin: 0;
+  border-color: black;
+}
+
+
+#app-roles span.login {
+  font-size: 10px;
+  color: grey;
+}
+
+#users-searchbox form {
+  margin: 0;
+}
+
+input#search_query_username {
+  width: 75%;
+}
+
+#remove-role-of-user {
+  background-color: red;
+  color: white;
+}

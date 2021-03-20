@@ -172,19 +172,27 @@ defmodule Mppm.Tracklist do
 
 
   def handle_info({message, server_login, uuid} = msg, state)
-  when message in [:current_track_info, :loaded_map] do
+  when message in [:current_track, :loaded_map] do
     tracklist = Map.get(state, server_login)
-    current_track_index = Enum.find_index(tracklist.tracks, & &1.uuid == uuid)
-    {to_last, to_first} = Enum.split(tracklist.tracks_ids, current_track_index)
-
-    {:ok, updated_tracklist} = upsert(tracklist, %{tracks_ids: to_first ++ to_last})
-    {:noreply, %{state | server_login => updated_tracklist}}
+    case length(tracklist.tracks_ids) == 1 do
+      true ->
+        {:noreply, state}
+      false ->
+        current_track_index = Enum.find_index(tracklist.tracks, & &1.uuid == uuid)
+        {to_last, to_first} = Enum.split(tracklist.tracks_ids, current_track_index)
+        {:ok, updated_tracklist} = upsert(tracklist, %{tracks_ids: to_first ++ to_last})
+        {:noreply, %{state | server_login => updated_tracklist}}
+    end
   end
 
+  def handle_info({:created, %Mppm.GameServer.Server{} = server}, state) do
+    tracklist = Mppm.Repo.get(Mppm.Tracklist, server.id)
+    tracklist = Map.put(tracklist, :tracks, fetch_tracklist_maps(tracklist))
+    {:noreply, Map.put(state, server.login, tracklist)}
+  end
 
-
-  def handle_info({:server_supervisor_started, server_config}, state), do:
-    {:noreply, %{state | server_config.login => Mppm.Repo.get(Mppm.Tracklist, server_config.id)}}
+  def handle_info({:deleted, server}, state), do:
+    {:noreply, Map.delete(state, server.login)}
 
   def handle_info(_unhandled_message, state) do
     {:noreply, state}
@@ -195,6 +203,7 @@ defmodule Mppm.Tracklist do
 
   def init(_init_value) do
     Phoenix.PubSub.subscribe(Mppm.PubSub, "maps-status")
+    Phoenix.PubSub.subscribe(Mppm.PubSub, "server-status")
     state = fetch_all_tracklists()
     {:ok, state}
   end
@@ -227,17 +236,20 @@ defmodule Mppm.Tracklist do
       {server_login, Map.put(
         tracklist,
         :tracks,
-        Mppm.Repo.all(
-          from t in Mppm.Track,
-          where: t.id == fragment("ANY(?)", ^tracklist.tracks_ids),
-          order_by: fragment("array_position(?, ?)", ^tracklist.tracks_ids, t.id),
-          preload: [:author, :style, :tags]
-        )
+        fetch_tracklist_maps(tracklist)
       )}
     end)
     |> Map.new
   end
 
+  defp fetch_tracklist_maps(%Mppm.Tracklist{} = tracklist) do
+    Mppm.Repo.all(
+      from t in Mppm.Track,
+      where: t.id == fragment("ANY(?)", ^tracklist.tracks_ids),
+      order_by: fragment("array_position(?, ?)", ^tracklist.tracks_ids, t.id),
+      preload: [:author, :style, :tags]
+    )
+  end
 
   def sort_tracks(%Mppm.Tracklist{} = tracklist) do
     tracks = Enum.map(tracklist.tracks, & {&1.id, &1}) |> Map.new()

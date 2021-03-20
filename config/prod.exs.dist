@@ -10,31 +10,30 @@ use Mix.Config
 # which you should run after static files are built and
 # before starting your production server.
 config :mppm, MppmWeb.Endpoint,
+  url: [host: System.get_env("MPPM_HOST"), port: System.get_env("MPPM_PORT")],
   http: [port: System.get_env("MPPM_PORT")],
   cache_static_manifest: "priv/static/cache_manifest.json"
 
-# Do not print debug messages in production
-config :logger, level: :info
 
-config :logger, :console,
-  level: :debug,
-  format: "[$level] $message\n"
 
 config :logger,
-  backends: [{LoggerFileBackend, :erro_log}]
+    backends: [
+      {LoggerFileBackend, :error},
+      {LoggerFileBackend, :info}
+    ]
 
-config :logger, :error_log,
-  path: "./error.log",
+config :logger, :info,
+  path: "./logs/info.log",
+  level: :info
+
+config :logger, :error,
+  path: "./logs/error.log",
   level: :error
+  metadata: [:request_id]
+  format: "$timeT$metadata[$level] $message\n",
 
 
 config :oauth2, debug: true
 
-config :mppm, Mppm.Service.Trackmania,
-  redirect_uri: "#{System.get_env("NADEO_REDIRECT_URI")}/auth/trackmania/callback",
-  authorize_url: "https://api.trackmania.com/oauth/authorize",
-  token_url: "https://api.trackmania.com/api/access_token",
-  site: "https://trackmania.com",
-  response_type: "code"
 
-import_config "#{Mix.env()}.secret.exs"
+import_config "prod.secret.exs"

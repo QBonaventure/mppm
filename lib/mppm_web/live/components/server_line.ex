@@ -2,7 +2,6 @@ defmodule MppmWeb.Live.Component.ServerLine do
   use Phoenix.LiveComponent
   alias MppmWeb.DashboardView
   alias Mppm.GameServer.{Server,DedicatedServer}
-  alias Mppm.ServerConfig
 
   def preload(assigns) do
     servers = Mppm.Repo.all(Mppm.GameServer.Server) |> Mppm.Repo.preload([:config, :ruleset, :tracklist])
@@ -11,7 +10,7 @@ defmodule MppmWeb.Live.Component.ServerLine do
       server = Enum.find(servers, & &1.id == assign.id)
       status =
         case Map.get(assign, :status) do
-          {server_login, status} -> status
+          {_server_login, status} -> status
           nil -> Map.get(Mppm.GameServer.Server.server_status(server.login), :status)
         end
       assign

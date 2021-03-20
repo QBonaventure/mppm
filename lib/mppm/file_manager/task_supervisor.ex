@@ -15,12 +15,13 @@ defmodule Mppm.FileManager.TasksSupervisor do
   end
 
 
-  def download_file(file_url, file_destination) do
-    spec = Mppm.FileManager.DownloadTask.child_spec(file_url, file_destination)
+  def download_file(file_url, file_destination, {_fun, _attrs} = callback) do
+    spec = Mppm.FileManager.DownloadTask.child_spec(file_url, file_destination, callback)
     DynamicSupervisor.start_child(__MODULE__, spec)
   end
-  def download_file(file_url, file_destination, {_fun, _attrs} = callback \\ nil) do
-    spec = Mppm.FileManager.DownloadTask.child_spec(file_url, file_destination, callback)
+
+  def download_file(file_url, file_destination) do
+    spec = Mppm.FileManager.DownloadTask.child_spec(file_url, file_destination)
     DynamicSupervisor.start_child(__MODULE__, spec)
   end
 

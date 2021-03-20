@@ -9,10 +9,10 @@
     <div id="user-<%= user.id %>" class="user-row <%= if !user.is_connected? do "disconnected" end %>">
       <div class="user-nickname"><%= user.nickname %></div>
       <div class="user-roles" phx-hook="role_dropzone" id="dropzone-user-<%= Integer.to_string(user.id) %>">
-        <%= for role <- Enum.sort_by(user.roles, & &1.id) do %>
+        <%= for role <- Enum.filter(user.roles, & &1.server_id == @server.id) |> Enum.sort_by(& &1.user_role.id) do %>
           <div class="user-role">
-            <span><%= role.name %></span>
-            <span class="remove-button" phx-click="remove-role" phx-target="#all-users-list" phx-value-role-id="<%= role.id %>" phx-value-user-id="<%= user.id %>">X</span>
+            <span><%= role.user_role.name %></span>
+            <span class="remove-button" phx-click="remove-role" phx-target="#all-users-list" phx-value-role-id="<%= role.user_role.id %>" phx-value-user-id="<%= user.id %>">X</span>
           </div>
         <% end %>
       </div>

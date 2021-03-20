@@ -9,7 +9,8 @@ defmodule Mppm.Session.UserSession do
     id: nil,
     nickname: nil,
     uuid: nil,
-    component_pid: nil
+    component_pid: nil,
+    role: :user
   ]
 
   def current_user(conn), do: conn.assigns[:current_user]
@@ -30,12 +31,15 @@ defmodule Mppm.Session.UserSession do
   end
 
 
-  def from_user(%Mppm.User{id: id, nickname: nickname, uuid: uuid}) do
+  def from_user(%Mppm.User{app_roles: %Ecto.Association.NotLoaded{}} = user),
+    do: user |> Mppm.Repo.preload([:app_roles]) |> from_user()
+  def from_user(%Mppm.User{id: id, nickname: nickname, uuid: uuid, app_roles: roles}) do
     %UserSession{
       key: :crypto.strong_rand_bytes(18) |> Base.url_encode64,
       id: id,
       nickname: nickname,
-      uuid: uuid
+      uuid: uuid,
+      role: get_role(roles)
     }
   end
 
@@ -57,6 +61,16 @@ defmodule Mppm.Session.UserSession do
   end
 
   def update_user_session(%UserSession{} = user_session, %Changeset{data: %Mppm.User{}, changes: %{}}) do
+    user_session
+  end
+
+  # def update_user_role(%UserSession{} = user_session, %Mppm.User{roles: %Ecto.Association.NotLoaded{}} = user) do
+  #   user = Mppm.Repo.preload(user, [:roles])
+  #   update_user_role(user_session, user)
+  # end
+  def update_user_role(%UserSession{} = user_session, %Mppm.User{} = user) do
+    user_session = %{user_session | role: get_role(user.app_roles)}
+    AgentStore.update(user_session.key, user_session)
     user_session
   end
 
@@ -93,5 +107,10 @@ defmodule Mppm.Session.UserSession do
       _ -> nil
     end
   end
+
+  defp get_role([]),
+    do: :user
+  defp get_role(roles),
+    do: roles |> List.first() |> Map.get(:name) |> String.downcase() |> String.to_atom()
 
 end

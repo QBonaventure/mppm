@@ -40,6 +40,13 @@ config :mppm,
 config :mppm, :ubi_nadeo_api,
   host: "https://tm-api.fearthec.io"
 
+config :mppm, Mppm.Service.Trackmania,
+  redirect_uri: "#{System.get_env("NADEO_REDIRECT_URI")}/auth/trackmania/callback",
+  authorize_url: "https://api.trackmania.com/oauth/authorize",
+  token_url: "https://api.trackmania.com/api/access_token",
+  site: "https://trackmania.com",
+  response_type: "code"
+
 config :mppm, Mppm.Scheduler,
   jobs: [
     {"0 */1 * * *", {Mppm.GameServer.DedicatedServer, :check_new_versions, []}}

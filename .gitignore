@@ -37,6 +37,8 @@ erl_crash.dump
 *.ez
 *.beam
 
+/logs/
+
 /config/*.exs
 .env
 .tool-versions

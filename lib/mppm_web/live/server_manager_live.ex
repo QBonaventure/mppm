@@ -10,8 +10,8 @@ defmodule MppmWeb.ServerManagerLive do
     {:ok, server} = Mppm.GameServer.Server.get_server(params["server_login"])
 
     Phoenix.PubSub.subscribe(Mppm.PubSub, "test")
-    :ok = Phoenix.PubSub.subscribe(Mppm.PubSub, socket.id)
-    :ok = Phoenix.PubSub.subscribe(Mppm.PubSub, "server-status:"<>server.login)
+    :ok = Phoenix.PubSub.subscribe(Mppm.PubSub, page_topic(params["server_login"]))
+    :ok = Phoenix.PubSub.subscribe(Mppm.PubSub, "server-status")
     :ok = Phoenix.PubSub.subscribe(Mppm.PubSub, "players-status")
     :ok = Phoenix.PubSub.subscribe(Mppm.PubSub, "tracklist-status")
 
@@ -44,57 +44,24 @@ defmodule MppmWeb.ServerManagerLive do
     {:ok, socket}
   end
 
-
-  def get_users_lists(server_login) do
-    connected_users_id =
-      Mppm.ConnectedUsers.get_connected_users(server_login)
-      |> Enum.map(& &1.id)
-
-    Mppm.Repo.all(Mppm.User)
-    |> Mppm.Repo.preload(:roles)
-    |> Enum.sort_by(& String.downcase(&1.nickname))
-    |> Enum.map(fn user ->
-      case user.id in connected_users_id do
-        true -> Map.put(user, :is_connected?, true)
-        false -> Map.put(user, :is_connected?, false)
-      end
-    end)
-  end
-
-  def broker_pname(server_login), do: {:global, {:broker_requester, server_login}}
-
-
-
-  def get_changeset(server_id, params) do
-    changeset =
-      Mppm.GameServer.Server
-      |> Mppm.Repo.get(server_id)
-      |> Mppm.Repo.preload([:tracklist, :config, ruleset: [:mode, :ta_respawn_behaviour, :rounds_respawn_behaviour]])
-      |> Mppm.GameServer.Server.changeset(params)
-
-    case Ecto.Changeset.apply_action(changeset, :update) do
-      {:error, changeset} ->
-        {:ok, changeset}
-      {:ok, _ } ->
-        {:ok, changeset}
-    end
-  end
-
-
-  def get_data(), do:
-  %{
-    pagination: %{item_count: 0, items_per_page: 20, page: 1},
-    tracks: []
-  }
-
   ################################################
   ################### EVENTS #####################
   ################################################
 
 
+  def handle_event("cancel-form", params, socket) do
+    changeset = Ecto.Changeset.change(socket.assigns.server)
+    {:noreply, assign(socket, changeset: changeset)}
+  end
+
+
+  def handle_event("validate", params, socket) do
+    {:ok, changeset} = get_changeset(socket.assigns.server.id, params["server"])
+    {:noreply, assign(socket, changeset: changeset)}
+  end
+
   def handle_event("update-config", params, socket) do
-    IO.inspect params
-    {:ok, changeset} = get_changeset(socket.assigns.server.id, params["server"]) |> IO.inspect
+    {:ok, changeset} = get_changeset(socket.assigns.server.id, params["server"])
     {:ok, new_server} = Mppm.GameServer.Server.update(changeset)
 
     {:noreply, assign(socket, changeset: Ecto.Changeset.change(new_server))}
@@ -130,24 +97,34 @@ defmodule MppmWeb.ServerManagerLive do
   def handle_event("add-role", %{"user_id" => user_id, "role_id" => role_id}, socket) do
     {user_id, _} = Integer.parse(user_id)
     {role_id, _} = Integer.parse(role_id)
+    server = socket.assigns.server
+    role = Enum.find(socket.assigns.available_roles, & &1.id == role_id)
 
     {:ok, _updated_user} =
       Enum.find(socket.assigns.users, & &1.id == user_id)
-      |> Mppm.User.add_role(Enum.find(socket.assigns.available_roles, & &1.id == role_id))
+      |> Mppm.User.add_role(server, role)
 
-    {:noreply, assign(socket, users: get_users_lists(socket.assigns.server.login))}
+    Mppm.PubSub.broadcast(page_topic(server.login), {:refresh_users})
+
+    # {:noreply, assign(socket, users: get_users_lists(socket.assigns.server.login))}
+    {:noreply, socket}
   end
 
 
   def handle_event("remove-role", %{"user-id" => user_id, "role-id" => role_id}, socket) do
     {user_id, _} = Integer.parse(user_id)
     {role_id, _} = Integer.parse(role_id)
+    server = socket.assigns.server
+    role = Enum.find(socket.assigns.available_roles, & &1.id == role_id)
 
     {:ok, _updated_user} =
       Enum.find(socket.assigns.users, & &1.id == user_id)
-      |> Mppm.User.remove_role(Enum.find(socket.assigns.available_roles, & &1.id == role_id))
+      |> Mppm.User.remove_role(server, role)
+
+    Mppm.PubSub.broadcast(page_topic(server.login), {:refresh_users})
 
     {:noreply, assign(socket, users: get_users_lists(socket.assigns.server.login))}
+    {:noreply, socket}
   end
 
 
@@ -166,7 +143,7 @@ defmodule MppmWeb.ServerManagerLive do
           {:ok, track}
       end
 
-    {_atom, tracklist} = Mppm.Tracklist.add_track(tracklist, track, index)
+    {_atom, _tracklist} = Mppm.Tracklist.add_track(tracklist, track, index)
 
     {:noreply, socket}
   end
@@ -219,15 +196,14 @@ defmodule MppmWeb.ServerManagerLive do
   end
 
 
-  def handle_event("validate", params, socket) do
-    {:ok, changeset} = get_changeset(socket.assigns.server.id, params["server"])
-    {:noreply, assign(socket, changeset: changeset)}
-  end
-
-
   ################################################
   ################### INFOS ######################
   ################################################
+
+
+  def handle_info({:refresh_users}, socket) do
+    {:noreply, assign(socket, users: get_users_lists(socket.assigns.server.login))}
+  end
 
   def handle_info({:test, changeset}, socket) do
     {:noreply, assign(socket, changeset: changeset)}
@@ -242,20 +218,32 @@ defmodule MppmWeb.ServerManagerLive do
     {:noreply, assign(socket, users: get_users_lists(server_login))}
   end
 
-  def handle_info({:endmatch}, socket) do
-    {:noreply, assign(socket, current_track_status: :ending)}
+  def handle_info({:endmatch, server_login}, socket) do
+    case socket.assigns.server.login == server_login do
+      true -> {:noreply, assign(socket, current_track_status: :ending)}
+      false -> {:noreply, socket}
+    end
   end
 
-  def handle_info({:endmap}, socket) do
-    {:noreply, assign(socket, current_track_status: :unloading)}
+  def handle_info({:endmap, server_login}, socket) do
+    case socket.assigns.server.login == server_login do
+      true -> {:noreply, assign(socket, current_track_status: :unloading)}
+      false -> {:noreply, socket}
+    end
   end
 
-  def handle_info({:beginmap, %{"UId" => _uuid}}, socket) do
-    {:noreply, assign(socket, current_track_status: :loading)}
+  def handle_info({:beginmap, server_login, %{"UId" => _uuid}}, socket) do
+    case socket.assigns.server.login == server_login do
+      true -> {:noreply, assign(socket, current_track_status: :loading)}
+      false -> {:noreply, socket}
+    end
   end
 
-  def handle_info({:beginmatch}, socket) do
-    {:noreply, assign(socket, current_track_status: :playing)}
+  def handle_info({:beginmatch, server_login}, socket) do
+    case socket.assigns.server.login == server_login do
+      true -> {:noreply, assign(socket, current_track_status: :playing)}
+      false -> {:noreply, socket}
+    end
   end
 
 
@@ -274,5 +262,50 @@ defmodule MppmWeb.ServerManagerLive do
     {:noreply, socket}
   end
 
+
+
+  ##############################################################################
+  ############################# PRIVATE FUNCTIONS ##############################
+  ##############################################################################
+
+
+  defp get_users_lists(server_login) do
+    connected_users_id =
+      Mppm.ConnectedUsers.get_connected_users(server_login)
+      |> Enum.map(& &1.id)
+
+    Mppm.Repo.all(Mppm.User)
+    |> Mppm.Repo.preload([roles: [:user_role]])
+    |> Enum.sort_by(& String.downcase(&1.nickname))
+    |> Enum.map(fn user ->
+      case user.id in connected_users_id do
+        true -> Map.put(user, :is_connected?, true)
+        false -> Map.put(user, :is_connected?, false)
+      end
+    end)
+  end
+
+  defp broker_pname(server_login), do: {:global, {:broker_requester, server_login}}
+
+
+
+  defp get_changeset(server_id, params) do
+    changeset =
+      Mppm.GameServer.Server
+      |> Mppm.Repo.get(server_id)
+      |> Mppm.Repo.preload([:tracklist, :config, ruleset: [:mode, :ta_respawn_behaviour, :rounds_respawn_behaviour]])
+      |> Mppm.GameServer.Server.changeset(params)
+
+    case Ecto.Changeset.apply_action(changeset, :update) do
+      {:error, changeset} ->
+        {:ok, changeset}
+      {:ok, _ } ->
+        {:ok, changeset}
+    end
+  end
+
+
+  defp page_topic(server_login),
+    do: "server-manager:"<>server_login
 
 end

@@ -9,7 +9,8 @@ defmodule Mppm.User do
     field :login, :string
     field :nickname, :string
     field :uuid, Ecto.UUID, autogenerate: false
-    many_to_many :roles, Mppm.UserRole, [join_through: Mppm.Relationship.UsersRoles, on_replace: :delete]
+    has_many :roles, Mppm.Relationship.UsersRoles, on_replace: :delete
+    many_to_many :app_roles, Mppm.UserAppRole, join_through: "rel_users_app_roles", on_replace: :delete
   end
 
 
@@ -41,34 +42,38 @@ defmodule Mppm.User do
   end
 
 
-  def remove_role(%User{} = user, %Mppm.UserRole{} = role) do
-    user = update_role(user, List.delete(user.roles, role))
+  def remove_role(%User{} = user, %Mppm.GameServer.Server{} = server, %Mppm.UserRole{} = role) do
+    user = update_role(user, server, Enum.reject(user.roles, & &1.user_role.id == role.id))
     Phoenix.PubSub.broadcast(Mppm.PubSub, "players-status", {:role_removed, elem(user, 1), role})
     user
   end
 
-  def add_role(%User{} = user, %Mppm.UserRole{} = role) do
-    user = update_role(user, [role | user.roles])
+  def add_role(%User{} = user, %Mppm.GameServer.Server{} = server, %Mppm.UserRole{} = role) do
+    role = %Mppm.Relationship.UsersRoles{user_role: role, server: server}
+    user = update_role(user, server, user.roles ++ [role])
     Phoenix.PubSub.broadcast(Mppm.PubSub, "players-status", {:role_granted, elem(user, 1), role})
     user
   end
 
-  def update_role(%User{} = user, new_roles) do
+  defp update_role(%User{} = user, _server, roles) do
     user
-    |> Ecto.Changeset.change()
-    |> Ecto.Changeset.put_assoc(:roles, new_roles)
+    |> change()
+    |> put_assoc(:roles, roles)
     |> Mppm.Repo.update()
   end
 
-
-  def set_administrator(%Mppm.User{} = user), do:
-    add_role(user, Mppm.Repo.get(Mppm.UserRole, 1))
-
-
-  def set_administrator(user_login), do:
-    Mppm.Repo.get_by(Mppm.User, login: user_login)
-    |> Mppm.Repo.preload(:roles)
-    |> set_administrator()
+  def update_app_role(%Mppm.User{app_roles: %Ecto.Association.NotLoaded{}} = user, role),
+    do: Mppm.Repo.preload(user, [:app_roles]) |> update_app_role(role)
+  def update_app_role(%Mppm.User{} = user, []) do
+    user
+    |> Ecto.Changeset.change(%{app_roles: []})
+    |> Mppm.Repo.update()
+  end
+  def update_app_role(%Mppm.User{} = user, %Mppm.UserAppRole{} = role) do
+    user
+    |> Ecto.Changeset.change(%{app_roles: [role]})
+    |> Mppm.Repo.update()
+  end
 
 
   @doc """
@@ -114,7 +119,6 @@ defmodule Mppm.User do
     |> Base.url_decode64!()
     |> Ecto.UUID.cast!
   end
-
 
 
   defp fetch_or_create(query, user) do

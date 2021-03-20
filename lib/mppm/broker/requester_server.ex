@@ -6,9 +6,18 @@ defmodule Mppm.Broker.RequesterServer do
   @handshake_id_bytes <<255,255,255,255>>
 
 
-  ##############################################################
-  ### Available commands with parameters for the game server ###
-  ##############################################################
+  def update_ruleset(server_login, values),
+    do: send_to_server(server_login, {:update_ruleset, values})
+
+  def switch_game_mode(server_login, %Mppm.Type.GameMode{} = mode),
+    do: send_to_server(server_login, {:switch_game_mode, mode})
+
+
+
+  ##############################################################################
+  ########### Available commands with parameters for the game server ###########
+  ##############################################################################
+
   def handle_call(:enable_callbacks, _from, state), do:
     {:reply, make_request("EnableCallbacks", [true], state), state}
 
@@ -94,9 +103,6 @@ defmodule Mppm.Broker.RequesterServer do
 
 
 
-
-
-
   def handle_cast({:force_spectator_to_target, player_login, user_login}, state) do
     make_request("ForceSpectatorTarget", [player_login, user_login, 0], state)
     {:noreply, state}
@@ -164,7 +170,23 @@ defmodule Mppm.Broker.RequesterServer do
 
 
 
-  def make_request(method, params, broker_state) do
+  ##############################################################################
+  ############################# PRIVATE FUNCTIONS ##############################
+  ##############################################################################
+
+
+  defp send_to_server(server_login, message) do
+    proc_name = {:global, {:broker_requester, server_login}}
+    case GenServer.whereis(proc_name) do
+      nil ->
+        {:none, :not_running}
+      _pid ->
+        GenServer.call(proc_name, message)
+    end
+  end
+
+
+  defp make_request(method, params, broker_state) do
     q = build_query(method, params)
     case send_query(broker_state.socket, q) do
       :ok ->
@@ -176,14 +198,15 @@ defmodule Mppm.Broker.RequesterServer do
   end
 
 
-  def build_query(method, params) do
+  defp build_query(method, params) do
     query =
       %XMLRPC.MethodCall{method_name: method, params: params}
       |> XMLRPC.encode!
     <<byte_size(query)::little-32>> <> @handshake_id_bytes <> query
   end
 
-  def send_query(socket, query), do:
+
+  defp send_query(socket, query), do:
     :gen_tcp.send(socket, query)
 
 

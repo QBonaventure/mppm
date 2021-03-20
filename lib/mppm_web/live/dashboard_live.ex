@@ -37,8 +37,8 @@ defmodule MppmWeb.DashboardLive do
 
 
   def handle_event("validate", %{"server" => params}, socket) do
-    {:ok, exe} = Mppm.GameServer.DedicatedServer.get(params["exe_version"])
-    {:ok, {_status, changeset}} = get_changeset(params) |> IO.inspect
+    {:ok, _exe} = Mppm.GameServer.DedicatedServer.get(params["exe_version"])
+    {:ok, {_status, changeset}} = get_changeset(params)
     {:noreply, assign(socket, new_server_changeset: changeset)}
   end
 
@@ -73,7 +73,7 @@ defmodule MppmWeb.DashboardLive do
 
 
   def handle_event("cancel-form", _params, socket) do
-    {:noreply, assign(socket, new_server_changeset: Server.create_changeset(%Server{}))}
+    {:noreply, assign(socket, new_server_changeset: Server.changeset(%Server{}))}
   end
 
 

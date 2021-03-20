@@ -25,12 +25,12 @@ defmodule MppmWeb.MainNavigationLive do
   end
 
 
-  def handle_info({:created, server_login}, socket) do
+  def handle_info({:created, _server}, socket) do
     {:noreply, assign(socket, servers: build_list())}
   end
 
 
-  def handle_info({:deleted, server_login}, socket) do
+  def handle_info({:deleted, _server_login}, socket) do
     {:noreply, assign(socket, servers: build_list())}
   end
 

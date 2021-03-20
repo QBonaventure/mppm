@@ -13,6 +13,7 @@ defmodule MppmWeb.Router do
   pipeline :with_session do
     plug :put_root_layout, {MppmWeb.LayoutView, :root}
     plug Mppm.Session.UserSession
+    plug Mppm.Session.Authorization, required_roles: [:administrator, :operator]
   end
 
   pipeline :auth do
@@ -28,6 +29,7 @@ defmodule MppmWeb.Router do
     get "/login.html", AuthController, :login
     get "/logout", AuthController, :logout
     get "/:service/callback", AuthController, :callback
+    live "/unauthorized.html", UserSessionLive
   end
 
   scope "/", MppmWeb do

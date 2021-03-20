@@ -22,3 +22,30 @@
     </div>
   <% end %>
 </div>
+
+<div id="app-roles">
+  <section id="administrators-list" phx-hook="element_dropzone">
+    <h1>Administrators</h2>
+    <%= for user <- Enum.find(@roles, %{users: []}, & &1.id == 1) |> Map.get(:users) do %>
+      <div id="user-<%= user.id %>" draggable="true" phx-hook="draggable_user_hook">
+        <span class="username"><%= user.nickname %></span>
+        <span class="login"><%= user.login %></span>
+      </div>
+    <% end %>
+  </section>
+  <section id="operators-list" phx-hook="element_dropzone">
+    <h1>Operators</h2>
+    <%= for user <- Enum.find(@roles, %{users: []}, & &1.id == 2) |> Map.get(:users) do %>
+      <div id="user-<%= user.id %>" draggable="true" phx-hook="draggable_user_hook">
+        <span class="username"><%= user.nickname %></span>
+        <span class="login"><%= user.login %></span>
+    </div>
+    <% end %>
+  </section>
+  <hr />
+  <div id="remove-role-of-user" phx-hook="element_dropzone">
+    <i class="fa fa-trash-alt"></i>
+  </div>
+  <hr />
+  <%= live_component(@socket, MppmWeb.Live.Component.UsersSearchBox, id: :users_search_box) %>
+</div>

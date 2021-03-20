@@ -29,9 +29,9 @@ defmodule Mppm.GameUI.BasicInfo do
 
 
   def add_controls(manialink, %Mppm.User{roles: %Ecto.Association.NotLoaded{}} = user), do:
-    add_controls(manialink, user |> Mppm.Repo.preload(:roles))
+    add_controls(manialink, user |> Mppm.Repo.preload([roles: [:user_role]]))
   def add_controls(manialink, %Mppm.User{} = user) do
-    case Enum.any?(user.roles, & &1.name == "Member") do
+    case Enum.any?(user.roles, & &1.user_role.name == "Member") do
       false ->
         manialink
       true ->
@@ -70,7 +70,8 @@ defmodule Mppm.GameUI.BasicInfo do
 
   def handle_info({:loaded_map, server_login, _map_uid}, state) do
     Mppm.ConnectedUsers.get_connected_users(server_login)
-    |> Enum.each(& get_info(server_login, &1) |> Mppm.GameUI.Helper.send_to_user(server_login, &1.login))
+    |> Enum.each(& get_info(server_login, &1)
+    |> Mppm.GameUI.Helper.send_to_user(server_login, &1.login))
 
     {:noreply, state}
   end

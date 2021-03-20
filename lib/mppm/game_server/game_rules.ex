@@ -184,18 +184,21 @@ defmodule Mppm.GameRules do
     {:ok, target_path}
   end
 
-  def propagate_ruleset_changes(%Ecto.Changeset{data: %Server{login: login}, changes: %{ruleset: %{changes: ruleset_changes}}}) do
-    mode_vars =
-      GenServer.call({:global, {:game_server, login}}, :get_current_game_mode_id)
-      |> get_script_variables_by_mode()
 
+  def propagate_ruleset_changes(%Ecto.Changeset{data: %Server{} = server, changes: %{ruleset: %{changes: ruleset_changes}}}) do
+    mode_vars = get_script_variables_by_mode(server.ruleset.mode_id)
     to_update = Enum.filter(ruleset_changes, fn {key, _value} -> Map.has_key?(mode_vars, key) end)
 
-    GenServer.call({:global, {:broker_requester, login}}, {:update_ruleset, to_update})
-    if switch_game_mode?(ruleset_changes) do
-      GenServer.call({:global, {:broker_requester, login}}, {:switch_game_mode, Mppm.Repo.get(Mppm.Type.GameMode, ruleset_changes.mode_id)})
-    end
+    Mppm.Repo.get(Mppm.GameServer.Server, server.id)
+    |> create_ruleset_file()
 
+
+    Mppm.Broker.RequesterServer.update_ruleset(server.login, to_update)
+
+    if switch_game_mode?(ruleset_changes) do
+      mode = Mppm.Repo.get(Mppm.Type.GameMode, ruleset_changes.mode_id)
+      Mppm.Broker.RequesterServer.switch_game_mode(server.login, mode)
+    end
     :ok
   end
   def propagate_ruleset_changes(_changeset), do: :none

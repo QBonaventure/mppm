@@ -1,6 +1,5 @@
 defmodule Mppm.GameUI.TimePartialsDelta do
   use GenServer
-  import Ecto.Query
 
   @background_style %{
     ahead: "background-positive",
@@ -36,13 +35,7 @@ defmodule Mppm.GameUI.TimePartialsDelta do
 
 
   def handle_info({:loaded_map, server_login, uuid}, state) do
-    top_record = Mppm.Repo.one(
-      from t in Mppm.TimeRecord,
-      join: m in assoc(t, :track),
-      where: m.uuid == ^uuid,
-      order_by: {:asc, t.lap_time},
-      limit: 1)
-
+    {:ok, top_record} = Mppm.TimeTracker.get_top_record(uuid)
     {:noreply, Map.put(state, server_login, top_record)}
   end
 
@@ -64,28 +57,29 @@ defmodule Mppm.GameUI.TimePartialsDelta do
         %Mppm.TimeRecord{} = best_time ->
           best_time
         :no_key ->
-           case GenServer.call(Mppm.TimeTracker, {:get_server_top_record, server_login}) do
+          {:ok, track} = Mppm.Tracklist.get_server_current_track(server_login)
+           case Mppm.TimeTracker.get_top_record(track.uuid) do
              nil -> nil
-             best_time ->
-               GenServer.cast(self(), {:set_new_top_record, server_login, best_time})
-               best_time
+             best_time -> List.first(best_time)
             end
         nil -> nil
       end
 
-    if !is_nil(best_time) do
-      best_time
-      |> Map.get(:checkpoints)
-      |> Enum.at(waypoint_nb)
-      |> case do
-        nil -> nil
-        ref_time ->
-          get_display(ref_time, time)
-          |> Mppm.GameUI.Helper.send_to_user(server_login, user_login, 3000)
-        end
+    case is_nil(best_time) do
+      true ->
+        {:noreply, state}
+      false ->
+        best_time
+        |> Map.get(:checkpoints)
+        |> Enum.at(waypoint_nb)
+        |> case do
+          nil -> nil
+          ref_time ->
+            get_display(ref_time, time)
+            |> Mppm.GameUI.Helper.send_to_user(server_login, user_login, 3000)
+          end
+        {:noreply, %{state | server_login => best_time}}
     end
-
-    {:noreply, %{state | server_login => best_time}}
   end
 
 
@@ -97,7 +91,6 @@ defmodule Mppm.GameUI.TimePartialsDelta do
   def start_link(_init_value), do: GenServer.start_link(__MODULE__, nil, name: __MODULE__)
   def init(_) do
     :ok = Phoenix.PubSub.subscribe(Mppm.PubSub, "maps-status")
-    :ok = Phoenix.PubSub.subscribe(Mppm.PubSub, "time-status")
     :ok = Phoenix.PubSub.subscribe(Mppm.PubSub, "race-status")
     {:ok, %{}}
   end

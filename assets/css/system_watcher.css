@@ -4,6 +4,7 @@ div#system-overview {
   bottom: 0;
   background-color: lightgrey;
   padding: 4px;
+  z-index: 50;
 }
 
 div#system-overview span {

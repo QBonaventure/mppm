@@ -1,0 +1,13 @@
+<section id="users-searchbox">
+  <%= f = form_for @query, "#", [phx_change: "changed", phx_target: @myself] %>
+    <%= text_input f, :username %>
+  </form>
+  <div id="users-searchbox-results">
+    <%= for user <- @results do %>
+      <div id="search-user-<%= user.id %>" draggable="true" phx-hook="draggable_search_user_hook">
+        <span class="username"><%= user.nickname %></span>
+        <span class="login"><%= user.login %></span>
+      </div>
+    <% end %>
+  </div>
+</section>

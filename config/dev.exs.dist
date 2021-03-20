@@ -24,14 +24,6 @@ config :mppm, MppmWeb.Endpoint,
 
 config :oauth2, debug: true
 
-config :mppm, Mppm.Service.Trackmania,
-  redirect_uri: "#{System.get_env("NADEO_REDIRECT_URI")}/auth/trackmania/callback",
-  authorize_url: "https://api.trackmania.com/oauth/authorize",
-  token_url: "https://api.trackmania.com/api/access_token",
-  site: "https://trackmania.com",
-  response_type: "code"
-
-
 # Watch static and templates for browser reloading.
 config :mppm, MppmWeb.Endpoint,
   live_reload: [
@@ -43,6 +35,8 @@ config :mppm, MppmWeb.Endpoint,
       ~r{lib/my_app_web/live/.*(ex)$}
     ]
   ]
+
+
 
 # Do not include metadata nor timestamps in development logs
 config :logger, :console,
@@ -62,4 +56,4 @@ config :phoenix, :stacktrace_depth, 20
 config :phoenix, :plug_init_mode, :runtime
 
 
-import_config "secret.exs"
+import_config "dev.secret.exs"
