@@ -1,0 +1,21 @@
+<div id="system-overview">
+  <div id="system-overview-header">
+    <span class="server-login">Login</span>
+    <span class="server-cpu">CPU%</span>
+    <span class="server-memory">MEM%</span>
+  </div>
+  <%= for data <- @data do %>
+    <div class="server-stat">
+      <span class="server-login"><%= data.login %></span>
+      <span class="server-cpu"><%= data.cpu %>%</span>
+      <span class="server-memory"><%= data.memory %>%</span>
+    </div>
+  <% end %>
+  <%= if length(@data) > 0 do %>
+    <div id="servers-total-stats">
+      <span class="server-login">Total</span>
+      <span class="server-cpu"><%= :erlang.float_to_binary(Enum.reduce(@data, 0.0, fn %{cpu: x}, acc -> x + acc end), [decimals: 1]) %>%</span>
+      <span class="server-memory"><%= :erlang.float_to_binary(Enum.reduce(@data, 0.0, fn %{memory: x}, acc -> x + acc end), [decimals: 1])  %>%</span>
+    </div>
+  <% end %>
+</div>

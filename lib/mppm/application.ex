@@ -9,6 +9,7 @@ defmodule Mppm.Application do
       Mppm.Repo,
       {Phoenix.PubSub, [name: Mppm.PubSub, adapter: Phoenix.PubSub.PG2]},
       MppmWeb.Endpoint,
+      Mppm.SystemWatcher,
       Mppm.Notifications,
       Mppm.ConnectedUsers,
       {

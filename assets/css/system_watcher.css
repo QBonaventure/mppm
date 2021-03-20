@@ -1,0 +1,28 @@
+div#system-overview {
+  position: fixed;
+  font-size: 10px;
+  bottom: 0;
+  background-color: lightgrey;
+  padding: 4px;
+}
+
+div#system-overview span {
+  display: inline-block;
+}
+
+div#system-overview span.server-login {
+  width: 60px;
+  overflow: clip;
+}
+
+
+div#system-overview span.server-cpu,
+div#system-overview span.server-memory {
+  text-align: right;
+  width: 40px;
+}
+
+div#system-overview #system-overview-header,
+div#system-overview #servers-total-stats {
+  font-weight: bold;
+}
