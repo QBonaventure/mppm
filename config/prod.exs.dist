@@ -28,9 +28,8 @@ config :logger, :info,
 
 config :logger, :error,
   path: "./logs/error.log",
-  level: :error
-  metadata: [:request_id]
-  format: "$timeT$metadata[$level] $message\n",
+  level: :error,
+  format: "$timeT$metadata[$level] $message\n"
 
 
 config :oauth2, debug: true
