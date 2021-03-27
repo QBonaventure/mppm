@@ -17,7 +17,8 @@ defmodule Mppm.TimeTracker do
       from r in Mppm.TimeRecord,
       join: t in assoc(r, :track),
       where: t.uuid == ^track_uuid,
-      order_by: {:desc, r.race_time}
+      order_by: {:desc, r.race_time},
+      limit: 1
     )
     case res do
       %Mppm.TimeRecord{} = rec -> {:ok, rec}
