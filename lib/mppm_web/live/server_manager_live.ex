@@ -9,11 +9,11 @@ defmodule MppmWeb.ServerManagerLive do
   def mount(params, session, socket) do
     {:ok, server} = Mppm.GameServer.Server.get_server(params["server_login"])
 
-    Phoenix.PubSub.subscribe(Mppm.PubSub, "test")
-    :ok = Phoenix.PubSub.subscribe(Mppm.PubSub, page_topic(params["server_login"]))
-    :ok = Phoenix.PubSub.subscribe(Mppm.PubSub, "server-status")
-    :ok = Phoenix.PubSub.subscribe(Mppm.PubSub, "players-status")
-    :ok = Phoenix.PubSub.subscribe(Mppm.PubSub, "tracklist-status")
+    :ok = Mppm.PubSub.subscribe(socket.id)
+    :ok = Mppm.PubSub.subscribe(page_topic(params["server_login"]))
+    :ok = Mppm.PubSub.subscribe("server-status")
+    :ok = Mppm.PubSub.subscribe("players-status")
+    :ok = Mppm.PubSub.subscribe("tracklist-status")
 
     user_session = Mppm.Session.AgentStore.get(session["current_user"])
     user = Mppm.Repo.get(Mppm.User, user_session.id)
@@ -60,6 +60,7 @@ defmodule MppmWeb.ServerManagerLive do
     {:noreply, assign(socket, changeset: changeset)}
   end
 
+
   def handle_event("update-config", params, socket) do
     {:ok, changeset} = get_changeset(socket.assigns.server.id, params["server"])
     {:ok, new_server} = Mppm.GameServer.Server.update(changeset)
@@ -73,20 +74,24 @@ defmodule MppmWeb.ServerManagerLive do
     {:noreply, socket}
   end
 
+
   def handle_event("restart-map", _params, socket) do
     GenServer.cast(broker_pname(socket.assigns.server.login), :restart_map)
     {:noreply, socket}
   end
+
 
   def handle_event("end-round", _params, socket) do
     GenServer.cast(broker_pname(socket.assigns.server.login), :end_round)
     {:noreply, socket}
   end
 
+
   def handle_event("end-warmup", _params, socket) do
     GenServer.cast(broker_pname(socket.assigns.server.login), :end_warmup)
     {:noreply, socket}
   end
+
 
   def handle_event("end-all-warmup", _params, socket) do
     GenServer.cast(broker_pname(socket.assigns.server.login), :end_all_warmup)
@@ -128,16 +133,15 @@ defmodule MppmWeb.ServerManagerLive do
   end
 
 
-
   def handle_event("add-mx-track", params, socket) do
     tracklist = socket.assigns.tracklist
     {mx_track_id, ""} = params["data"] |> String.split("-") |> List.last |> Integer.parse
     index = params["index"]-1
-
+# IO.inspect %Mppm.Service.ManiaExchange.Track{mx_track_id,}socket.assigns.mx_searchbox_tracklist
     {:ok, track} =
       case Mppm.Repo.get_by(Mppm.Track, mx_track_id: mx_track_id) do
         nil ->
-          mx_track = Enum.find(socket.assigns.mx_searchbox_tracklist, & &1.mx_track_id == mx_track_id)
+          mx_track = Enum.find(socket.assigns.mx_searchbox_tracklist, & &1.mx_track_id == mx_track_id) |> IO.inspect
           Mppm.TracksFiles.download_mx_track(mx_track)
         %Mppm.Track{} = track ->
           {:ok, track}
@@ -154,6 +158,7 @@ defmodule MppmWeb.ServerManagerLive do
     {:ok, tracklist} = Mppm.Tracklist.remove_track(socket.assigns.tracklist, track_id)
     {:noreply, assign(socket, tracklist: tracklist)}
   end
+
 
   def handle_event("reorganize-tracklist", params, socket) do
     {track_id, ""} =
@@ -188,6 +193,7 @@ defmodule MppmWeb.ServerManagerLive do
     {:noreply, assign(socket, new_chat_message: new_chat_msg)}
   end
 
+
   def handle_event("send-chat-message", %{"chat_message" => %{"text" => chat_msg}}, socket) do
     message_to_send = "[" <> socket.assigns.user.nickname <> "] " <> chat_msg
     GenServer.call(broker_pname(socket.assigns.server.login), {:write_to_chat, message_to_send})
@@ -210,8 +216,10 @@ defmodule MppmWeb.ServerManagerLive do
   end
 
 
-  def handle_info({:mx_searchbox_tracklist, tracklist}, socket), do:
+  def handle_info({:mx_searchbox_tracklist, tracklist}, socket) do
+    IO.inspect tracklist
     {:noreply, assign(socket, mx_searchbox_tracklist: tracklist)}
+  end
 
 
   def handle_info({:servers_users_updated, server_login, _servers_users}, socket) do
