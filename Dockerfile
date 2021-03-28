@@ -41,7 +41,7 @@ RUN mix phx.digest
 
 from elixir:1.10-slim
 
-RUN apt-get update && apt-get install -y curl && \
+RUN apt-get update && apt-get install -y curl procps && \
   rm -rf /var/lib/apt/lists/* && \
   mix local.hex --force
 
