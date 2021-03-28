@@ -3,6 +3,7 @@ defmodule Mppm.Session.UserSession do
   alias Mppm.Session.AgentStore
   alias Ecto.Changeset
   import Plug.Conn
+  import Ecto.Query
 
   defstruct [
     key: nil,
@@ -78,7 +79,6 @@ defmodule Mppm.Session.UserSession do
   @spec set_user_session(%Plug.Conn{}, %Mppm.User{}) :: {%Plug.Conn{}, String.t}
   def set_user_session(conn, %Mppm.User{} = user) do
       {user_session, message} = create_user_session(user)
-
       AgentStore.create(user_session)
       conn = put_session(conn, :current_user, user_session.key)
 
@@ -89,6 +89,14 @@ defmodule Mppm.Session.UserSession do
   @spec create_user_session(%Mppm.User{}) :: {%UserSession{}, String.t}
   defp create_user_session(%Mppm.User{} = user) do
     user = Mppm.User.get(user)
+    user =
+      case first_admin_connection?() do
+        true ->
+          {:ok, user} = Mppm.User.update_app_role(user, Mppm.Repo.get(Mppm.UserAppRole, 1))
+          user
+        false ->
+          user
+      end
     {UserSession.from_user(user), "Hello #{user.nickname}!"}
   end
 
@@ -112,5 +120,13 @@ defmodule Mppm.Session.UserSession do
     do: :user
   defp get_role(roles),
     do: roles |> List.first() |> Map.get(:name) |> String.downcase() |> String.to_atom()
+
+
+  defp first_admin_connection?() do
+    case Mppm.Repo.one(from u in Mppm.Relationship.UsersAppRoles, select: count(u.user_id)) do
+      0 -> true
+      1 -> false
+    end
+  end
 
 end
