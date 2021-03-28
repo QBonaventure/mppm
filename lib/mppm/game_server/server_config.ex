@@ -54,7 +54,8 @@ defmodule Mppm.ServerConfig do
     config
     |> cast(data, [
       :player_pwd, :spec_pwd, :superadmin_pass, :admin_pass, :user_pass,
-      :max_players, :ip_address, :client_inputs_max_latency, :connection_upload_rate,
+      :max_players, :ip_address, :bind_ip, :client_inputs_max_latency, :connection_upload_rate,
+      :autosave_replays, :autosave_validation_replays, :keep_player_slot, :disable_horns,
       :connection_download_rate, :packet_assembly_multithread, :packets_per_frame,
       :full_packets_per_frame, :visuals_delay, :trust_client_to_server_sending_rate,
       :visuals_server_to_client_sending_rate, :disable_replay_recording, :workers_nb

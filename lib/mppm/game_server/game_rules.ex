@@ -103,7 +103,7 @@ defmodule Mppm.GameRules do
 
   @modes_fields [
     :ta_time_limit, :ta_warmup_nb,
-    :ta_warmup_duration,
+    :ta_warmup_duration, :ta_forced_laps_nb,
 
     :rounds_pts_limit, :rounds_finish_timeout,
     :rounds_forced_laps_nb, :rounds_maps_per_match, :rounds_rounds_per_map,
