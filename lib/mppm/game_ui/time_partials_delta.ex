@@ -35,8 +35,12 @@ defmodule Mppm.GameUI.TimePartialsDelta do
 
 
   def handle_info({:loaded_map, server_login, uuid}, state) do
-    {:ok, top_record} = Mppm.TimeTracker.get_top_record(uuid)
-    {:noreply, Map.put(state, server_login, top_record)}
+    case Mppm.TimeTracker.get_top_record(uuid) do
+      {:ok, top_record} ->
+        {:noreply, Map.put(state, server_login, top_record)}
+      :none ->
+        {:noreply, state}
+      end
   end
 
 
