@@ -125,7 +125,7 @@ defmodule Mppm.Session.UserSession do
   defp first_admin_connection?() do
     case Mppm.Repo.one(from u in Mppm.Relationship.UsersAppRoles, select: count(u.user_id)) do
       0 -> true
-      1 -> false
+      _ -> false
     end
   end
 
