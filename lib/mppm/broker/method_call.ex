@@ -211,7 +211,7 @@ defmodule Mppm.Broker.MethodCall do
       end
 
     unless text == nil do
-      server = Mppm.Repo.get_by(Mppm.ServerConfig, login: server_login)
+      server = Mppm.Repo.get_by(Mppm.GameServer.Server, login: server_login)
       {:ok, chat_message} =
         %Mppm.ChatMessage{}
         |> Mppm.ChatMessage.changeset(user, server, %{text: text})
