@@ -87,14 +87,14 @@ defmodule Mppm.ConnectedUsers do
   def handle_cast({:connected_user_info, user, is_spectator?}, state) do
     case Enum.find(state.unknown_users, & &1.user_login == user.login) do
       %{server_login: server_login} ->
-        {:ok, user_record} =
+        {:ok, new_user} =
           %Mppm.User{}
-          |> Mppm.User.changeset(user)
+          |> Mppm.User.changeset(Map.from_struct(user))
           |> Mppm.Repo.insert
 
         {:noreply, %{state |
           unknown_users: remove_unknown_user(state, user.login),
-          servers_users: add_server_user(state, server_login, user_record, is_spectator?)
+          servers_users: add_server_user(state, server_login, new_user, is_spectator?)
         }}
       _ ->
         {:noreply, state}
