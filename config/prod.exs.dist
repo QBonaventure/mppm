@@ -29,7 +29,7 @@ config :logger, :info,
 config :logger, :error,
   path: "./logs/error.log",
   level: :error,
-  format: "$timeT$metadata[$level] $message\n"
+  format: "$dateT$time $message\n"
 
 
 config :oauth2, debug: true
