@@ -13,6 +13,13 @@ defmodule Mppm.Broker.RequesterServer do
     do: send_to_server(server_login, {:switch_game_mode, mode})
 
 
+  def request_connected_users(server_login),
+    do: send_to_server(server_login, {:get_players_list})
+
+  def add_fake_player(server_login),
+    do: send_to_server(server_login, {:add_fake_player})
+
+
 
   ##############################################################################
   ########### Available commands with parameters for the game server ###########
@@ -28,9 +35,14 @@ defmodule Mppm.Broker.RequesterServer do
   def handle_call({:get_players_list}, _from, state), do:
     {:reply, make_request("GetPlayerList", [1000, 0], state), state}
 
+  def handle_call({:add_fake_player}, _from, state),
+    do: {:reply, make_request("ConnectFakePlayer", [], state), state}
+
+
   def handle_call({:send_notice, message, _avatar_id, mood}, _from, state)
   when is_binary(message) and is_integer(mood) and mood >= 0 and mood <= 2, do:
     {:reply, make_request("SendNotice", [message, "", mood], state), state}
+
 
   ############### Manialinks
   def handle_call({:display, xml, hide_on_click?, hide_timeout}, _from, state)
