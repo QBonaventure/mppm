@@ -249,7 +249,6 @@ defmodule Mppm.Broker.RequesterServer do
     end
   end
 
-
   defp make_request(method, params, broker_state) do
     q = build_query(method, params)
     case send_query(broker_state.socket, q) do

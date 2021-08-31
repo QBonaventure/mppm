@@ -137,11 +137,11 @@ defmodule MppmWeb.ServerManagerLive do
     tracklist = socket.assigns.tracklist
     {mx_track_id, ""} = params["data"] |> String.split("-") |> List.last |> Integer.parse
     index = params["index"]-1
-# IO.inspect %Mppm.Service.ManiaExchange.Track{mx_track_id,}socket.assigns.mx_searchbox_tracklist
+
     {:ok, track} =
       case Mppm.Repo.get_by(Mppm.Track, mx_track_id: mx_track_id) do
         nil ->
-          mx_track = Enum.find(socket.assigns.mx_searchbox_tracklist, & &1.mx_track_id == mx_track_id) |> IO.inspect
+          mx_track = Enum.find(socket.assigns.mx_searchbox_tracklist, & &1.mx_track_id == mx_track_id)
           Mppm.TracksFiles.download_mx_track(mx_track)
         %Mppm.Track{} = track ->
           {:ok, track}
@@ -217,7 +217,6 @@ defmodule MppmWeb.ServerManagerLive do
 
 
   def handle_info({:mx_searchbox_tracklist, tracklist}, socket) do
-    IO.inspect tracklist
     {:noreply, assign(socket, mx_searchbox_tracklist: tracklist)}
   end
 

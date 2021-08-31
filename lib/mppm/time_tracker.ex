@@ -26,7 +26,6 @@ defmodule Mppm.TimeTracker do
 
 
   """
-
   def get_top_record(track_uuid) do
     res = Mppm.Repo.one(
       from r in Mppm.TimeRecord,
