@@ -14,6 +14,7 @@ defmodule Mppm.GameUI.GameUISupervisor do
 
   def init([server_login]) do
     children = [
+      {Mppm.GameUI.ChatCommands, [server_login]},
       {Mppm.GameUI.BasicInfo, [server_login]},
       {Mppm.GameUI.Controller, [server_login]},
       {Mppm.GameUI.LiveRaceRanking, [server_login]},

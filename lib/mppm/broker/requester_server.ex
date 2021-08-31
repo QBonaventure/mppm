@@ -160,6 +160,12 @@ defmodule Mppm.Broker.RequesterServer do
   end
 
 
+  def handle_call(command, _from, state) do
+    Logger.info("No function call can be matched for "<>inspect(command))
+    {:reply, :ok, state}
+  end
+
+
 
   def handle_cast({:force_spectator_to_target, player_login, user_login}, state) do
     make_request("ForceSpectatorTarget", [player_login, user_login, 0], state)
