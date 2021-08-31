@@ -125,6 +125,10 @@ defmodule Mppm.ConnectedUsers do
 
 
   def start_link(_init_value), do: GenServer.start_link(__MODULE__, nil, name: __MODULE__)
-  def init(_), do: {:ok, %{servers_users: %{}, unknown_users: []}}
+  def init(_) do
+    Mppm.PubSub.subscribe("player-status")
+    Mppm.PubSub.subscribe("server-status")
+    {:ok, %{servers_users: %{}, unknown_users: []}}
+  end
 
 end
