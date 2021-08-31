@@ -10,7 +10,16 @@
 
 ## "players-status"
 
+- {:user_connection, server_login, user_login, is_spectator?}
 - {:user_disconnection, server_login, user_login, reason}
+
+- {:user_info, server_login, user_login, user_nickname, is_spectator?}
+- {:users_info_list, server_login, users_info_list}
+
+- {:user_connected, server_login, Mppm.User.t()}
+Sent by Mppm.ConnectedUsers for other processes to use.
+- {:user_disconnected, server_login, Mppm.User.t()}
+
 - {:user_connection_to_server, server_login, user_login, is_spectator?}
 - {:servers_users_updated, server_login, servers_users}
 - {:role_removed, , role}
