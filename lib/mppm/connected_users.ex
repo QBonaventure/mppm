@@ -20,6 +20,11 @@ defmodule Mppm.ConnectedUsers do
     GenServer.call(Mppm.ConnectedUsers, :get_state)
   end
 
+  def connected_users() do
+    GenServer.call(Mppm.ConnectedUsers, :get_state)
+    |> Map.get(:servers_users)
+  end
+
   def where_is_user(user_login) do
     GenServer.call(Mppm.ConnectedUsers, :get_state)
     |> Map.get(:servers_users)
