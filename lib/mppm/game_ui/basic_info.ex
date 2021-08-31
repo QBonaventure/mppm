@@ -63,10 +63,16 @@ defmodule Mppm.GameUI.BasicInfo do
     {current_track, next_track}
   end
 
+
+  ##############################################################################
+  ############################ GenServer Callbacks #############################
+  ##############################################################################
+
   def handle_info({:tracklist_update, _, tracklist}, state) do
     tracklist = tracklist |> Mppm.Repo.preload(:server)
     Mppm.ConnectedUsers.get_connected_users(tracklist.server.login)
-    |> Enum.each(& get_info(tracklist.server.login, &1) |> Mppm.GameUI.Helper.send_to_user(tracklist.server.login, &1.login))
+    |> Enum.each(& get_info(tracklist.server.login, &1)
+    |> Mppm.GameUI.Helper.send_to_user(tracklist.server.login, &1.login))
 
     {:noreply, state}
   end
