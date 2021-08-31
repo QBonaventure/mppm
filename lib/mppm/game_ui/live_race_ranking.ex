@@ -71,7 +71,7 @@ defmodule Mppm.GameUI.LiveRaceRanking do
 
 
   def handle_info({:turn_start, server_login}, state) do
-    state = Map.put(state, server_login, %{})
+    state = Map.put(state, :users_progress, %{})
     Mppm.GameUI.LiveRaceRanking.get_table(%{})
     |> Mppm.GameUI.Helper.send_to_all(server_login)
 
@@ -79,34 +79,39 @@ defmodule Mppm.GameUI.LiveRaceRanking do
   end
 
 
-  def handle_info({:player_waypoint, server_login, user_login, waypoint_nb, time}, state) do
-    user_nickname =
-      Mppm.ConnectedUsers.get_connected_users(server_login)
-      |> Enum.find(& &1.login == user_login)
-      |> Map.get(:nickname)
-    state = Kernel.put_in(state, [server_login, user_login], %{waypoint_nb: waypoint_nb, time: time, nickname: user_nickname, login: user_login})
-    GenServer.cast(self(), {:update_table, server_login, state})
+  def handle_info({_player_status, server_login, user_login, waypoint_nb, time}, state)
+  when _player_status in [:player_waypoint, :player_end_race] do
+    %Mppm.User{nickname: user_nickname} = Mppm.ConnectedUsers.get_user(user_login)
+    state = Kernel.put_in(state, [:users_progress, user_login], %{waypoint_nb: waypoint_nb, time: time, nickname: user_nickname, login: user_login})
+    update_table(state)
     {:noreply, state}
   end
 
 
   def handle_info({:player_giveup, server_login, user_login}, state) do
-    current_list = Map.delete(Map.get(state, server_login), user_login)
-    state =  %{state | server_login => current_list}
-    GenServer.cast(self(), {:update_table, server_login, state})
+    current_list = Map.delete(state.users_progress, user_login)
+    state =  %{state | users_progress: current_list}
+    update_table(state)
+    {:noreply, state}
+  end
+
+  def handle_info({:user_disconnected, server_login, user_login}, state) do
+    current_list = Map.delete(state.users_progress, user_login)
+    state =  %{state | users_progress: current_list}
+    update_table(state)
     {:noreply, state}
   end
 
 
   def handle_info({:servers_users_updated, server_login, _servers_users}, state) do
-    GenServer.cast(self(), {:update_table, server_login, state})
+    update_table(state)
     {:noreply, state}
   end
 
   def handle_info({:started, server_login}, state) do
     case Map.has_key?(state, server_login) do
       true -> {:noreply, state}
-      false -> {:noreply, Map.put(state, server_login, %{})}
+      false -> {:noreply, Map.put(state, %{})}
     end
   end
 
@@ -115,16 +120,14 @@ defmodule Mppm.GameUI.LiveRaceRanking do
     {:noreply, state}
 
 
-  def handle_cast({:update_table, server_login, waypoints}, state) do
-    if !Enum.empty?(waypoints) do
-      Enum.each(Mppm.ConnectedUsers.get_connected_users(server_login), fn %{login: user_login, is_spectator?: is_spectator?} ->
-        Map.get(waypoints, server_login)
+  def update_table(state) do
+      Enum.each(Mppm.ConnectedUsers.get_connected_users(state.server_login), fn %{login: user_login, is_spectator?: is_spectator?} ->
+        state.users_progress
         |> Enum.map(& %{waypoint_nb: Map.get(elem(&1, 1), :waypoint_nb), time: Map.get(elem(&1, 1), :time), nickname: Map.get(elem(&1, 1), :nickname), login: Map.get(elem(&1, 1), :login)})
         |> Mppm.GameUI.LiveRaceRanking.get_table(user_login, is_spectator?)
-        |> Mppm.GameUI.Helper.send_to_user(server_login, user_login)
+        |> Mppm.GameUI.Helper.send_to_user(state.server_login, user_login)
       end)
-    end
-    {:noreply, state}
+    :ok
   end
 
 
