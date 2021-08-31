@@ -3,7 +3,7 @@ services:
   db:
     image: postgres:13.2-alpine
     env_file:
-      - .env
+      - .env.docker
     volumes:
       - mppm-db-data:/var/lib/postgresql/data
     ports:
@@ -12,7 +12,7 @@ services:
     image: qbonaventure/mppm:0.3.0
     tty: true
     env_file:
-      - .env
+      - .env.docker
     volumes:
       - mppm-data:/opt/mppm/game_servers
     ports:
