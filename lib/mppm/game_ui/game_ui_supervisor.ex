@@ -20,6 +20,7 @@ defmodule Mppm.GameUI.GameUISupervisor do
       {Mppm.GameUI.TimePartialsDelta, [server_login]},
       {Mppm.GameUI.TimeRecords, [server_login]},
     ]
+    Mppm.GameUI.Helper.toggle_base_ui(server_login, ["Race_RespawnHelper"], false)
     Supervisor.init(children, strategy: :one_for_one)
   end
 

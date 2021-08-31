@@ -25,6 +25,48 @@ defmodule Mppm.Broker.RequesterServer do
   ########### Available commands with parameters for the game server ###########
   ##############################################################################
 
+  def handle_call({:reset_base_ui, modules}, _from, state) do
+    mess = %{uimodules: modules} |> Jason.encode!
+    {:reply, make_request("TriggerModeScriptEventArray", ["Common.UIModules.ResetProperties", [mess]], state), state}
+  end
+
+  def handle_call({:scale_base_ui, module, new_size}, _from, state) do
+    mess = %{uimodules: [%{id: module, scale: new_size, scale_update: true}]} |> Jason.encode!
+    {:reply, make_request("TriggerModeScriptEventArray", ["Common.UIModules.SetProperties", [mess]], state), state}
+  end
+
+  def handle_call({:reposition_base_ui, module, {x, y}}, _from, state) do
+    mess = %{uimodules: [%{id: module, position: [x, y], position_update: true}]} |> Jason.encode!
+    {:reply, make_request("TriggerModeScriptEventArray", ["Common.UIModules.SetProperties", [mess]], state), state}
+  end
+
+  def handle_call({:hide_base_ui, module}, _from, state) do
+    mess = %{uimodules: [%{id: module, visible: false, visible_update: true}]} |> Jason.encode!
+    {:reply, make_request("TriggerModeScriptEventArray", ["Common.UIModules.SetProperties", [mess]], state), state}
+  end
+
+  def handle_call({:show_base_ui, module}, _from, state) do
+    mess = %{uimodules: [%{id: module, visible: true, visible_update: true}]} |> Jason.encode!
+    {:reply, make_request("TriggerModeScriptEventArray", ["Common.UIModules.SetProperties", [mess]], state), state}
+  end
+
+  def handle_call(:hide_base_ui, _from, state) do
+    mess =
+      %{uimodules: Enum.map(@common_ui_modules, & %{id: &1, visible: false, visible_update: true})}
+      |> Jason.encode!
+
+    {:reply, make_request("TriggerModeScriptEventArray", ["Common.UIModules.SetProperties", [mess]], state), state}
+  end
+
+  def handle_call(:show_base_ui, _from, state) do
+    elements = ["Race_Chrono"]
+    mess =
+      %{uimodules: Enum.map(@common_ui_modules, & %{id: &1, visible: true, visible_update: true})}
+      |> Jason.encode!
+
+    {:reply, make_request("TriggerModeScriptEventArray", ["Common.UIModules.SetProperties", [mess]], state), state}
+  end
+
   def handle_call(:enable_callbacks, _from, state), do:
     {:reply, make_request("EnableCallbacks", [true], state), state}
 
