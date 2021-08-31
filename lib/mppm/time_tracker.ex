@@ -2,6 +2,21 @@ defmodule Mppm.TimeTracker do
   use GenServer
   import Ecto.Query
 
+
+  def top_record(%Mppm.Track{} = track) do
+    res = Mppm.Repo.one(
+      from r in Mppm.TimeRecord,
+      join: t in assoc(r, :track),
+      where: t.uuid == ^track.uuid,
+      order_by: {:desc, r.race_time},
+      limit: 1
+    )
+    case res do
+      %Mppm.TimeRecord{} = rec -> {:ok, rec}
+      nil -> {:ok, :none}
+    end
+  end
+
   @moduledoc """
   Tracks, record and provide players best time on tracks.
 
