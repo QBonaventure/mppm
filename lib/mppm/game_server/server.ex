@@ -104,7 +104,7 @@ defmodule Mppm.GameServer.Server do
     do: GenServer.call(proc_name(server_login), :status, 1000)
 
   def server_id(server_login),
-    do: GenServer.call(proc_name(server_login), :id)
+    do: Mppm.Repo.one(from s in Mppm.GameServer.Server, select: s.id, where: s.login == ^server_login)
 
 
   def update(%Ecto.Changeset{} = changeset) do
