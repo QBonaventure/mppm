@@ -9,6 +9,7 @@ defmodule Mppm.Application do
       Mppm.Repo,
       {Phoenix.PubSub, [name: Mppm.PubSub, adapter: Phoenix.PubSub.PG2]},
       MppmWeb.Endpoint,
+      Mppm.Tracklist,
       Mppm.Notifications,
       Mppm.ConnectedUsers,
       {
@@ -18,18 +19,16 @@ defmodule Mppm.Application do
       {
         DynamicSupervisor, strategy: :one_for_one, name: Mppm.GameServer.Supervisor
       },
-      Mppm.Tracklist,
       Mppm.TracksFiles,
+      Mppm.TimeTracker,
+      Mppm.Scheduler,
+      Mppm.SystemWatcher,
       %{
         id: Mppm.GameServer.Starter,
         start: {Mppm.GameServer.Starter, :start_link, []},
         restart: :temporary,
         type: :worker
       },
-      Mppm.TimeTracker,
-      Mppm.GameUI.GameUISupervisor,
-      Mppm.Scheduler,
-      Mppm.SystemWatcher,
     ]
 
     opts = [strategy: :one_for_one, name: Mppm.Supervisor]

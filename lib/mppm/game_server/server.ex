@@ -267,6 +267,10 @@ defmodule Mppm.GameServer.Server do
           {:ok, _child_pid} =
             Mppm.Broker.Supervisor.child_spec(state.server, listening_ports.xmlrpc)
             |> Mppm.GameServer.Supervisor.start_child()
+          Process.sleep(2000)
+          {:ok, _child_pid} =
+            Mppm.GameUI.GameUISupervisor.child_spec(state.server.login)
+            |> Mppm.GameServer.Supervisor.start_child()
           %{
             state |
             status: :started,
@@ -279,12 +283,12 @@ defmodule Mppm.GameServer.Server do
           Logger.info "["<>state.server.login<>"] Server couldn't start"
           %{state | status: :stopped}
       end
-
     {:reply, {:ok, state}, state}
   end
 
   def handle_call(:stop, _from, state) do
-    Supervisor.stop({:global, {:broker_supervisor, state.server.login}})
+    :ok = Supervisor.stop({:global, {:game_ui_supervisor, state.server.login}})
+    :ok = Supervisor.stop({:global, {:broker_supervisor, state.server.login}})
     pid =
       case state.port do
         nil ->
@@ -342,6 +346,8 @@ defmodule Mppm.GameServer.Server do
   def handle_cast({:relink_orphan_process, {_login, pid, xmlrpc_port}}, state) do
     Mppm.Broker.Supervisor.child_spec(state.server, xmlrpc_port)
     |> Mppm.GameServer.Supervisor.start_child
+    Mppm.GameUI.GameUISupervisor.child_spec(state.server.login)
+    |> Mppm.GameServer.Supervisor.start_child()
     state = %{state |
       status: :started,
       listening_ports: %{xmlrpc: xmlrpc_port},

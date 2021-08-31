@@ -18,6 +18,10 @@ defmodule Mppm.GameServer.Supervisor do
     {:ok, _child_pid} = DynamicSupervisor.start_child(__MODULE__, broker_spec)
   end
 
+  def start_child(%{id: Mppm.GameUI.GameUISupervisor} = game_ui_spec) do
+    {:ok, _child_pid} = DynamicSupervisor.start_child(__MODULE__, game_ui_spec)
+  end
+
 
   @doc """
   Starts a game server GenServer upon creation or app start.
