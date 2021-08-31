@@ -1,6 +1,17 @@
 defmodule Mppm.ConnectedUsers do
   use GenServer
 
+
+  def get_user(user_login) do
+    case where_is_user(user_login) do
+      nil ->
+        user = Mppm.Repo.get_by(Mppm.User, login: user_login)
+      server_login ->
+        get_connected_users(server_login)
+        |> Enum.find(& &1.login == user_login)
+    end
+  end
+
   def get_connected_users(server_login) do
     GenServer.call(Mppm.ConnectedUsers, :get_state) |> Map.get(:servers_users) |> Map.get(server_login, [])
   end
