@@ -1,6 +1,8 @@
 defmodule Mppm.GameUI.LiveRaceRanking do
   use GenServer
 
+  @behaviour Mppm.GameUI.Module
+
 
   @camcorder_img_url "http://endlessicons.com/wp-content/uploads/2012/11/camcorder-icon-614x460.png"
 
@@ -126,11 +128,22 @@ defmodule Mppm.GameUI.LiveRaceRanking do
   end
 
 
-  def start_link(_init_value), do: GenServer.start_link(__MODULE__, nil, name: __MODULE__)
-  def init(_) do
+  def child_spec([server_login]) do
+    %{
+      id: __MODULE__,
+      start: {__MODULE__, :start_link, [[server_login]]},
+      restart: :transient
+    }
+  end
+
+  def start_link([server_login], _opts \\ []),
+    do: GenServer.start_link(__MODULE__, [server_login], name: {:global, {__MODULE__, server_login}})
+  def init([server_login]) do
+    Process.flag(:trap_exit, true)
     :ok = Phoenix.PubSub.subscribe(Mppm.PubSub, "race-status")
     :ok = Phoenix.PubSub.subscribe(Mppm.PubSub, "players-status")
-    {:ok, %{}}
+
+    {:ok, %{server_login: server_login, users_progress: %{}}}
   end
 
 end

@@ -1,5 +1,8 @@
 defmodule Mppm.GameUI.TimePartialsDelta do
   use GenServer
+  require Logger
+
+  @behaviour Mppm.GameUI.Module
 
   @background_style %{
     ahead: "background-positive",
@@ -92,11 +95,50 @@ defmodule Mppm.GameUI.TimePartialsDelta do
   end
 
 
-  def start_link(_init_value), do: GenServer.start_link(__MODULE__, nil, name: __MODULE__)
-  def init(_) do
+  ##############################################################################
+  ############################## GenServer Impl. ###############################
+  ##############################################################################
+
+  def child_spec([server_login]) do
+    %{
+      id: __MODULE__,
+      start: {__MODULE__, :start_link, [[server_login]]},
+      restart: :transient
+    }
+  end
+  def start_link([server_login], _opts \\ []),
+    do: GenServer.start_link(__MODULE__, [server_login], name: {:global, {__MODULE__, server_login}})
+  def init([server_login]) do
+    Process.flag(:trap_exit, true)
     :ok = Phoenix.PubSub.subscribe(Mppm.PubSub, "maps-status")
     :ok = Phoenix.PubSub.subscribe(Mppm.PubSub, "race-status")
-    {:ok, %{}}
+
+    Mppm.GameUI.Helper.log_module_start(server_login, name())
+
+    {:ok, %{server_login: server_login, top_record: top_record(server_login)}, {:continue, :init_continue}}
+  end
+
+  def handle_continue(:init_continue, state) do
+    {:noreply, state}
+  end
+
+  def terminate(_reason, state) do
+    :normal
+  end
+
+
+  ##############################################################################
+  ############################# Private Functions ##############################
+  ##############################################################################
+
+  defp top_record(server_login) do
+    {:ok, track} = Mppm.Tracklist.get_server_current_track(server_login)
+    case Mppm.TimeTracker.top_record(track) do
+      {:ok, :none} ->
+        :none
+      {:ok, %Mppm.TimeRecord{} = record} ->
+        record
+    end
   end
 
 end

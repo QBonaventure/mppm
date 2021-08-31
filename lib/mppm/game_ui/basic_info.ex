@@ -1,6 +1,10 @@
 defmodule Mppm.GameUI.BasicInfo do
   use GenServer
 
+  @behaviour Mppm.GameUI.Module
+
+  def name(), do: "BasicInfo"
+
 
   def root_wrap(content \\ nil), do:
     {:manialink, [id: "basic-infos", version: 3], [Mppm.GameUI.Stylesheet.get_stylesheet(), content]}
@@ -93,18 +97,53 @@ defmodule Mppm.GameUI.BasicInfo do
   end
 
   def handle_info(unhandled_message, state) do
-    IO.inspect unhandled_message, label: "GameUI.BasicInfo unhandled message"
     {:noreply, state}
   end
 
 
 
-  def start_link(_init_value), do: GenServer.start_link(__MODULE__, nil, name: __MODULE__)
-  def init(_) do
+  ##############################################################################
+  ############################## GenServer Impl. ###############################
+  ##############################################################################
+
+  def child_spec([server_login]) do
+    %{
+      id: __MODULE__,
+      start: {__MODULE__, :start_link, [[server_login]]},
+      restart: :transient
+    }
+  end
+
+  def start_link([server_login], _opts \\ []),
+    do: GenServer.start_link(__MODULE__, [server_login], name: {:global, {__MODULE__, server_login}})
+
+  def init([server_login]) do
+    Process.flag(:trap_exit, true)
     :ok = Phoenix.PubSub.subscribe(Mppm.PubSub, "maps-status")
     :ok = Phoenix.PubSub.subscribe(Mppm.PubSub, "tracklist-status")
     :ok = Phoenix.PubSub.subscribe(Mppm.PubSub, "players-status")
-    {:ok, %{}}
+
+    Mppm.GameUI.Helper.log_module_start(server_login, name())
+
+    {:ok, %{server_login: server_login}, {:continue, :init_continue}}
   end
+
+  def handle_continue(:init_continue, state) do
+    Mppm.ConnectedUsers.get_connected_users(state.server_login)
+    |> Enum.each(& get_info(state.server_login, &1)
+    |> Mppm.GameUI.Helper.send_to_user(state.server_login, &1.login))
+    Mppm.GameUI.Helper.toggle_base_ui(state.server_login, "Race_Record", false)
+    Mppm.GameUI.Helper.reposition_base_ui(state.server_login, "Race_Countdown", {-92, 88.5})
+    Mppm.GameUI.Helper.scale_base_ui(state.server_login, "Race_Countdown", 0.65)
+    {:noreply, state}
+  end
+
+  def terminate(_reason, state) do
+    Mppm.GameUI.Helper.send_to_all(root_wrap(), state.server_login)
+    Mppm.GameUI.Helper.log_module_stop(state.server_login, name())
+    Mppm.GameUI.Helper.reset_base_ui(state.server_login, ["Race_Countdown", "Race_Record"])
+    :normal
+  end
+
 
 end
