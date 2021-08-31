@@ -6,7 +6,7 @@ defmodule Mppm.GameUI.Helper do
   def base_ui_modules(),
     do: @base_ui_modules
 
-  def send_to_user(manialink, server_login, user_login, timeout) do
+  def send_to_user(manialink, server_login, user_login, timeout \\ 0) do
     xml = Mppm.XML.to_doc(manialink)
 
     GenServer.call(
@@ -15,8 +15,11 @@ defmodule Mppm.GameUI.Helper do
     )
   end
 
-  def send_to_user(manialink, server_login, user_login) do
+  def send_to_all(manialink, server_login) do
     xml = Mppm.XML.to_doc(manialink)
+    GenServer.call({:global, {:broker_requester, server_login}}, {:display, xml, false, 0})
+  end
+
 
   def scale_base_ui(server_login, module, new_size) do
     GenServer.call(
@@ -64,8 +67,7 @@ defmodule Mppm.GameUI.Helper do
   end
 
 
-  def get_custom_template(server_login, player_login) do
-    user = Mppm.Repo.get_by(Mppm.User, login: player_login)
+  def get_custom_template(server_login, user) do
     {:ok, track} = Mppm.Tracklist.get_server_current_track(server_login)
     track_records = Mppm.Repo.preload(track, :time_records) |> Map.get(:time_records)
 
