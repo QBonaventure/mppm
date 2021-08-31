@@ -10,21 +10,23 @@ defmodule Mppm.GameUI.TimePartialsDelta do
     equal: "background-quad-black"
   }
 
+  def name, do: "TimePartialsDelta"
 
   def root_wrap(content \\ nil), do:
     {:manialink, [id: "time-partial-diffs", version: 3], [Mppm.GameUI.Stylesheet.get_stylesheet(), content]}
 
   def get_display(reference_time, user_time) do
     delta = user_time - reference_time
+
     {
       :frame,
-      [id: "diffs", size: "36 4.5", pos: "-22 48"],
+      [id: "diffs", size: "36 45", pos: "-19 39", align: "center"],
       [
-        {:frame, [id: "diff-with-best", pos: "0 0", size: "36 4.5", halign: "left"], [
-            {:label, [halign: "center", textsize: "2", pos: "9 -0.5", text: "Top 1"], []},
-            {:label, [halign: "center", textsize: "2", pos: "27 -0.5", text: Mppm.TimeRecord.get_sign(delta)<> Mppm.TimeRecord.to_string(delta)], []},
-            {:quad, [size: "18 4.5", pos: "9 0", halign: "center", class: "background-quad-black"], []},
-            {:quad, [size: "18 4.5", pos: "27 0", halign: "center", class: Map.get(@background_style, Mppm.TimeRecord.compare(reference_time, user_time))], []}
+        {:frame, [id: "diff-with-best", pos: "0 -4.6", size: "36 10", halign: "left"], [
+            {:label, [halign: "right", textsize: "2.5", pos: "8 -1", text: "Loc1", textfont: "Oswald", textcolor: "fff"], []},
+            {:label, [halign: "right", textsize: "3.1", pos: "26 -1", text: Mppm.TimeRecord.get_sign(delta)<>Mppm.TimeRecord.to_string(delta), textfont: "Oswald", textcolor: "fff"], []},
+            {:quad, [size: "9 7", pos: "0 0", halign: "left", class: "background-quad-black", bgcolor: "000", opacity: "0.6"], []},
+            {:quad, [size: "18 7", pos: "27 0", halign: "right", class: Map.get(@background_style, Mppm.TimeRecord.compare(reference_time, user_time))], []}
         ]}
       ]
     }
@@ -32,51 +34,29 @@ defmodule Mppm.GameUI.TimePartialsDelta do
   end
 
 
-  def handle_cast({:set_new_top_record, server_login, %Mppm.TimeRecord{} = new_time}, state) do
-    {:noreply, Map.put(state, server_login, new_time)}
-  end
-
-
   def handle_info({:loaded_map, server_login, uuid}, state) do
-    case Mppm.TimeTracker.get_top_record(uuid) do
-      {:ok, top_record} ->
-        {:noreply, Map.put(state, server_login, top_record)}
-      :none ->
-        {:noreply, state}
-      end
+    {:noreply, %{state | top_record: top_record(server_login)}}
   end
 
 
   def handle_info({:new_time_record, server_login, time}, state) do
-    case Map.get(state, server_login) do
-      nil -> {:noreply, Map.put(state, server_login, time)}
+    case Map.get(state, :top_record) do
+      nil ->
+        {:noreply, %{state | top_record: time}}
       top_record ->
         case Mppm.TimeRecord.compare(time, top_record) do
-          :ahead -> {:noreply, Map.put(state, server_login, time)}
+          :ahead -> {:noreply, %{state | top_record: time}}
           _ -> {:noreply, state}
         end
       end
   end
 
   def handle_info({:player_waypoint, server_login, user_login, waypoint_nb, time}, state) do
-    best_time =
-      case Map.get(state, server_login) do
-        %Mppm.TimeRecord{} = best_time ->
-          best_time
-        :no_key ->
-          {:ok, track} = Mppm.Tracklist.get_server_current_track(server_login)
-           case Mppm.TimeTracker.get_top_record(track.uuid) do
-             nil -> nil
-             best_time -> List.first(best_time)
-            end
-        nil -> nil
-      end
-
-    case is_nil(best_time) do
-      true ->
+    case state.top_record do
+      :none ->
         {:noreply, state}
-      false ->
-        best_time
+      %Mppm.TimeRecord{} = top_record ->
+        top_record
         |> Map.get(:checkpoints)
         |> Enum.at(waypoint_nb)
         |> case do
@@ -85,7 +65,7 @@ defmodule Mppm.GameUI.TimePartialsDelta do
             get_display(ref_time, time)
             |> Mppm.GameUI.Helper.send_to_user(server_login, user_login, 3000)
           end
-        {:noreply, %{state | server_login => best_time}}
+        {:noreply, state}
     end
   end
 
