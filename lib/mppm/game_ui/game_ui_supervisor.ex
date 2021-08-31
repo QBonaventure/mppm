@@ -17,6 +17,7 @@ defmodule Mppm.GameUI.GameUISupervisor do
       {Mppm.GameUI.ChatCommands, [server_login]},
       {Mppm.GameUI.BasicInfo, [server_login]},
       {Mppm.GameUI.Controller, [server_login]},
+      {Mppm.GameUI.CurrentCPs, [server_login]},
       {Mppm.GameUI.LiveRaceRanking, [server_login]},
       {Mppm.GameUI.TimePartialsDelta, [server_login]},
       {Mppm.GameUI.TimeRecords, [server_login]},
