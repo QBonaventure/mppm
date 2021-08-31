@@ -78,39 +78,30 @@ defmodule Mppm.ConnectedUsers do
     Enum.reject(state.unknown_users, & &1.user_login == user_login)
 
 
+  ##############################################################################
+  ################################ Handle Info #################################
+  ##############################################################################
 
-  def handle_cast({:user_connection, server_login, user_login, is_spectator?}, state) do
-    case Mppm.Repo.get_by(Mppm.User, %{login: user_login}) do
-      nil ->
-        :ok = GenServer.cast({:global, {:broker_requester, server_login}}, {:request_user_info, user_login})
-        {:noreply, %{state | unknown_users: add_unknown_user(state, server_login, user_login)}}
-      user ->
-        {:noreply, %{state | servers_users: add_server_user(state, server_login, user, is_spectator?)}}
-    end
+
+  def handle_info({:user_connection, server_login, user, is_spectator?}, state) do
+    Mppm.PubSub.broadcast("players-status", {:user_connected, server_login, user})
+    {:noreply, %{state | servers_users: add_server_user(state, server_login, user, is_spectator?)}}
   end
 
-  def handle_cast({:user_disconnection, server_login, user_login}, state) do
+  def handle_info({:user_disconnection, server_login, user_login}, state) do
+    Mppm.PubSub.broadcast("players-status", {:user_disconnected, server_login, user_login})
     {:noreply, %{state | servers_users: remove_server_user(state, server_login, user_login)}}
   end
 
-
-
-  def handle_cast({:connected_user_info, user, is_spectator?}, state) do
-    case Enum.find(state.unknown_users, & &1.user_login == user.login) do
-      %{server_login: server_login} ->
-        {:ok, new_user} =
-          %Mppm.User{}
-          |> Mppm.User.changeset(Map.from_struct(user))
-          |> Mppm.Repo.insert
-
-        {:noreply, %{state |
-          unknown_users: remove_unknown_user(state, user.login),
-          servers_users: add_server_user(state, server_login, new_user, is_spectator?)
-        }}
-      _ ->
-        {:noreply, state}
-    end
+  def handle_info({:stopped, server_login}, state) do
+    updated_servers_users = Map.delete(state.servers_users, server_login)
+    {:noreply, %{state | servers_users: updated_servers_users}}
   end
+
+  def handle_info(_unhandled_message, state) do
+    {:noreply, state}
+  end
+
 
   def handle_cast({:user_is_player, server_login, user_login}, state) do
     {:noreply, update_user_status(state, server_login, user_login, false)}

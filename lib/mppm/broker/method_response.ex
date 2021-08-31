@@ -10,15 +10,10 @@ defmodule Mppm.Broker.MethodResponse do
 
 
   # For GetPlayerInfo response
-  defp dispatch_response(_server_login, %{"Login" => login, "NickName" => nickname, "SpectatorStatus" => is_spectator?}) do
-    user = %Mppm.User{login: login, nickname: nickname}
-    GenServer.cast(Mppm.ConnectedUsers, {:connected_user_info, user, is_spectator?})
-  end
-
-  # For GetDetailedPlayerInfo response
-  defp dispatch_response(_server_login, %{"Login" => login, "NickName" => nickname, "IsSpectator" => is_spectator?}) do
-    user = %Mppm.User{login: login, nickname: nickname}
-    GenServer.cast(Mppm.ConnectedUsers, {:connected_user_info, user, is_spectator?})
+  defp dispatch_response(server_login, %{"Login" => login, "NickName" => nickname, "SpectatorStatus" => is_spectator?}) do
+    # user = %Mppm.User{login: login, nickname: nickname}
+    # GenServer.cast(Mppm.ConnectedUsers, {:connected_user_info, user, is_spectator?})
+    Mppm.PubSub.broadcast("player-status", {:user_info, server_login, login, nickname, is_spectator?})
   end
 
   defp dispatch_response(server_login, %{"UId" => uuid}) do
@@ -26,12 +21,20 @@ defmodule Mppm.Broker.MethodResponse do
   end
 
 
+  # For GetDetailedPlayerInfo response
+  defp dispatch_response(server_login, %{"Login" => login, "NickName" => nickname, "IsSpectator" => is_spectator?} = user) do
+    user = Mppm.User.get(%Mppm.User{login: login})
+    Mppm.PubSub.broadcast("player-status", {:user_connection, server_login, user, is_spectator?})
+  end
+
   defp dispatch_response(server_login, [%{"PlayerId" => 0} | remainder]) do
     Enum.each(
       remainder,
-      & broadcast("players-status", {:user_connection_to_server, server_login, Map.get(&1, "Login"), Map.get(&1, "SpectatorStatus") != 0})
+      fn %{"Login" => login, "NickName" => nickname, "SpectatorStatus" => spec_status} ->
+        user = Mppm.User.get(%Mppm.User{login: login})
+        Mppm.PubSub.broadcast("player-status", {:user_connection, server_login, user, spec_status != 0})
+      end
     )
-    Enum.each(remainder, & GenServer.cast(Mppm.ConnectedUsers, {:user_connection, server_login, Map.get(&1, "Login"), Map.get(&1, "SpectatorStatus") != 0}))
   end
 
   defp dispatch_response(server_login, %{"ScriptName" => script_name}) do

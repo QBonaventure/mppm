@@ -222,14 +222,13 @@ defmodule Mppm.Broker.MethodCall do
 
 
   def dispatch_message(server_login, "ManiaPlanet.PlayerConnect", [user_login, is_spectator?]) do
-    broadcast("players-status", {:user_connection_to_server, server_login, user_login, is_spectator?})
-    GenServer.cast(Mppm.ConnectedUsers, {:user_connection, server_login, user_login, is_spectator?})
+    user = Mppm.User.get(%Mppm.User{login: user_login})
+    broadcast("player-status", {:user_connection, server_login, user, is_spectator?})
   end
 
 
   def dispatch_message(server_login, "ManiaPlanet.PlayerDisconnect", [user_login, reason]) do
-    broadcast("players-status", {:user_disconnection, server_login, user_login, reason})
-    GenServer.cast(Mppm.ConnectedUsers, {:user_disconnection, server_login, user_login})
+    Mppm.PubSub.broadcast("player-status", {:user_disconnection, server_login, user_login})
   end
 
 
@@ -250,8 +249,9 @@ defmodule Mppm.Broker.MethodCall do
     IO.inspect %{method: method_name, data: data}, label: "Unhandled message"
   end
 
-  defp broadcast(topic, msg), do:
+  defp broadcast(topic, msg) do
     Phoenix.PubSub.broadcast(Mppm.PubSub, topic, msg)
+  end
 
 
 
