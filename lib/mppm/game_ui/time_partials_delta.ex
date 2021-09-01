@@ -25,8 +25,8 @@ defmodule Mppm.GameUI.TimePartialsDelta do
         {:frame, [id: "diff-with-best", pos: "0 -4.6", size: "36 10", halign: "left"], [
             {:label, [halign: "right", textsize: "2.5", pos: "8 -1", text: "Loc1", textfont: "Oswald", textcolor: "fff"], []},
             {:label, [halign: "right", textsize: "3.1", pos: "26 -1", text: Mppm.TimeRecord.get_sign(delta)<>Mppm.TimeRecord.to_string(delta), textfont: "Oswald", textcolor: "fff"], []},
-            {:quad, [size: "9 7", pos: "0 0", halign: "left", class: "background-quad-black", bgcolor: "000", opacity: "0.6"], []},
-            {:quad, [size: "18 7", pos: "27 0", halign: "right", class: Map.get(@background_style, Mppm.TimeRecord.compare(reference_time, user_time))], []}
+            {:quad, [size: "9 7", pos: "0 0", halign: "left", class: "background-quad-black", bgcolor: "000", opacity: "1"], []},
+            {:quad, [size: "18 7", pos: "27 0", halign: "right", opacity: "1", class: Map.get(@background_style, Mppm.TimeRecord.compare(reference_time, user_time))], []}
         ]}
       ]
     }
