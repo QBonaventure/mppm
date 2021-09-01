@@ -5,20 +5,23 @@
   </div>
 </section>
 
-<section id="game-server-chat">
-  <div id="chat-box">
-    <%= for message  <- @chat do %>
-      <div class="chat-message">
-        <span class="chat-message-author"><%= message.user.nickname %> ></span>
-        <span class="chat-message-class"><%= message.text %></span>
-      </div>
-    <% end %>
-  </div>
-  <div id="chat-message-input-box">
-    <%= f = form_for @new_chat_message, "#", [phx_change: "validate-chat-message", phx_submit: "send-chat-message"] %>
-      <%= textarea f, :text %>
+<section id="game-server-chat" x-data="{ open: false}">
+  <h1 @click="open = true">Chatbox</h1>
+  <div class="displayable" x-show.transition="open" @click.away="open = false">
+    <div id="chat-box">
+      <%= for message  <- @chat do %>
+        <div class="chat-message">
+          <span class="chat-message-author"><%= message.user.nickname %> ></span>
+          <span class="chat-message-class"><%= message.text %></span>
+        </div>
+      <% end %>
+    </div>
+    <div id="chat-message-input-box">
+      <%= f = form_for @new_chat_message, "#", [phx_change: "validate-chat-message", phx_submit: "send-chat-message"] %>
+        <%= textarea f, :text %>
 
-      <button type="submit" <%= unless @new_chat_message.valid? do "disabled" end %>>Submit</button>    </form>
+        <button type="submit" <%= unless @new_chat_message.valid? do "disabled" end %>>Submit</button>    </form>
+    </div>
   </div>
 </section>
 
