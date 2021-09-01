@@ -1,6 +1,22 @@
 defmodule Mppm.GameUI.GameUISupervisor do
   use Supervisor
 
+  def available_modules() do
+    [
+      Mppm.GameUI.ChatCommands,
+      Mppm.GameUI.BasicInfo,
+      Mppm.GameUI.CurrentCPs,
+      Mppm.GameUI.LiveRaceRanking,
+      Mppm.GameUI.TimePartialsDelta,
+      Mppm.GameUI.TimeRecords
+    ]
+  end
+
+  def active_modules(server_login) do
+    Supervisor.which_children({:global, {:game_ui_supervisor, "ftc_tm20_5"}})
+    |> Enum.map(fn {module, pid, _, _} -> {module, pid} end)
+  end
+
   def child_spec(server_login) do
     %{
       id: __MODULE__,
