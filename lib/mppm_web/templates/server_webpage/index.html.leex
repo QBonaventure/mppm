@@ -1,0 +1,6 @@
+<section id="server-tracklist">
+  <h1>Tracklist</h1>
+  <%= for track <- @tracklist.tracks |> Mppm.Repo.preload(:author) do %>
+    <%= live_component(@socket, MppmWeb.Live.Component.PublicTrackCard, id: track.id) %>
+  <% end %>
+</section>
