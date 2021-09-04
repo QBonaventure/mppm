@@ -1,0 +1,21 @@
+<div id="track-<%= @track.id %>" class="row">
+  <div class="track-info">
+    <img src="<%= Mppm.Track.thumbnail_src(@track.mx_track_id) %>" />
+    <span class="track-name"><%= @track.name %></span>
+    <span class="track-author"><span>by</span> <%= @track.author.nickname %></span>
+  </div>
+  <div id="track-<%= @track.id %>-records">
+    <%= for record <- Enum.sort(@track.time_records, &(&1.race_time < &2.race_time)) do %>
+      <div class="track-record">
+        <span class="rank"></span>
+        <span class="time"><%= Mppm.TimeRecord.to_string(record.race_time) %></span>
+        <span class="delta">
+          <%= if record.race_time > @top_record do
+            "+"<>Mppm.TimeRecord.to_string(record.race_time - @top_record)
+          end %>
+        </span>
+        <span class="player"><%= record.user.nickname %></span>
+      </div>
+    <% end %>
+  </div>
+</div>

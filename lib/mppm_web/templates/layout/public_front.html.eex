@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8"/>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Mppm · </title>
+    <link rel="stylesheet" href="<%= Routes.static_path(@conn, "/css/public_front.css") %>"/>
+    <link  rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
+    <script src="https://cdn.jsdelivr.net/gh/alpinejs/alpine@v2.7.3/dist/alpine.min.js" defer></script>
+    <script src="https://kit.fontawesome.com/3df8439085.js" crossorigin="anonymous"></script>
+    <%= csrf_meta_tag() %>
+  </head>
+  <body>
+    <header>
+      <div class="container">
+        <a href="/" id="app-logo">
+          MPPM
+        </a>
+      </div>
+    </header>
+    <main role="main" class="container">
+      <%= @inner_content %>
+    </main>
+
+    <footer>
+      <div class="container">
+        <img id="fearthec-footer-logo" src="https://fearthec-documentations.s3.eu-west-3.amazonaws.com/images/ftc-logo.png" />
+        <span class="footer-link">Need help? <a href="https://discord.gg/Fz5dDuN">Discord!</a></span>
+        <div id="footer-tech-stacks">
+          <img src="<%= Routes.static_path(@conn, "/images/elixir.png") %>" id="elixir-logo" />
+          <img src="<%= Routes.static_path(@conn, "/images/phoenix.png") %>" id="phoenix-logo" />
+        </div>
+      </div>
+    </footer>
+    <script type="text/javascript" src="<%= Routes.static_path(@conn, "/js/app.js") %>"></script>
+  </body>
+
+</html>
