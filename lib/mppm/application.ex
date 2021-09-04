@@ -4,7 +4,7 @@ defmodule Mppm.Application do
 
 
   def start(_type, _args) do
-    Mppm.GameServer.DedicatedServer.check_install()
+
     children = [
       Mppm.Repo,
       {Phoenix.PubSub, [name: Mppm.PubSub, adapter: Phoenix.PubSub.PG2]},
@@ -32,7 +32,12 @@ defmodule Mppm.Application do
     ]
 
     opts = [strategy: :one_for_one, name: Mppm.Supervisor]
-    Supervisor.start_link(children, opts)
+    response = Supervisor.start_link(children, opts)
+
+    Mppm.User.check_install()
+    Mppm.GameServer.DedicatedServer.check_install()
+
+    response
   end
 
   # Tell Phoenix to update the endpoint configuration

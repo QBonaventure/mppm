@@ -45,7 +45,11 @@ defmodule Mppm.TracksFiles do
     receive do
       {:DOWN, ^ref, _, _, :normal} ->
         file_data = extract_track_file_data(track_file_path)
-        user = Mppm.User.get(%Mppm.User{login: file_data.author})
+        user =
+          case file_data.author do
+            "Nadeo" -> Mppm.User.get_nadeo_user()
+            author_nickname -> Mppm.User.get(%Mppm.User{login: author_nickname})
+          end
 
         # tags =
         #   case track.tags do
@@ -102,7 +106,11 @@ defmodule Mppm.TracksFiles do
       case map do
         {id, map_filename} ->
           file_data = extract_track_file_data(@mx_path<>map_filename)
-          user = Mppm.User.get(%Mppm.User{login: file_data.author})
+          user =
+            case file_data.author do
+              "Nadeo" -> Mppm.User.get_nadeo_user()
+              author_nickname -> Mppm.User.get(%Mppm.User{login: author_nickname})
+            end
           data =
             Enum.find(missing_maps_info, & &1.mx_track_id == id)
             |> Map.from_struct()

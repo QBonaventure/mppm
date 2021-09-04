@@ -42,8 +42,21 @@ defmodule Mppm.Track do
       from Mppm.Track,
       order_by: fragment("RANDOM()"),
       limit: ^nb_of_tracks
-
     Mppm.Repo.all(query)
+  end
+
+  def track_records(track_uuid, limit \\ 20) do
+    Mppm.Repo.all(
+      from t in Mppm.TimeRecord,
+      select: t,
+      join: tr in Mppm.Track, on: tr.uuid == ^track_uuid and tr.id == t.track_id,
+      order_by: t.race_time,
+      limit: ^limit
+    )
+  end
+
+  def thumbnail_src(track_id) do
+    "https://trackmania.exchange/maps/screenshot/normal/#{track_id}"
   end
 
 end

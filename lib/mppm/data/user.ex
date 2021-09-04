@@ -5,6 +5,9 @@ defmodule Mppm.User do
   alias __MODULE__
   alias Mppm.Service.UbiNadeoApi
 
+
+  @nadeo_user_nickname "Nadeo"
+
   schema "users" do
     field :login, :string
     field :nickname, :string
@@ -87,6 +90,11 @@ defmodule Mppm.User do
   def get(%Mppm.User{login: login} = user) when not is_nil(login), do:
     build_query_with_login(user) |> fetch_or_create(user)
 
+
+  def get_nadeo_user() do
+    Mppm.Repo.one(from u in Mppm.User, where: u.nickname == @nadeo_user_nickname)
+  end
+
   @doc """
     Encodes user UUID to base 64 URL safe user login as used in-game.
 
@@ -120,6 +128,23 @@ defmodule Mppm.User do
     |> Ecto.UUID.cast!
   end
 
+
+  def check_install() do
+    case Mppm.Repo.one(from u in User, where: u.nickname == @nadeo_user_nickname) do
+      nil ->
+        uuid = Ecto.UUID.generate()
+        new(uuid, uuid_to_login(uuid), @nadeo_user_nickname)
+        |> create_new_user()
+      _ ->
+      :ok
+    end
+  end
+
+
+
+  ##############################################################################
+  ############################# Private Functions ##############################
+  ##############################################################################
 
   defp fetch_or_create(query, user) do
     case Mppm.Repo.one(query) |> exists?() do
