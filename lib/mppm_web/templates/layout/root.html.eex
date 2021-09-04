@@ -36,8 +36,8 @@
         <img id="fearthec-footer-logo" src="https://fearthec-documentations.s3.eu-west-3.amazonaws.com/images/ftc-logo.png" />
         <span class="footer-link">Need help? <a href="https://discord.gg/Fz5dDuN">Discord!</a></span>
         <div id="footer-tech-stacks">
-            <img src="images/elixir.png" id="elixir-logo" />
-          <img src="images/phoenix.png" id="phoenix-logo" />
+          <img src="<%= Routes.static_path(@conn, "/images/elixir.png") %>" id="elixir-logo" />
+          <img src="<%= Routes.static_path(@conn, "/images/phoenix.png") %>" id="phoenix-logo" />
         </div>
       </div>
     </footer>
