@@ -7,7 +7,7 @@
   --mx: 0,122,76;
   --mx-plain-green: 0,113,90;
   --mx-pastel: 204,227,227;
-
+  --base-font-size: 12px;
 }
 
 @import "./phoenix.css";
@@ -82,13 +82,27 @@ footer img#elixir-logo {
 
 
 
+div[data-phx-view="ServerWebpageLive"] h1 {
+  width: 100%;
+  font-size: 22px;
+  text-align: center;
+  margin: 10px auto;
+}
 
+div[data-phx-view="ServerWebpageLive"] > section {
+  float: left;
+}
+
+
+#server-tracklist {
+  width: 402px;
+}
 
 #server-tracklist .row {
   margin: 5px 0;
   padding: 5px;
   border: 1px solid grey;
-  width: 402px;
+  width: 100%;
 }
 
 #server-tracklist .track-info {
@@ -174,4 +188,55 @@ div.track-record span.delta {
 div.track-record span.player {
   width: 100px;
 
+}
+
+
+section#live-race-ranking {
+  width: 270px;
+  counter-reset: css-counter 0;
+}
+
+section#live-race-ranking div {
+  font-size: var(--base-font-size);
+  counter-increment: css-counter 1;
+  border-bottom: 1px solid lightgrey;
+}
+
+section#live-race-ranking span {
+  display: inline-block;
+}
+
+section#live-race-ranking span.rank::before {
+  content: counter(css-counter);
+}
+
+
+section#live-race-ranking span.rank {
+  text-align: right;
+  width: 20px;
+  color: lightgrey;
+}
+
+
+section#live-race-ranking span.player {
+  text-align: left;
+  width: 80px;
+  overflow: hidden;
+  vertical-align: bottom;
+}
+
+section#live-race-ranking span.cp {
+  width: 20px;
+  text-align: right;
+}
+
+section#live-race-ranking span.time {
+  width: 70px;
+  text-align: right;
+}
+
+section#live-race-ranking span.delta {
+  width: 65px;
+  color: red;
+  text-align: left;
 }
