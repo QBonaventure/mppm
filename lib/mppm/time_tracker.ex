@@ -53,6 +53,10 @@ defmodule Mppm.TimeTracker do
     # |> Enum.sort_by(& &1.lap_time)
   end
 
+  def get_ongoing_runs(server_login) do
+    GenServer.call(__MODULE__, {:ongoing_runs, server_login})
+  end
+
 
   ##############################################################################
   ############################## GenServer Impl. ###############################
@@ -108,6 +112,12 @@ defmodule Mppm.TimeTracker do
   #     end
   #   {:noreply, %{state | tracks_records: tracks_records, servers_track: servers_track}}
   # end
+
+
+  def handle_call({:ongoing_runs, server_login}, _from, state) do
+    {:reply, state.ongoing_runs, state}
+  end
+
 
   def handle_info({:user_disconnection, _server_login, user_login, _is_spectator?}, state) do
     {:noreply, %{state | ongoing_runs: Map.delete(state.ongoing_runs, user_login)}}
