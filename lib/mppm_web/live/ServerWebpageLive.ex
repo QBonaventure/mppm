@@ -21,6 +21,7 @@ defmodule MppmWeb.ServerWebpageLive do
       |> assign(tracklist: tracklist)
       |> assign(current_track_status: :playing)
       |> assign(user_session: session)
+      |> assign(live_ranking: %{})
     {:ok, socket}
   end
 
@@ -31,8 +32,28 @@ defmodule MppmWeb.ServerWebpageLive do
     {:noreply, socket}
   end
 
+  def handle_info({event, server_login, player_login, waypoint_index, time} = pp, socket)
+  when event in ~w(player_waypoint player_end_race)a do
+    waypoint_index = waypoint_index+1
+  end? = event == :player_end_race
+    updated_live_ranking =
+      socket.assigns.live_ranking
+      |> Map.put(player_login, %{waypoint_index: waypoint_index, time: time, end?: end?})
+      |> Enum.sort_by(fn {login, %{time: time, waypoint_index: wp}} -> {1/wp, time} end)
+      |> Map.new()
 
-  def handle_info(_unhandled_message, socket) do
+    {:noreply, assign(socket, live_ranking: updated_live_ranking)}
+  end
+
+  def handle_info({:player_giveup, server_login, player_login}, socket) do
+    updated_live_ranking =
+      socket.assigns.live_ranking
+      |> Map.delete(player_login)
+    {:noreply, assign(socket, live_ranking: updated_live_ranking)}
+  end
+
+
+  def handle_info(unhandled_message, socket) do
     {:noreply, socket}
   end
 

@@ -4,3 +4,16 @@
     <%= live_component(@socket, MppmWeb.Live.Component.PublicTrackCard, id: track.id) %>
   <% end %>
 </section>
+
+<section id="live-race-ranking">
+  <h1>Live Race Ranking</h1>
+  <%= for {user_login, %{time: time, waypoint_index: wp_index, end?: end?}} <- @live_ranking do %>
+    <div>
+      <span class="rank"></span>
+      <span class="player"><%= Mppm.ConnectedUsers.get_user_nickname(user_login) %></span>
+      <span class="cp"><%= display_cp(wp_index, end?) %></span>
+      <span class="time"><%= Mppm.TimeRecord.to_string(time) %></span>
+      <span class="delta">+</span>
+    </div>
+  <% end %>
+</section>

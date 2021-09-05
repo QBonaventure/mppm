@@ -12,6 +12,11 @@ defmodule Mppm.ConnectedUsers do
     end
   end
 
+  def get_user_nickname(user_login) do
+    get_user(user_login)
+    |> Map.get(:nickname)
+  end
+
   def get_connected_users(server_login) do
     GenServer.call(Mppm.ConnectedUsers, :get_state) |> Map.get(:servers_users) |> Map.get(server_login, [])
   end
