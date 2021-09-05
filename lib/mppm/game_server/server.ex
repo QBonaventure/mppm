@@ -346,6 +346,7 @@ defmodule Mppm.GameServer.Server do
   def handle_cast({:relink_orphan_process, {_login, pid, xmlrpc_port}}, state) do
     Mppm.Broker.Supervisor.child_spec(state.server, xmlrpc_port)
     |> Mppm.GameServer.Supervisor.start_child
+    Process.sleep(2000)
     Mppm.GameUI.GameUISupervisor.child_spec(state.server.login)
     |> Mppm.GameServer.Supervisor.start_child()
     state = %{state |
