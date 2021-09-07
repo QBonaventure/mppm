@@ -10,6 +10,8 @@ defmodule Mppm.TimeTracker do
   correctly manage cases where a map is being simultaneously played on different
   servers.
   """
+
+
   def top_record(%Mppm.Track{} = track) do
     res = Mppm.Repo.one(
       from r in Mppm.TimeRecord,
@@ -31,18 +33,12 @@ defmodule Mppm.TimeTracker do
   def get_server_records(server_login) do
     {:ok, track} = Mppm.Tracklist.get_server_current_track(server_login)
     track_records(track.uuid)
-    # case Enum.find(state.tracks, & &1.uuid == uuid) do
-    #   nil ->
-    #     Mppm.Track.get_by_uid(uuid) |> Mppm.Repo.preload(:time_records)
-    #   track ->
-    #     track
-    # end
-    # |> Map.get(:time_records)
-    # |> Enum.sort_by(& &1.lap_time)
   end
 
-  def get_ongoing_runs(server_login) do
-    GenServer.call(__MODULE__, {:ongoing_runs, server_login})
+
+  def ongoing_runs(server_login) do
+    res = GenServer.call(__MODULE__, {:ongoing_runs, server_login})
+    {:ok, res}
   end
 
 
@@ -56,51 +52,44 @@ defmodule Mppm.TimeTracker do
     # :ok = Phoenix.PubSub.subscribe(Mppm.PubSub, "maps-status")
     :ok = Phoenix.PubSub.subscribe(Mppm.PubSub, "players-status")
 
-    {:ok, %{ongoing_runs: %{}}}
+    {:ok, %{ongoing_runs: %{}, runs: %{}}}
   end
 
 
-  # def handle_info({:started, server_login}, state) do
-  #   {:ok, server_track} = Mppm.Tracklist.get_server_current_track(server_login)
-  #   records = track_records(server_track.uuid)
-  #   servers_track = Map.put(state.servers_track, server_login, server_track.uuid)
-  #   tracks_records = Map.put(state.tracks_records, server_track.uuid, records)
-  #
-  #     {:noreply, %{state | servers_track: servers_track, tracks_records: tracks_records}}
-  #   {:noreply, %{state | servers_track: servers_track, tracks_records: tracks_records}}
-  # end
-
-  # def handle_info({:stopped, server_login}, state) do
-  #   track_uuid = Kernel.get_in(state, [:servers_track, server_login])
-  #   servers_track = Map.delete(state.servers_track, server_login)
-  #   tracks_records =
-  #     case track_uuid in Map.values(servers_track) do
-  #       true -> state.tracks_records
-  #       false -> Map.delete(state.tracks_records, track_uuid)
-  #     end
-  #   {:noreply, %{state | tracks_records: tracks_records, servers_track: servers_track}}
-  # end
+  def handle_call({:players_runs, players_logins}, _from, state) do
+    {:reply, state.ongoing_runs.server_login, state}
+  end
 
 
   def handle_call({:ongoing_runs, server_login}, _from, state) do
-    {:reply, state.ongoing_runs, state}
+    data =
+      state.runs
+      |> Enum.filter(fn {_user_login, data} -> data.server_login == server_login end)
+
+    {:reply, data, state}
   end
 
 
   def handle_info({:user_disconnection, _server_login, user_login, _is_spectator?}, state) do
-    {:noreply, %{state | ongoing_runs: Map.delete(state.ongoing_runs, user_login)}}
+    ongoing_runs = Map.delete(state.ongoing_runs, user_login)
+    runs = Map.delete(state.runs, user_login)
+
+    {:noreply, %{state | ongoing_runs: ongoing_runs, runs: runs}}
   end
 
-  def handle_info({event, _server_login, user_login}, state)
+  def handle_info({event, server_login, user_login}, state)
   when event in [:player_start, :player_giveup] do
-    runs = Map.put(state.ongoing_runs, user_login, [])
-    {:noreply, %{state | ongoing_runs: runs}}
+    ongoing_runs = Map.put(state.ongoing_runs, user_login, [])
+    runs = Map.put(state.runs, user_login, %{server_login: server_login, partials: []})
+    {:noreply, %{state | ongoing_runs: ongoing_runs, runs: runs}}
   end
 
 
-  def handle_info({:player_waypoint, _server_login, user_login, _waypoint_nb, time}, state) do
-    runs = Map.put(state.ongoing_runs, user_login, Map.get(state.ongoing_runs, user_login, []) ++ [time])
-    {:noreply, %{state | ongoing_runs: runs}}
+  def handle_info({:player_waypoint, server_login, user_login, waypoint_nb, time}, state) do
+    player_cp_times = Map.get(state.ongoing_runs, user_login, []) ++ [time]
+    ongoing_runs = Map.put(state.ongoing_runs, user_login, player_cp_times)
+    runs = Map.put(state.runs, user_login, %{server_login: server_login, partials: player_cp_times})
+    {:noreply, %{state | ongoing_runs: ongoing_runs, runs: runs}}
   end
 
   def handle_info({:player_end_race, server_login, user_login, _waypoint_nb, time}, state) do
@@ -113,30 +102,6 @@ defmodule Mppm.TimeTracker do
     {:noreply, state}
   end
 
-
-  # def handle_info({id, server_login, track_uuid}, state) when id in [:beginmap] do
-  #   servers_track = Map.put(state.servers_track, server_login, track_uuid)
-  #   track_records =
-  #     case Map.has_key?(state.tracks_records, track_uuid) do
-  #       true -> Map.get(state.tracks_records, track_uuid)
-  #       false -> track_records(track_uuid)
-  #     end
-  #   state =
-  #     state
-  #     |> Kernel.put_in([:tracks_records, track_uuid], track_records)
-  #     |> Kernel.put_in([:servers_track, server_login], track_uuid)
-  #   {:noreply, state}
-  # end
-
-  # def handle_info({:endmap, server_login, track_uuid}, state) do
-  #   servers_track = Map.delete(state.servers_track, server_login)
-  #
-  #   tracks_records =
-  #     state.tracks_records
-  #     |> Enum.filter(fn {track_uuid, _} -> track_uuid in Map.values(servers_track) end)
-  #
-  #   {:noreply, %{state | servers_track: servers_track, tracks_records: tracks_records}}
-  # end
 
   def handle_info(_, state), do: {:noreply, state}
 
