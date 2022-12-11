@@ -144,7 +144,7 @@ defmodule Mppm.GameServer.DedicatedServer do
         {:ok, _pid} = Mppm.FileManager.TasksSupervisor.download_file(
           dedi_server.download_link,
           "/tmp/TrackmaniaServer_#{dedi_server.version}.zip",
-          {&Mppm.GameServer.DedicatedServer.finish_install/2, [version: dedi_server.version] ++ opts}
+          {&Mppm.GameServer.DedicatedServer.finish_install/2, dedi_server.version}
         )
         {:ok, :installing}
       {:ok, :already_installed} = resp ->
@@ -346,7 +346,7 @@ defmodule Mppm.GameServer.DedicatedServer do
       File.write(zip_path, body)
 
       Logger.info "Installing game server files..."
-      finish_install(zip_path, [version: version, first_install: true])
+      finish_install(zip_path, version)
     end
 
     if {:ok, []} == File.ls(Mppm.TracksFiles.mx_path()) do
