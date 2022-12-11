@@ -179,6 +179,7 @@ defmodule Mppm.GameRules do
       |> List.flatten
 
     Logger.info "["<>server.login<>"] Writing new ruleset"
+    File.mkdir_p("#{@maps_path}MatchSettings/")
     :ok = :file.write_file(target_path, new_xml)
 
     {:ok, target_path}
