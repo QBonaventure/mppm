@@ -34,6 +34,7 @@ defmodule Mppm.GameServer.DedicatedServer do
     embeds_many :servers, Mppm.GameServer.Server
   end
 
+
   @required_fields [:version, :release_datetime, :download_link, :status]
   @fields @required_fields ++ [:servers]
   def changeset(%__MODULE__{} = dedicated_server, data \\ %{}) do
@@ -56,6 +57,7 @@ defmodule Mppm.GameServer.DedicatedServer do
     end
   end
 
+
   @doc """
   Returns the system path for the given dedicated server version.
 
@@ -75,8 +77,6 @@ defmodule Mppm.GameServer.DedicatedServer do
   Lists all available versions to be installed.
 
   Returns list of t()
-
-
   """
   @spec list_versions() :: [t()]
   def list_versions() do
@@ -123,7 +123,6 @@ defmodule Mppm.GameServer.DedicatedServer do
       {:ok, :uninstalling} ->
         File.rm_rf("#{@root_path}TrackmaniaServer_#{dedi_server.version}")
         GenServer.cast(__MODULE__, {:update_status, :uninstalled, dedi_server})
-        "sdqd"
       false ->
         {:ok, :no_change}
     end
@@ -135,17 +134,16 @@ defmodule Mppm.GameServer.DedicatedServer do
 
   As it requires downloading files with the FileManager, it returns directly.
   """
-  @spec install_game_server(version() | t(), list()) :: {:ok, :installing | :already_installed}
-  def install_game_server(version, opts \\ [])
-  def install_game_server(version, opts) when is_integer(version), do:
-    install_game_server(get(version) |> elem(1), opts)
-  def install_game_server(%__MODULE__{} = dedi_server, opts) do
+  @spec install_game_server(version() | t()) :: {:ok, :installing | :already_installed}
+  def install_game_server(version) when is_integer(version), do:
+    install_game_server(get(version) |> elem(1))
+  def install_game_server(%__MODULE__{} = dedi_server) do
     case GenServer.call(__MODULE__, {:install_flag, dedi_server}) do
       {:ok, :installing} ->
         {:ok, _pid} = Mppm.FileManager.TasksSupervisor.download_file(
           dedi_server.download_link,
           "/tmp/TrackmaniaServer_#{dedi_server.version}.zip",
-          {&Mppm.GameServer.DedicatedServer.finish_install/2, [version: dedi_server.version] ++ opts}
+          {&Mppm.GameServer.DedicatedServer.finish_install/2, dedi_server.version}
         )
         {:ok, :installing}
       {:ok, :already_installed} = resp ->
@@ -158,9 +156,8 @@ defmodule Mppm.GameServer.DedicatedServer do
   Terminates the game server installation initiated by the `install_game_server/2`
   function.
   """
-  @spec finish_install(binary(), []) :: :ok
-  def finish_install(zip_file_path, opts) do
-    version = Keyword.get(opts, :version)
+  @spec finish_install(binary(), integer()) :: :ok
+  def finish_install(zip_file_path, version) do
     destination_path = "#{@root_path}TrackmaniaServer_#{version}"
     File.mkdir(destination_path)
 
@@ -169,7 +166,7 @@ defmodule Mppm.GameServer.DedicatedServer do
 
     :zip.unzip(binary, [cwd: String.to_charlist(destination_path)])
 
-    if Keyword.get(opts, :first_install) == true do
+    unless File.exists?("#{@user_data_path}/Config") do
       :ok = prepare_first_install(destination_path)
     end
 
@@ -269,6 +266,7 @@ defmodule Mppm.GameServer.DedicatedServer do
     {:noreply, state}
 
 
+
   ############################################
   ############ Private functions #############
   ############################################
@@ -281,6 +279,7 @@ defmodule Mppm.GameServer.DedicatedServer do
     :ok
   end
 
+
   defp server_version_installed?(version), do:
     File.exists?("#{@root_path}TrackmaniaServer_#{version}/TrackmaniaServer")
 
@@ -288,8 +287,11 @@ defmodule Mppm.GameServer.DedicatedServer do
     Mppm.Repo.all(from s in Mppm.GameServer.Server, select: s.exe_version, distinct: true)
   end
 
-  defp link_to_user_data(install_path), do:
+
+  defp link_to_user_data(install_path) do
     File.ln_s("#{@root_path}UserData", "#{install_path}/UserData")
+  end
+
 
   defp set_executable_mode(install_path) do
     case System.cmd("chmod", ["+x", "#{install_path}/TrackmaniaServer"]) do
@@ -300,16 +302,19 @@ defmodule Mppm.GameServer.DedicatedServer do
     end
   end
 
+
   defp cleanup_install(install_path) do
     File.rm_rf("#{install_path}/UserData")
     File.rm_rf("#{install_path}/RemoteControlExamples")
     File.rm("#{install_path}/TrackmaniaServer.exe")
   end
 
-  defp prepare_first_install(install_path) do
-    File.cp_r("#{install_path}/UserData", @user_data_path)
+  def prepare_first_install(install_path) do
+    File.cp_r("#{install_path}/UserData/Config", "#{@user_data_path}/Config")
     File.mkdir("#{@user_data_path}/Maps/MX")
+    :ok
   end
+
 
   defp cast(versions) when is_list(versions), do: Enum.map(versions, & cast(&1))
   # Casts map of server version from Mppm.Service.UbiNadeoApi to module struct.
@@ -345,7 +350,7 @@ defmodule Mppm.GameServer.DedicatedServer do
       File.write(zip_path, body)
 
       Logger.info "Installing game server files..."
-      finish_install(zip_path, [version: version, first_install: true])
+      finish_install(zip_path, version)
     end
 
     if {:ok, []} == File.ls(Mppm.TracksFiles.mx_path()) do
@@ -354,6 +359,7 @@ defmodule Mppm.GameServer.DedicatedServer do
       :ok = File.cp("./priv/default_tracks/#{first_track_name}", "#{Mppm.TracksFiles.mx_path()}/#{first_track_name}", fn _, _ -> false end)
     end
   end
+
 
   defp update_dedicated_status(status, %__MODULE__{version: version}, state) do
     versions =
@@ -374,6 +380,8 @@ defmodule Mppm.GameServer.DedicatedServer do
     {:ok, list} = Mppm.Service.UbiNadeoApi.server_versions()
     cast(list)
   end
+
+
 
   ############################################
   ######## GenServer implementation ##########
@@ -400,6 +408,5 @@ defmodule Mppm.GameServer.DedicatedServer do
       end)
     {:ok, %{versions: versions}}
   end
-
 
 end

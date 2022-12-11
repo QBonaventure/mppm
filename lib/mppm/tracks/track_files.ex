@@ -127,7 +127,10 @@ defmodule Mppm.TracksFiles do
 
   def start_link(_init_value), do: GenServer.start_link(__MODULE__, nil, name: __MODULE__)
 
-  def init(_init_value), do: {:ok, %{tracks_files: []}, {:continue, :check_files}}
+  def init(_init_value) do
+    File.mkdir_p!(@mx_path)
+    {:ok, %{tracks_files: []}, {:continue, :check_files}}
+  end
 
   def handle_continue(:check_files, state), do: {:noreply, %{state | tracks_files: get_files_list()}}
 

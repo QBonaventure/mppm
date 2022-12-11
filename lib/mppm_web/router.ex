@@ -19,8 +19,18 @@ defmodule MppmWeb.Router do
   pipeline :auth do
   end
 
+  pipeline :public_front do
+    plug :put_root_layout, {MppmWeb.LayoutView, :public_front}
+  end
+
   pipeline :api do
     plug :accepts, ["json"]
+  end
+
+  scope "/", MppmWeb do
+    pipe_through [:browser, :public_front]
+
+    live "/:server_login/webpage", ServerWebpageLive
   end
 
   scope "/auth", MppmWeb do
