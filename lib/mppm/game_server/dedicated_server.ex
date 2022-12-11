@@ -135,11 +135,10 @@ defmodule Mppm.GameServer.DedicatedServer do
 
   As it requires downloading files with the FileManager, it returns directly.
   """
-  @spec install_game_server(version() | t(), list()) :: {:ok, :installing | :already_installed}
-  def install_game_server(version, opts \\ [])
-  def install_game_server(version, opts) when is_integer(version), do:
-    install_game_server(get(version) |> elem(1), opts)
-  def install_game_server(%__MODULE__{} = dedi_server, opts) do
+  @spec install_game_server(version() | t()) :: {:ok, :installing | :already_installed}
+  def install_game_server(version) when is_integer(version), do:
+    install_game_server(get(version) |> elem(1))
+  def install_game_server(%__MODULE__{} = dedi_server) do
     case GenServer.call(__MODULE__, {:install_flag, dedi_server}) do
       {:ok, :installing} ->
         {:ok, _pid} = Mppm.FileManager.TasksSupervisor.download_file(
@@ -158,9 +157,8 @@ defmodule Mppm.GameServer.DedicatedServer do
   Terminates the game server installation initiated by the `install_game_server/2`
   function.
   """
-  @spec finish_install(binary(), []) :: :ok
-  def finish_install(zip_file_path, opts) do
-    version = Keyword.get(opts, :version)
+  @spec finish_install(binary(), integer()) :: :ok
+  def finish_install(zip_file_path, version) do
     destination_path = "#{@root_path}TrackmaniaServer_#{version}"
     File.mkdir(destination_path)
 
