@@ -163,11 +163,11 @@ defmodule Mppm.GameServer.DedicatedServer do
     File.mkdir(destination_path)
 
     {:ok, binary} = File.read(zip_file_path)
-    File.rm(zip_file_path)
+    # File.rm(zip_file_path)
 
     :zip.unzip(binary, [cwd: String.to_charlist(destination_path)])
 
-    if Keyword.get(opts, :first_install) == true do
+    unless File.exists?("#{@user_data_path}/Config") do
       :ok = prepare_first_install(destination_path)
     end
 
@@ -298,16 +298,19 @@ defmodule Mppm.GameServer.DedicatedServer do
     end
   end
 
+
   defp cleanup_install(install_path) do
     File.rm_rf("#{install_path}/UserData")
     File.rm_rf("#{install_path}/RemoteControlExamples")
     File.rm("#{install_path}/TrackmaniaServer.exe")
   end
 
-  defp prepare_first_install(install_path) do
-    File.cp_r("#{install_path}/UserData", @user_data_path)
+  def prepare_first_install(install_path) do
+    File.cp_r("#{install_path}/UserData/Config", "#{@user_data_path}/Config")
     File.mkdir("#{@user_data_path}/Maps/MX")
+    :ok
   end
+
 
   defp cast(versions) when is_list(versions), do: Enum.map(versions, & cast(&1))
   # Casts map of server version from Mppm.Service.UbiNadeoApi to module struct.
