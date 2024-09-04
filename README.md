@@ -65,7 +65,7 @@ runtimes, as well as to pinpoint specific version of it for any paths.
 
   - inotify-tools
   - PostgreSQL 10
-  - NodeJS 6.4
+  - NodeJS 12
 
 ### Erlang/Elixir
 
