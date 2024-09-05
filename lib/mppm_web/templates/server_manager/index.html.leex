@@ -184,11 +184,3 @@
     </form>
   </div>
 </section>
-
-
-<section id="interface-settings-section" x-data="{ open: false}">
-  <h1 @click="open = true">Interface Settings</h1>
-  <div class="displayable" x-show.transition="open" @click.away="open = false">
-    <%= live_component @socket, MppmWeb.Live.Component.UISettings, server: @server %>
-  </div>
-</section>
