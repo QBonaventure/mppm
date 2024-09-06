@@ -12,7 +12,7 @@ defmodule Mppm.GameUI.GameUISupervisor do
     ]
   end
 
-  def active_modules(server_login) do
+  def active_modules(_server_login) do
     Supervisor.which_children({:global, {:game_ui_supervisor, "ftc_tm20_5"}})
     |> Enum.map(fn {module, pid, _, _} -> {module, pid} end)
   end

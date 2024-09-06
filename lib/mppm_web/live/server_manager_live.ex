@@ -49,7 +49,7 @@ defmodule MppmWeb.ServerManagerLive do
   ################################################
 
 
-  def handle_event("cancel-form", params, socket) do
+  def handle_event("cancel-form", _params, socket) do
     changeset = Ecto.Changeset.change(socket.assigns.server)
     {:noreply, assign(socket, changeset: changeset)}
   end

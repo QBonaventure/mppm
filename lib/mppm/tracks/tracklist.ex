@@ -164,14 +164,13 @@ defmodule Mppm.Tracklist do
 
   def handle_call({:remove_track, tracklist, track_id}, _from, state) do
     tracks_ids = Enum.reject(tracklist.tracks_ids, & &1 == track_id)
-    tracks = Enum.reject(tracklist.tracks, & &1.id == track_id)
 
     {:ok, updated_tracklist} = upsert(tracklist, %{tracks_ids: tracks_ids})
     {:reply, {:ok, updated_tracklist}, %{state | tracklist.server.login => updated_tracklist}}
   end
 
 
-  def handle_info({message, server_login, uuid} = msg, state)
+  def handle_info({message, server_login, uuid}, state)
   when message in [:current_track, :loaded_map] do
     tracklist = Map.get(state, server_login)
     case length(tracklist.tracks_ids) == 1 do

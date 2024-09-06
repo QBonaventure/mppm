@@ -227,7 +227,7 @@ defmodule Mppm.Broker.MethodCall do
   end
 
 
-  def dispatch_message(server_login, "ManiaPlanet.PlayerDisconnect", [user_login, reason]) do
+  def dispatch_message(server_login, "ManiaPlanet.PlayerDisconnect", [user_login, _reason]) do
     Mppm.PubSub.broadcast("player-status", {:user_disconnection, server_login, user_login})
   end
 

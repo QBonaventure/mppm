@@ -328,11 +328,12 @@ defmodule Mppm.GameServer.DedicatedServer do
     unless File.exists?(@root_path) do
       Logger.info "Creating #{@root_path}"
       case File.mkdir_p!(@root_path) do
+        :ok ->
+          "Successfully created '#{@root_path}' directory!"
         {_, :enoent} ->
           raise File.Error, "Couldn't create the '#{@root_path}' directory. Please check file permissions, or create the MPPM folder manually.'"
         {:error, reason} ->
           raise reason
-        _ ->
       end
     end
 

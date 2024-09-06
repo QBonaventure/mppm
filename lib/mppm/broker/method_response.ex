@@ -22,7 +22,7 @@ defmodule Mppm.Broker.MethodResponse do
 
 
   # For GetDetailedPlayerInfo response
-  defp dispatch_response(server_login, %{"Login" => login, "NickName" => nickname, "IsSpectator" => is_spectator?} = user) do
+  defp dispatch_response(server_login, %{"Login" => login, "NickName" => _nickname, "IsSpectator" => is_spectator?}) do
     user = Mppm.User.get(%Mppm.User{login: login})
     Mppm.PubSub.broadcast("player-status", {:user_connection, server_login, user, is_spectator?})
   end
@@ -30,7 +30,7 @@ defmodule Mppm.Broker.MethodResponse do
   defp dispatch_response(server_login, [%{"PlayerId" => 0} | remainder]) do
     Enum.each(
       remainder,
-      fn %{"Login" => login, "NickName" => nickname, "SpectatorStatus" => spec_status} ->
+      fn %{"Login" => login, "NickName" => _nickname, "SpectatorStatus" => spec_status} ->
         user = Mppm.User.get(%Mppm.User{login: login})
         Mppm.PubSub.broadcast("player-status", {:user_connection, server_login, user, spec_status != 0})
       end

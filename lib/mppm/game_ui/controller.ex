@@ -19,7 +19,7 @@ defmodule Mppm.GameUI.Controller do
   end
   def start_link([server_login], _opts \\ []),
     do: GenServer.start_link(__MODULE__, [server_login], name: {:global, {__MODULE__, server_login}})
-  def init([server_login]) do
+  def init([_server_login]) do
     :ok = Phoenix.PubSub.subscribe(Mppm.PubSub, "players-status")
     {:ok, %{}}
   end

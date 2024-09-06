@@ -56,7 +56,7 @@ defmodule Mppm.TimeTracker do
   end
 
 
-  def handle_call({:players_runs, players_logins}, _from, state) do
+  def handle_call({:players_runs, _players_logins}, _from, state) do
     {:reply, state.ongoing_runs.server_login, state}
   end
 
@@ -85,7 +85,7 @@ defmodule Mppm.TimeTracker do
   end
 
 
-  def handle_info({:player_waypoint, server_login, user_login, waypoint_nb, time}, state) do
+  def handle_info({:player_waypoint, server_login, user_login, _waypoint_nb, time}, state) do
     player_cp_times = Map.get(state.ongoing_runs, user_login, []) ++ [time]
     ongoing_runs = Map.put(state.ongoing_runs, user_login, player_cp_times)
     runs = Map.put(state.runs, user_login, %{server_login: server_login, partials: player_cp_times})
@@ -97,6 +97,7 @@ defmodule Mppm.TimeTracker do
       {:new, new_time} ->
         Mppm.PubSub.broadcast("race-status", {:new_time_record, server_login, new_time})
       :none ->
+        nil
         # Map.get(state.tracks_records, track_uuid)
     end
     {:noreply, state}

@@ -105,7 +105,7 @@ defmodule Mppm.GameUI.CurrentCPs do
   end
 
 
-  def update_table(server_login, cps) do
+  def update_table(_server_login, cps) do
     cps_manialink =
       cps
       |> Enum.map(&checkpoint_container/1)

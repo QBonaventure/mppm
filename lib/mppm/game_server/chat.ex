@@ -8,7 +8,7 @@ defmodule Mppm.GameServer.Chat do
       id: __MODULE__,
       start: {__MODULE__, :start_link, [[server_config], []]},
       restart: :transient,
-      name: {:global, {:server_chat, server_config.login}}
+      name: {:global, {:server_chat, server_config.server_id}}
     }
   end
 

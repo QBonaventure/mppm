@@ -25,7 +25,7 @@ defmodule Mppm.MixProject do
   def application do
     [
       mod: {Mppm.Application, []},
-      extra_applications: [:logger, :runtime_tools, :logger_file_backend, :os_mon]
+      extra_applications: [:xmerl, :logger, :runtime_tools, :logger_file_backend, :os_mon]
     ]
   end
 

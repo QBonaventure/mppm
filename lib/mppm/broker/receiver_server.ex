@@ -96,7 +96,7 @@ defmodule Mppm.Broker.ReceiverServer do
       message -> case message do
         %XMLRPC.MethodCall{} -> Mppm.Broker.MethodCall.dispatch(login, message)
         %XMLRPC.MethodResponse{} -> Mppm.Broker.MethodResponse.dispatch(login, message)
-        _unhandled_message ->
+        unhandled_message -> raise unhandled_message
       end
     end
   end

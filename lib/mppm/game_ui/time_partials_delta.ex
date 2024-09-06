@@ -34,12 +34,12 @@ defmodule Mppm.GameUI.TimePartialsDelta do
   end
 
 
-  def handle_info({:loaded_map, server_login, uuid}, state) do
+  def handle_info({:loaded_map, server_login, _uuid}, state) do
     {:noreply, %{state | top_record: top_record(server_login)}}
   end
 
 
-  def handle_info({:new_time_record, server_login, time}, state) do
+  def handle_info({:new_time_record, _server_login, time}, state) do
     case Map.get(state, :top_record) do
       nil ->
         {:noreply, %{state | top_record: time}}
@@ -102,7 +102,7 @@ defmodule Mppm.GameUI.TimePartialsDelta do
     {:noreply, state}
   end
 
-  def terminate(_reason, state) do
+  def terminate(_reason, _state) do
     :normal
   end
 

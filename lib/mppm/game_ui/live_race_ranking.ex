@@ -79,8 +79,8 @@ defmodule Mppm.GameUI.LiveRaceRanking do
   end
 
 
-  def handle_info({_player_status, server_login, user_login, waypoint_nb, time}, state)
-  when _player_status in [:player_waypoint, :player_end_race] do
+  def handle_info({player_status, _server_login, user_login, waypoint_nb, time}, state)
+  when player_status in [:player_waypoint, :player_end_race] do
     %Mppm.User{nickname: user_nickname} = Mppm.ConnectedUsers.get_user(user_login)
     state = Kernel.put_in(state, [:users_progress, user_login], %{waypoint_nb: waypoint_nb, time: time, nickname: user_nickname, login: user_login})
     update_table(state)
@@ -88,14 +88,14 @@ defmodule Mppm.GameUI.LiveRaceRanking do
   end
 
 
-  def handle_info({:player_giveup, server_login, user_login}, state) do
+  def handle_info({:player_giveup, _server_login, user_login}, state) do
     current_list = Map.delete(state.users_progress, user_login)
     state =  %{state | users_progress: current_list}
     update_table(state)
     {:noreply, state}
   end
 
-  def handle_info({:user_disconnected, server_login, user_login}, state) do
+  def handle_info({:user_disconnected, _server_login, user_login}, state) do
     current_list = Map.delete(state.users_progress, user_login)
     state =  %{state | users_progress: current_list}
     update_table(state)
@@ -103,7 +103,7 @@ defmodule Mppm.GameUI.LiveRaceRanking do
   end
 
 
-  def handle_info({:servers_users_updated, server_login, _servers_users}, state) do
+  def handle_info({:servers_users_updated, _server_login, _servers_users}, state) do
     update_table(state)
     {:noreply, state}
   end
@@ -111,7 +111,7 @@ defmodule Mppm.GameUI.LiveRaceRanking do
   def handle_info({:started, server_login}, state) do
     case Map.has_key?(state, server_login) do
       true -> {:noreply, state}
-      false -> {:noreply, Map.put(state, %{})}
+      false -> {:noreply, Map.put(state, server_login, %{})}
     end
   end
 

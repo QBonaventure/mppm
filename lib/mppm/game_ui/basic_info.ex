@@ -102,7 +102,7 @@ defmodule Mppm.GameUI.BasicInfo do
     {:noreply, state}
   end
 
-  def handle_info(unhandled_message, state) do
+  def handle_info(_unhandled_message, state) do
     {:noreply, state}
   end
 

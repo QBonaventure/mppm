@@ -15,7 +15,7 @@ defmodule MppmWeb.ServerWebpageLive do
       :ok = Mppm.PubSub.subscribe("players-status")
     end
 
-    user_session = Mppm.Session.AgentStore.get(session["current_user"])
+    # user_session = Mppm.Session.AgentStore.get(session["current_user"])
     {:ok, tracklist} = Mppm.Tracklist.get_tracklist(server_login)
     {:ok, time_data} = Mppm.TimeTracker.ongoing_runs(server_login)
 
@@ -47,7 +47,7 @@ defmodule MppmWeb.ServerWebpageLive do
   end
 
 
-  def handle_info({event, server_login, player_login, waypoint_index, time} = pp, socket)
+  def handle_info({event, _server_login, player_login, waypoint_index, time}, socket)
   when event in ~w(player_waypoint player_end_race)a do
     waypoint_index = waypoint_index+1
     end? = event == :player_end_race
@@ -55,14 +55,14 @@ defmodule MppmWeb.ServerWebpageLive do
     updated_live_ranking =
       socket.assigns.live_ranking
       |> Map.put(player_login, %{waypoint_index: waypoint_index, time: time, end?: end?})
-      |> Enum.sort_by(fn {login, %{time: time, waypoint_index: wp}} -> {1/wp, time} end)
+      |> Enum.sort_by(fn {_login, %{time: time, waypoint_index: wp}} -> {1/wp, time} end)
       |> Map.new()
 
     {:noreply, assign(socket, live_ranking: updated_live_ranking)}
   end
 
 
-  def handle_info({:player_giveup, server_login, player_login}, socket) do
+  def handle_info({:player_giveup, _server_login, player_login}, socket) do
     updated_live_ranking =
       socket.assigns.live_ranking
       |> Map.delete(player_login)
@@ -70,7 +70,7 @@ defmodule MppmWeb.ServerWebpageLive do
   end
 
 
-  def handle_info(unhandled_message, socket) do
+  def handle_info(_unhandled_message, socket) do
     {:noreply, socket}
   end
 

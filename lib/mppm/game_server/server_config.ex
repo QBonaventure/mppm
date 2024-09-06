@@ -13,7 +13,6 @@ defmodule Mppm.ServerConfig do
   # @app_path Application.get_env(:mppm, :app_path)
   @root_path Application.get_env(:mppm, :game_servers_root_path)
   @config_path @root_path <> "UserData/Config/"
-  @maps_path @root_path <> "UserData/Maps/"
 
 
   @primary_key {:server_id, :id, autogenerate: false}

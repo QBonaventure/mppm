@@ -58,7 +58,7 @@ defmodule Mppm.GameUI.ChatCommands do
     {:noreply, state}
   end
 
-  def terminate(_reason, state) do
+  def terminate(_reason, _state) do
     :normal
   end
 

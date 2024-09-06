@@ -50,22 +50,24 @@ defmodule Mppm.Broker.RequesterServer do
     {:reply, make_request("TriggerModeScriptEventArray", ["Common.UIModules.SetProperties", [mess]], state), state}
   end
 
-  def handle_call(:hide_base_ui, _from, state) do
-    mess =
-      %{uimodules: Enum.map(@common_ui_modules, & %{id: &1, visible: false, visible_update: true})}
-      |> Jason.encode!
 
-    {:reply, make_request("TriggerModeScriptEventArray", ["Common.UIModules.SetProperties", [mess]], state), state}
-  end
+  # Both methods deactivated because @common_ui_modules isn't yet set, certainly WIP.
+  # def handle_call(:hide_base_ui, _from, state) do
+  #   mess =
+  #     %{uimodules: Enum.map(@common_ui_modules, & %{id: &1, visible: false, visible_update: true})}
+  #     |> Jason.encode!
+  #
+  #   {:reply, make_request("TriggerModeScriptEventArray", ["Common.UIModules.SetProperties", [mess]], state), state}
+  # end
 
-  def handle_call(:show_base_ui, _from, state) do
-    elements = ["Race_Chrono"]
-    mess =
-      %{uimodules: Enum.map(@common_ui_modules, & %{id: &1, visible: true, visible_update: true})}
-      |> Jason.encode!
-
-    {:reply, make_request("TriggerModeScriptEventArray", ["Common.UIModules.SetProperties", [mess]], state), state}
-  end
+  # def handle_call(:show_base_ui, _from, state) do
+  #   elements = ["Race_Chrono"]
+  #   mess =
+  #     %{uimodules: Enum.map(@common_ui_modules, & %{id: &1, visible: true, visible_update: true})}
+  #     |> Jason.encode!
+  #
+  #   {:reply, make_request("TriggerModeScriptEventArray", ["Common.UIModules.SetProperties", [mess]], state), state}
+  # end
 
   def handle_call(:enable_callbacks, _from, state), do:
     {:reply, make_request("EnableCallbacks", [true], state), state}
