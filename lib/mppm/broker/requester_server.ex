@@ -150,8 +150,9 @@ defmodule Mppm.Broker.RequesterServer do
 
 
   def handle_call({:write_to_chat, message}, _from, state)
-  when is_binary(message), do:
-    {:reply, make_request("ChatSend", [message], state), state}
+  when is_binary(message) do
+    {:reply, make_request("ChatSendServerMessage", [message], state), state}
+  end
 
 
   def handle_call(:get_broker_state, _, state), do: {:reply, state, state}

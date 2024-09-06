@@ -195,7 +195,7 @@ defmodule MppmWeb.ServerManagerLive do
 
 
   def handle_event("send-chat-message", %{"chat_message" => %{"text" => chat_msg}}, socket) do
-    message_to_send = "[" <> socket.assigns.user.nickname <> "] " <> chat_msg
+    message_to_send = "$aaa[$g " <> socket.assigns.user.nickname <> " $aaa]$g " <> chat_msg
     GenServer.call(broker_pname(socket.assigns.server.login), {:write_to_chat, message_to_send})
 
     {:noreply, socket}
@@ -255,7 +255,12 @@ defmodule MppmWeb.ServerManagerLive do
 
 
   def handle_info({:new_chat_message, %Mppm.ChatMessage{} = message}, socket) do
-    {:noreply, assign(socket, chat: [message] ++ socket.assigns.chat)}
+    case socket.assigns.server.id == message.server_id do
+      true ->
+        {:noreply, assign(socket, chat: [message] ++ socket.assigns.chat)}
+      false ->
+        {:noreply, socket}
+    end
   end
 
   def handle_info({:tracklist_update, server_login, %Mppm.Tracklist{} = tracklist}, socket) do
