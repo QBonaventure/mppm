@@ -20,7 +20,6 @@ defmodule Mppm.GameUI.ChatCommands do
 
   def handle_info({:new_chat_message, %Mppm.ChatMessage{text: "/"<>input}}, state) do
     [command, input] = String.split(input<>" ", " ", parts: 2)
-    IO.inspect {command, input}
     execute(command, input)
     {:noreply, state}
   end

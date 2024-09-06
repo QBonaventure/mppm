@@ -198,10 +198,11 @@ defmodule Mppm.Broker.MethodCall do
   end
 
 
-  def dispatch_message(server_login, "ManiaPlanet.PlayerChat", data) do
+  def dispatch_message(server_login, "ManiaPlanet.PlayerChat", data = [_sender_id, _sender_login, text, _is_registered_cmd]) do
     {user, text} =
       case data do
         [0, _, text, _] ->
+          # In case it's sent from MPPM, we find the nickname then fetch the player.
           case Regex.scan(~r"\[(.*)\]\s(.*)", text, capture: :all_but_first) do
             [[player_nick, text]] -> {Mppm.Repo.get_by(Mppm.User, nickname: player_nick), text}
             _ -> {nil, nil}
