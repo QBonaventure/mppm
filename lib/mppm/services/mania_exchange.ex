@@ -24,8 +24,10 @@ defmodule Mppm.Service.ManiaExchange do
 
 
   @spec make_maps_info_request([String.t()]) :: [MXTrack.t()]
-  def make_maps_info_request(maps_ids) when is_list(maps_ids), do: maps_ids |> Enum.join(",") |> make_maps_info_request()
-  def make_maps_info_request(map_id) when is_integer(map_id), do: Integer.to_string(map_id) |> make_maps_info_request()
+  def make_maps_info_request(maps_ids) when is_list(maps_ids), do:
+    maps_ids |> Enum.join(",") |> make_maps_info_request()
+  def make_maps_info_request(map_id) when is_integer(map_id), do:
+    Integer.to_string(map_id) |> make_maps_info_request()
   def make_maps_info_request(maps_ids) when is_binary(maps_ids) do
     {:ok, %Response{body: data}} = Mppm.Service.ManiaExchange.get("/api/maps/get_map_info/multi/" <> maps_ids)
     Enum.map(data, &MXTrack.cast(&1))

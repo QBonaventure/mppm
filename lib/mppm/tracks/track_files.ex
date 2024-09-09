@@ -1,6 +1,8 @@
 defmodule Mppm.TracksFiles do
   use GenServer
 
+
+
   @maps_path Application.get_env(:mppm, :game_servers_root_path) <> "UserData/Maps/"
   @mx_directory "MX/"
   @mx_path "#{@maps_path}#{@mx_directory}"
@@ -72,8 +74,12 @@ defmodule Mppm.TracksFiles do
     "#{@mx_directory}#{track_id}_#{Slug.slugify(track_name)}.Map.Gbx"
 
 
-
+  #
   def get_files_list() do
+    File.ls!(@mx_path)
+    |> Enum.map(& {extract_mx_id(&1), &1})
+    |> fetch_maps_data()
+
     File.ls!(@mx_path)
     |> Enum.map(& {extract_mx_id(&1), &1})
     |> fetch_maps_data()
@@ -95,6 +101,7 @@ defmodule Mppm.TracksFiles do
     |> Enum.map(fn {id, _} = track -> Enum.find(records, track, & &1.mx_track_id == id) end)
   end
 
+
   def retrieve_missing_maps_data(maps_list) do
     missing_maps_info =
       maps_list
@@ -105,22 +112,41 @@ defmodule Mppm.TracksFiles do
     Enum.map(maps_list, fn map ->
       case map do
         {id, map_filename} ->
-          file_data = extract_track_file_data(@mx_path<>map_filename)
-          user =
-            case file_data.author do
-              "Nadeo" -> Mppm.User.get_nadeo_user()
-              author_nickname -> Mppm.User.get(%Mppm.User{login: author_nickname})
-            end
-          data =
-            Enum.find(missing_maps_info, & &1.mx_track_id == id)
+          file_data =
+            @mx_path<>map_filename
+            |> extract_track_file_data
+            |> to_track_map
+
+          track =
+            missing_maps_info
+            |> Enum.find(
+              %Mppm.Service.ManiaExchange.Track{is_deleted: true, mx_track_id: id},
+              fn x -> x.mx_track_id == id
+            end)
             |> Map.from_struct()
-            |> Map.put(:author, user)
-          %Mppm.Track{}
-          |> Mppm.Track.changeset(data)
+            |> Map.merge(file_data)
+
+          Mppm.Track.changeset(%Mppm.Track{}, track)
           |> Mppm.Repo.insert!
         _ -> map
       end
     end)
+  end
+
+  # Temporary function to allow updating retrieve_missing_maps_data/1
+  def to_track_map(%{} = file_data) do
+    user =
+      case file_data.author do
+        "Nadeo" -> Mppm.User.get_nadeo_user()
+        author_nickname -> Mppm.User.get(%Mppm.User{login: author_nickname})
+      end
+    map =
+      %{}
+      |> Map.put(:exe_ver, file_data.exever)
+      |> Map.put(:gbx_map_name, file_data.name)
+      |> Map.put(:uuid, file_data.uid)
+      |> Map.put(:laps_nb, file_data.nblaps)
+      |> Map.put(:author, user)
   end
 
 

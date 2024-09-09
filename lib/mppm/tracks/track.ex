@@ -16,17 +16,18 @@ defmodule Mppm.Track do
     field :exe_ver, :string
     field :uploaded_at, :utc_datetime
     field :updated_at, :utc_datetime
+    field :is_deleted, :boolean, default: false
     has_many :time_records, Mppm.TimeRecord
   end
 
 
-  @required_fields ~w(mx_track_id uuid name gbx_map_name laps_nb awards_nb exe_ver uploaded_at updated_at)a
+  @required_fields ~w(mx_track_id uuid is_deleted name gbx_map_name laps_nb awards_nb exe_ver uploaded_at updated_at)a
   def changeset(%Mppm.Track{} = track, data \\ %{}) do
     track
     |> cast(data, @required_fields)
     |> put_assoc(:author, data.author)
-    |> put_assoc(:style, data.style)
-    |> put_assoc(:tags, data.tags)
+    # |> put_assoc(:style, data.style)
+    # |> put_assoc(:tags, data.tags)
   end
 
 
@@ -44,6 +45,7 @@ defmodule Mppm.Track do
       limit: ^nb_of_tracks
     Mppm.Repo.all(query)
   end
+
 
   def track_records(track_uuid, limit \\ 20) do
     Mppm.Repo.all(

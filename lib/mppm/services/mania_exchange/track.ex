@@ -11,8 +11,9 @@ defmodule Mppm.Service.ManiaExchange.Track do
     laps_nb: nil,
     awards_nb: nil,
     exe_ver: nil,
-    uploaded_at: nil, 
-    updated_at: nil
+    uploaded_at: nil,
+    updated_at: nil,
+    is_deleted: false
 
   @spec cast(map()) :: {:ok, map()}
   def cast(%{} = mx_track) do
