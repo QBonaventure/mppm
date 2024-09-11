@@ -147,9 +147,16 @@ defmodule Mppm.User do
   ##############################################################################
 
   defp fetch_or_create(query, user) do
-    case Mppm.Repo.one(query) |> exists?() do
-      {:found, user} -> user
-      {:not_found, _} -> create_new_user(user)
+    # Logins are 22 bytes long. if it's not, it's a fake player.
+    case user.login != nil and byte_size(user.login) != 22 do
+      false ->
+        case Mppm.Repo.one(query) |> exists?() do
+          {:found, user} -> user
+          {:not_found, _} ->
+          create_new_user(user)
+        end
+      true ->
+        Map.put(user, :is_fake, true)
     end
   end
 
