@@ -6,7 +6,8 @@ Application
 |- Mppm.Tracklist
 |- Mppm.TimeTracker
 |- Mppm.GameServer.Supervisor
-   |
+   |- Mppm.GameUI.Supervisor
+     |- 
    |
    |
    |
