@@ -36,7 +36,6 @@ defmodule Mppm.Tracklist do
   end
 
   @spec get_tracklist(Mppm.GameServer.Server.t() | String.t()) :: t()
-
   def get_tracklist(server_login) when is_binary(server_login) do
     GenServer.call(__MODULE__, {:get_server_tracklist, server_login})
   end

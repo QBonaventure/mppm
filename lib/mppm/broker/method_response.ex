@@ -27,6 +27,8 @@ defmodule Mppm.Broker.MethodResponse do
     Mppm.PubSub.broadcast("player-status", {:user_connection, server_login, user, is_spectator?})
   end
 
+  # For GetPlayerList(int, int, int)
+  # PlayerId = 0 means it's the dedicated server account, so we get rid of it
   defp dispatch_response(server_login, [%{"PlayerId" => 0} | remainder]) do
     Enum.each(
       remainder,
