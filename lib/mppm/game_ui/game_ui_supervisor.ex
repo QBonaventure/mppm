@@ -1,6 +1,10 @@
 defmodule Mppm.GameUI.GameUISupervisor do
   use Supervisor
 
+  def name(server_login) do
+    {:global, {:game_ui_supervisor, server_login}}
+  end
+
   def available_modules() do
     [
       Mppm.GameUI.ChatCommands,
