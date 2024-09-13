@@ -1,7 +1,7 @@
 defmodule Mppm.GameUI.Helper do
   require Logger
 
-  @base_ui_modules ~w(Race_Chrono Race_Checkpoint Race_DisplayMessage Race_Record Race_Countdown Race_RespawnHelper Race_BestRaceViewer Rounds_SmallScoresTable Race_Record Race_ScoresTable)
+  @base_ui_modules ~w(Track_Karma, Race_Chrono Race_Checkpoint Race_DisplayMessage Race_Record Race_Countdown Race_RespawnHelper Race_BestRaceViewer Rounds_SmallScoresTable Race_Record Race_ScoresTable)
 
   def base_ui_modules(),
     do: @base_ui_modules

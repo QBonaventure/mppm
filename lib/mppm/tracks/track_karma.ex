@@ -18,9 +18,10 @@ defmodule Mppm.TrackKarma do
     |> put_assoc(:user, data.user)
   end
 
-  def new(%Mppm.Track{} = track, %Mppm.User{} = user, note) do
-
-    %Mppm.TrackKarma{track: track, user: user, note: note}
+  def upsert_vote(%Mppm.User{} = user, %Mppm.Track{} = track, note) do
+    %Mppm.TrackKarma{}
+    |> Mppm.TrackKarma.changeset(%{user: user, track: track, note: note})
+    |> Mppm.Repo.insert(on_conflict: :replace_all, conflict_target: [:user_id, :track_id])
   end
 
 end

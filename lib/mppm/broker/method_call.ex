@@ -242,8 +242,26 @@ defmodule Mppm.Broker.MethodCall do
     end
   end
 
-  def dispatch_message(server_login, "ManiaPlanet.PlayerManialinkPageAnswer", [_, user_login, method_call, params]), do:
+  @doc """
+    Triggered by users clicking on the game UI.
+    Triggers are set by the action attribute in manialink elements, with the
+    method to be called followed by its params, seperated by colons such as:
+      {:label, [text: "Hello!", action: "say:hello:world"], []}
+
+    Here, `method_call` value is "say", and the param list is ["hello", "world"].
+  """
+  def dispatch_message(
+    server_login,
+    "ManiaPlanet.PlayerManialinkPageAnswer",
+    [_playerUid, user_login, method_call, _params]
+    ) do
+    {method_call, params} =
+      case String.split(method_call, ":") do
+        [method_call | params] -> {method_call, params}
+        [method_call] -> {method_call, nil}
+      end
     Mppm.GameUI.Actions.handle_action(method_call, server_login, user_login, params)
+  end
 
 
   def dispatch_message(_server_login, method_name, data) do

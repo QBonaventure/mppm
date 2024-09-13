@@ -18,6 +18,7 @@ defmodule Mppm.Track do
     field :updated_at, :utc_datetime
     field :is_deleted, :boolean, default: false
     has_many :time_records, Mppm.TimeRecord
+    has_many :karma_votes, Mppm.TrackKarma
   end
 
 

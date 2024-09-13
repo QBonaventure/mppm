@@ -31,6 +31,7 @@ Sent by Mppm.ConnectedUsers for other processes to use.
 - {:update_server_map, server_login, track_uid}
 - {:endmap, server_login, track_uid}
 - {:current_track_info, server_login, track_uid}
+- {:new_track_vote, server_login, %Mppm.TrackKarma{}}
 
 
 ## "race-status"

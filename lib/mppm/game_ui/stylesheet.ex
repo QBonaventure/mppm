@@ -15,6 +15,7 @@ defmodule Mppm.GameUI.Stylesheet do
       [class: "header-text", textcolor: "EEE", textsize: "0.8", pos: Float.to_string(@widget_base_width/2) <>" 0", halign: "center"],
       [class: "background-quad", bgcolor: "700", opacity: "0.3"],
       [class: "background-quad-black", bgcolor: "222", opacity: "0.4"],
+      [class: "background-activated", bgcolor: "F00", opacity: "0.4"],
       [class: "background-positive", bgcolor: "F00", opacity: "0.4"],
       [class: "background-negative", bgcolor: "0F0", opacity: "0.4"],
     ]
