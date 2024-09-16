@@ -126,7 +126,6 @@ defmodule Mppm.GameUI.TimeRecords do
             {:label, [text: time_record.user.nickname, class: "text", pos: "7 -0.7", halign: "left"], []},
             {:label, [text: Mppm.TimeRecord.to_string(time_record.lap_time), class: "text", pos: "33 -0.7", halign: "right"], []},
             {:quad, [size: "36 4.5", pos: "1 1", class: "background-quad-black"], []}
-            # {:label, [text: "sssssssssss", class: "text", pos: "33 0", halign: "right"], []}
         ]}
         {line, index+1}
       end)
