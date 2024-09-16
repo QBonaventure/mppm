@@ -31,7 +31,7 @@ defmodule Mppm.GameUI.TrackKarma do
         {:quad, [size: "6.5 5", pos: "29 -7.5",action: "vote:5", class: "background-quad-black"], []},
         {:label, [text: "5", class: "button text", pos: "31 -9"], []}
       ]
-    {:frame, [pos: "120 50"], content}
+    {:frame, [pos: "122.5 30"], content}
     |> root_wrap()
   end
 
@@ -126,10 +126,6 @@ defmodule Mppm.GameUI.TrackKarma do
       |> Mppm.Repo.preload(:karma_votes)
       |> Map.get(:karma_votes)
 
-    # votes =
-    #   votes
-    #   |> Enum.map(fn %{user_id: id, note: note} -> {id, note} end)
-    #   |> Map.new
     mean_vote = mean_value(votes)
     state = %{votes: votes, mean_vote: mean_vote}
 
