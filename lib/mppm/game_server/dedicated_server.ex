@@ -1,20 +1,20 @@
 defmodule Mppm.GameServer.DedicatedServer do
-  use GenServer
-  import Ecto.Query, only: [from: 2]
-  use Ecto.Schema
-  import Ecto.Changeset
-  require Logger
-
   @moduledoc """
-  Takes care of everything related to dedicated server files and executables related
+  Takes care of everything related to dedicated server files and executables.
   """
+
+  use GenServer
+  use Ecto.Schema
+
+  import Ecto.Query, only: [from: 2]
+  import Ecto.Changeset
+
+  require Logger
 
   @allowed_statuses [:installed, :uninstalled, :in_use, :installing, :unknown]
   @root_path Application.get_env(:mppm, :game_servers_root_path)
   @user_data_path "#{@root_path}UserData"
 
-  # @enforce_keys [:version, :release_datetime, :download_link, :status]
-  # defstruct [:version, :release_datetime, :download_link, status: :unknown]
   @type t :: %__MODULE__{
       version: version(),
       release_datetime: release_datetime(),
@@ -74,9 +74,7 @@ defmodule Mppm.GameServer.DedicatedServer do
   @doc """
   Lists all available versions to be installed.
 
-  Returns list of t()
-
-
+  Returns list of `t()`.
   """
   @spec list_versions() :: [t()]
   def list_versions() do

@@ -1,7 +1,8 @@
 defmodule Mppm.GameUI.TrackKarma do
+
   use GenServer
 
-  @rgb_hex_ratio 15.9375
+
   @hex_numeric_value %{
     15 => "F",
     14 => "E",
@@ -11,7 +12,7 @@ defmodule Mppm.GameUI.TrackKarma do
     10 => "A"
   }
 
-
+  @spec widget(float()) :: tuple()
   def widget(mean_vote) do
     content =
       [
@@ -59,12 +60,20 @@ defmodule Mppm.GameUI.TrackKarma do
   end
 
   # Catch all calls that we do not care about
-  def handle_info(_, state), do: {:noreply, state}
+  @impl true
+  def handle_info(_message, state), do: {:noreply, state}
 
 
   ##############################################################################
   ########################### Private functions ################################
   ##############################################################################
+
+  def root_wrap(content \\ nil), do:
+  {
+    :manialink,
+    [id: "track-karma", version: 3],
+    [Mppm.GameUI.Stylesheet.get_stylesheet(), content]
+  }
 
   defp get_vote_bar_length(nil), do: "0"
   defp get_vote_bar_length(mean_vote),
@@ -108,6 +117,7 @@ defmodule Mppm.GameUI.TrackKarma do
      GenServer.start_link(__MODULE__, init_value, name: __MODULE__)
   end
 
+  @impl true
   def init([server_login]) do
     {:ok, cur_track} = Mppm.Tracklist.get_server_current_track(server_login)
 
@@ -128,6 +138,7 @@ defmodule Mppm.GameUI.TrackKarma do
     {:ok, state}
   end
 
+  @impl true
   def terminate(_reason, _state) do
     :ok
   end
