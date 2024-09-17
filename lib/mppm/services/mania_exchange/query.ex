@@ -15,7 +15,7 @@ defmodule Mppm.Service.ManiaExchange.Query do
 
   def changeset(%Query{} = query, options \\ %{}) do
     query
-    |> cast(options, [:author_name, :track_style_id, :map_name, :page])
+    |> cast(options, [:author_name, :track_style_id, :map_name, :page, :items_per_page])
   end
 
   def latest_awarded_maps() do

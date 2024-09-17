@@ -67,7 +67,7 @@ defmodule Mppm.Service.ManiaExchange do
   defp get_params(%Query{} = query) do
     %{
       api: "on",
-      map_name: query.map_name,
+      trackname: query.map_name,
       author: query.author_name,
       style: query.track_style_id,
       page: query.page,
