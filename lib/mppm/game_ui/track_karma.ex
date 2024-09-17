@@ -35,33 +35,23 @@ defmodule Mppm.GameUI.TrackKarma do
     |> root_wrap()
   end
 
-  def root_wrap(content \\ nil), do:
-    {:manialink, [id: "track-karma", version: 3], [Mppm.GameUI.Stylesheet.get_stylesheet(), content]}
-
 
   ##############################################################################
   ########################## GenServer Callbacks ###############################
   ##############################################################################
 
+  @impl true
   def handle_info({:user_connected, server_login, user}, state) do
-    widget(2)
+    widget(state.mean_value)
     |> Mppm.GameUI.Helper.send_to_user(server_login, user.login)
     {:noreply, state}
   end
 
+  @impl true
   def handle_info({:new_track_vote, server_login, vote}, state) do
-    new_vote =
-      vote
-      |> Map.put(:track, %Ecto.Association.NotLoaded{__field__: :track})
-      |> Map.put(:user, %Ecto.Association.NotLoaded{__field__: :user})
+    new_vote = Mppm.Repo.unload(vote, [:user, :track])
 
-    user_id = new_vote.user_id
-
-    updated_votes = Enum.map(state.votes, fn
-        %{user_id: ^user_id} -> new_vote
-        x -> x
-      end)
-
+    updated_votes = Map.put(state.votes, new_vote.user_id, new_vote)
     updated_mean_vote = mean_value(updated_votes)
 
     Mppm.GameUI.Helper.send_to_all(widget(updated_mean_vote), server_login)
@@ -97,7 +87,7 @@ defmodule Mppm.GameUI.TrackKarma do
   defp mean_value([]), do: nil
   defp mean_value(votes) do
     votes
-    |> Enum.reduce(0, fn vote, acc -> acc + vote.note end)
+    |> Enum.reduce(0, fn {_user_id, vote}, acc -> acc + vote.note end)
     |> Kernel./(Enum.count(votes))
     |> Float.round(1)
   end
@@ -125,6 +115,8 @@ defmodule Mppm.GameUI.TrackKarma do
       cur_track
       |> Mppm.Repo.preload(:karma_votes)
       |> Map.get(:karma_votes)
+      |> Enum.map(&({&1.user_id, &1}))
+      |> Map.new()
 
     mean_vote = mean_value(votes)
     state = %{votes: votes, mean_vote: mean_vote}
