@@ -17,8 +17,7 @@ This brings a few advantages:
 - if your server starts, so does its controller
 - all-in-one solutions, way more simple to use
 - it's blazing fast, really real real-time
-- it's ubiquitous, your controller is in-game, on your 2nd screen web browser, on
-your smartphone
+- it's ubiquitous, your controller is in-game, on your 2nd screen web browser, on your smartphone
 - it makes it pretty easy to build up tools for your server, including web tools
 - etc.
 
@@ -29,6 +28,11 @@ failure proof!
 
 
 ## Functionalities
+
+There are 3 main functionalities:
+- game servers management (on the web or smartphone)
+- in-game controller
+- public webpages displaying various info about your server
 
 ### Game servers
 - download any available dedicated server version
@@ -112,12 +116,21 @@ You can safely export all the files variables before starting the application us
 
 ## First start
 
+### Beforehand
+
+Trackmania servers need ssl certificates to run. On some systems, such as linux 
+distributions based on RHEL, the server will be looking for an inexistant file :
+`/etc/pki/tls/certs/ca-certificates.crt`. But we do have `ca-bundle.crt`, so simply 
+execute `# cp /etc/pki/tls/certs/ca-bundle.crt /etc/pki/tls/certs/ca-certificates.crt`,
+and you should be good to go!
+
 ### Without docker
 
   * Go to the application root folder
   * Install elixir dependencies with `mix deps.get` (you may also manually run `mix deps.compile` but that will be done anyway if necessary at start)
   * Create and migrate your database with `mix ecto.setup`
   * Install Node.js dependencies with `npm install --prefix assets/`
+  * You may need to create the /opt/mppm, and gives right to the user running the application 
   * Finally, start the Phoenix endpoint with `mix phx.server` (or
     `(export $(grep -v '^#' .env | xargs) && mix phx.server)` if you use the env file)
 
