@@ -32,12 +32,14 @@ defmodule Mppm.Application do
     ]
 
     opts = [strategy: :one_for_one, name: Mppm.Supervisor]
-    response = Supervisor.start_link(children, opts)
-
-    Mppm.User.check_install()
-    Mppm.GameServer.DedicatedServer.check_install()
-
-    response
+    case Supervisor.start_link(children, opts) do
+      {:error, message} ->
+        message
+      {:ok, pid} ->
+        Mppm.User.check_install()
+        Mppm.GameServer.DedicatedServer.check_install()
+        {:ok, pid}
+    end
   end
 
   # Tell Phoenix to update the endpoint configuration
