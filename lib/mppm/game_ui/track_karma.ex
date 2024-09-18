@@ -43,7 +43,7 @@ defmodule Mppm.GameUI.TrackKarma do
 
   @impl true
   def handle_info({:user_connected, server_login, user}, state) do
-    widget(state.mean_value)
+    widget(state.mean_vote)
     |> Mppm.GameUI.Helper.send_to_user(server_login, user.login)
     {:noreply, state}
   end
