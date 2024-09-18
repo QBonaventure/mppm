@@ -56,7 +56,7 @@ defmodule Mppm.GameUI.TrackKarma do
     updated_mean_vote = mean_value(updated_votes)
 
     Mppm.GameUI.Helper.send_to_all(widget(updated_mean_vote), server_login)
-    {:noreply, %{votes: updated_votes, mean_value: updated_mean_vote}}
+    {:noreply, %{votes: updated_votes, mean_vote: updated_mean_vote}}
   end
 
   # Catch all calls that we do not care about
@@ -93,8 +93,8 @@ defmodule Mppm.GameUI.TrackKarma do
     Map.get(@hex_numeric_value, Kernel.round((value/2.5)*15), to_string(Kernel.trunc(value*6)))
   end
 
-  defp mean_value([]), do: nil
-  defp mean_value(votes) do
+  def mean_value(%{}), do: nil
+  def mean_value(votes) do
     votes
     |> Enum.reduce(0, fn {_user_id, vote}, acc -> acc + vote.note end)
     |> Kernel./(Enum.count(votes))
