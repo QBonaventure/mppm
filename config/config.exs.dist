@@ -38,7 +38,7 @@ config :mppm,
 
 
 config :mppm, :ubi_nadeo_api,
-  host: "https://tm-api.fearthec.io"
+  host: "https://tm-api.fearthec.ovh"
 
 config :mppm, Mppm.Service.Trackmania,
   redirect_uri: "#{System.get_env("NADEO_REDIRECT_URI")}/auth/trackmania/callback",
